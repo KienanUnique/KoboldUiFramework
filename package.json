@@ -2,7 +2,7 @@
   "name": "com.kienanunique.kobolduiframework",
   "displayName": "KoboldUiFramework",
   "version": "0.0.1-preview",
-  "description": "KoboldUiFramework",
+  "description": "Simple Ui framework with animations",
   "dependencies": {
     "com.annulusgames.alchemy": {
       "version": "https://github.com/AnnulusGames/Alchemy.git?path=/Alchemy/Assets/Alchemy",
