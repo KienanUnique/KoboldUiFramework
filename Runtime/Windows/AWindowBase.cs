@@ -1,8 +1,8 @@
-﻿using UnityEngine;
-using Utils;
+﻿using KoboldUi.Utils;
+using UnityEngine;
 using Zenject;
 
-namespace Windows
+namespace KoboldUi.Windows
 {
     public abstract class AWindowBase : MonoBehaviour, IWindow, IInitializable
     {

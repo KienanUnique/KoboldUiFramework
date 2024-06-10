@@ -1,9 +1,9 @@
 ﻿using System;
 using DG.Tweening;
-using Element.Animations.Parameters.Impl;
+using KoboldUi.Element.Animations.Parameters.Impl;
 using UnityEngine;
 
-namespace Element.Animations.Impl
+namespace KoboldUi.Element.Animations.Impl
 {
     [RequireComponent(typeof(CanvasGroup))]
     public class FadeAnimation : AUiAnimation<FadeAnimationParameters>

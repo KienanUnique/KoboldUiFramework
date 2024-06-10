@@ -1,10 +1,10 @@
-﻿using Managers;
-using Signals;
+﻿using KoboldUi.Managers;
+using KoboldUi.Signals;
+using KoboldUi.Utils;
 using UnityEngine;
-using Utils;
 using Zenject;
 
-namespace Installers
+namespace KoboldUi.Installers
 {
     public class WindowsManagersInstaller : MonoInstaller
     {

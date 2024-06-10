@@ -1,4 +1,4 @@
-﻿namespace Utils
+﻿namespace KoboldUi.Utils
 {
     public static class AssetMenuPath
     {

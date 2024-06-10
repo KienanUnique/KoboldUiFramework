@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace Element.Animations.Parameters
+namespace KoboldUi.Element.Animations.Parameters
 {
     public abstract class AUiAnimationParameters : ScriptableObject, IUiAnimationParameters
     {

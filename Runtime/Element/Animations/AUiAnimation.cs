@@ -1,12 +1,12 @@
 ﻿using System;
+using Alchemy.Inspector;
 using DG.Tweening;
 using UnityEngine;
 using Zenject;
 #if KOBOLD_ALCHEMY_SUPPORT
-using Alchemy.Inspector;
 #endif
 
-namespace Element.Animations
+namespace KoboldUi.Element.Animations
 {
     public abstract class AUiAnimation<TParams> : AUiAnimationBase where TParams : IUiAnimationParameters
     {

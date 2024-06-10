@@ -1,4 +1,4 @@
-﻿namespace Element.View
+﻿namespace KoboldUi.Element.View
 {
     public interface IUiView
     {

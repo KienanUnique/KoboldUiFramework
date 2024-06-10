@@ -1,6 +1,6 @@
-﻿using Utils;
+﻿using KoboldUi.Utils;
 
-namespace Element.Controller
+namespace KoboldUi.Element.Controller
 {
     public interface IUIController
     {

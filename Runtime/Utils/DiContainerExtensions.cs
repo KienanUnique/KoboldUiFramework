@@ -1,8 +1,8 @@
-﻿using Windows;
+﻿using KoboldUi.Windows;
 using UnityEngine;
 using Zenject;
 
-namespace Utils
+namespace KoboldUi.Utils
 {
     public static class DiContainerExtensions
     {

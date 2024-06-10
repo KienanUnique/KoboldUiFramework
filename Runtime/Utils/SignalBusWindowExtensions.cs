@@ -1,8 +1,8 @@
-﻿using Windows;
-using Signals;
+﻿using KoboldUi.Signals;
+using KoboldUi.Windows;
 using Zenject;
 
-namespace Utils
+namespace KoboldUi.Utils
 {
     public static class SignalBusWindowExtensions
     {

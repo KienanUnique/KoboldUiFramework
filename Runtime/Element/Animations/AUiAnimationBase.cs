@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace Element.Animations
+namespace KoboldUi.Element.Animations
 {
     public abstract class AUiAnimationBase : MonoBehaviour, IUiAnimation 
     {

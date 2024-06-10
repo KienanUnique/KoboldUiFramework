@@ -1,9 +1,9 @@
-﻿using Element.Animations.Parameters.Impl;
+﻿using KoboldUi.Element.Animations.Parameters.Impl;
+using KoboldUi.Utils;
 using UnityEngine;
-using Utils;
 using Zenject;
 
-namespace Installers
+namespace KoboldUi.Installers
 {
     [CreateAssetMenu(menuName = AssetMenuPath.INSTALLERS + nameof(DefaultAnimationsInstaller),
         fileName = nameof(DefaultAnimationsInstaller))]

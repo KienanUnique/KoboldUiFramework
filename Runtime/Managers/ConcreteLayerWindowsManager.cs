@@ -1,13 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
-using Windows;
-using Interfaces;
-using Signals;
+using KoboldUi.Interfaces;
+using KoboldUi.Signals;
+using KoboldUi.Utils;
+using KoboldUi.Windows;
 using UniRx;
-using Utils;
 using Zenject;
 
-namespace Managers
+namespace KoboldUi.Managers
 {
     public class ConcreteLayerWindowsManager : IInitializable, IDisposable
     {

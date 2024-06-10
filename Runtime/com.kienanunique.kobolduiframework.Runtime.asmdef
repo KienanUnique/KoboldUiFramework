@@ -1,6 +1,6 @@
 {
     "name": "com.kienanunique.kobolduiframework",
-    "rootNamespace": "",
+    "rootNamespace": "KoboldUi",
     "references": [
         "Alchemy",
         "UniRx",

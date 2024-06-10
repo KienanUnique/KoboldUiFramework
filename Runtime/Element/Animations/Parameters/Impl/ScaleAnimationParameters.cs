@@ -1,8 +1,8 @@
 ﻿using DG.Tweening;
+using KoboldUi.Utils;
 using UnityEngine;
-using Utils;
 
-namespace Element.Animations.Parameters.Impl
+namespace KoboldUi.Element.Animations.Parameters.Impl
 {
     [CreateAssetMenu(menuName = AssetMenuPath.ANIMATION_PARAMETERS + nameof(ScaleAnimationParameters),
         fileName = nameof(ScaleAnimationParameters))]

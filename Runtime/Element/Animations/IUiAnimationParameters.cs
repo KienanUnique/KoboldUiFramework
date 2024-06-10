@@ -1,4 +1,4 @@
-namespace Element.Animations
+namespace KoboldUi.Element.Animations
 {
     public interface IUiAnimationParameters
     {

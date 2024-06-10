@@ -1,6 +1,6 @@
 ﻿using Zenject;
 
-namespace Installers
+namespace KoboldUi.Installers
 {
     public class ProjectSignalBusInstaller : MonoInstaller
     {

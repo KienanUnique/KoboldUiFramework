@@ -1,6 +1,6 @@
-﻿using Utils;
+﻿using KoboldUi.Utils;
 
-namespace Windows
+namespace KoboldUi.Windows
 {
     public interface IWindow
     {

@@ -1,10 +1,10 @@
 ﻿using System;
 using DG.Tweening;
-using Element.Animations.Parameters.Impl;
+using KoboldUi.Element.Animations.Parameters.Impl;
+using KoboldUi.Utils;
 using UnityEngine;
-using Utils;
 
-namespace Element.Animations.Impl
+namespace KoboldUi.Element.Animations.Impl
 {
     [RequireComponent(typeof(RectTransform))]
     public class SlideAnimation : AUiAnimation<SlideAnimationParameters>

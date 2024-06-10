@@ -1,11 +1,11 @@
 ﻿using System.Collections.Generic;
-using Element.Controller;
-using Element.View;
+using KoboldUi.Element.Controller;
+using KoboldUi.Element.View;
+using KoboldUi.Utils;
 using UnityEngine;
-using Utils;
 using Zenject;
 
-namespace Windows
+namespace KoboldUi.Windows
 {
     [RequireComponent(typeof(CanvasGroup))]
     public abstract class AWindow : AWindowBase

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Signals
+namespace KoboldUi.Signals
 {
     public readonly struct SignalOpenWindow
     {

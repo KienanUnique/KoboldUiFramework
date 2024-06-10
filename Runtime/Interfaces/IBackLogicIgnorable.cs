@@ -1,4 +1,4 @@
-namespace Interfaces
+namespace KoboldUi.Interfaces
 {
     public interface IBackLogicIgnorable
     {

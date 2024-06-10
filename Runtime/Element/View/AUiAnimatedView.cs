@@ -1,8 +1,8 @@
 ﻿using System.Collections.Generic;
-using Element.Animations;
+using KoboldUi.Element.Animations;
 using UnityEngine;
 
-namespace Element.View
+namespace KoboldUi.Element.View
 {
     public class AUiAnimatedView : AUiView
     {

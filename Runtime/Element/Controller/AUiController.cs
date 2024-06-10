@@ -1,8 +1,8 @@
-﻿using Element.View;
-using Utils;
+﻿using KoboldUi.Element.View;
+using KoboldUi.Utils;
 using Zenject;
 
-namespace Element.Controller
+namespace KoboldUi.Element.Controller
 {
     public abstract class AUiController<TView> : IUIController, IInitializable where TView : IUiView
     {
