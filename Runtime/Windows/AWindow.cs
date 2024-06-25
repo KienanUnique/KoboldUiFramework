@@ -23,6 +23,7 @@ namespace KoboldUi.Windows
         public sealed override void Initialize()
         {
             AddControllers();
+            base.Initialize();
         }
 
         public override void SetState(EWindowState state)

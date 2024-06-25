@@ -1,4 +1,5 @@
 ﻿using KoboldUi.Utils;
+using UniRx;
 using UnityEngine;
 using Zenject;
 
@@ -6,12 +7,17 @@ namespace KoboldUi.Windows
 {
     public abstract class AWindowBase : MonoBehaviour, IWindow, IInitializable
     {
+        private readonly ReactiveProperty<bool> _isInitialized = new(false);
+
         public virtual void Initialize()
         {
+            _isInitialized.Value = true;
         }
         
-        public abstract void InstallBindings(DiContainer container);
+        public IReactiveProperty<bool> IsInitialized => _isInitialized;
         
+        public abstract void InstallBindings(DiContainer container);
+
         public abstract void SetState(EWindowState state);
 
         public void SetAsLastSibling()

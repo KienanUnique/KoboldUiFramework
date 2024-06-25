@@ -8,8 +8,8 @@ using UniRx;
 using Zenject;
 
 namespace KoboldUi.Managers
-{
-    public class ConcreteLayerWindowsManager : IInitializable, IDisposable
+{   
+    public class ConcreteLayerWindowsManager : IDisposable
     {
         private readonly Stack<IWindow> _windowsStack = new();
         private readonly CompositeDisposable _disposables = new();
@@ -17,6 +17,8 @@ namespace KoboldUi.Managers
         private readonly DiContainer _diContainer;
         private readonly SignalBus _signalBus;
         private readonly EWindowLayer _windowLayer;
+
+        private IDisposable _waitInitializationDisposable;
 
         public ConcreteLayerWindowsManager(
             DiContainer diContainer,
@@ -27,16 +29,17 @@ namespace KoboldUi.Managers
             _diContainer = diContainer;
             _signalBus = signalBus;
             _windowLayer = windowLayer;
-        }
-
-        public void Initialize()
-        {
+            
             _signalBus.GetStreamId<SignalOpenWindow>(_windowLayer).Subscribe(OnSignalOpenWindow).AddTo(_disposables);
             _signalBus.GetStreamId<SignalBackWindow>(_windowLayer).Subscribe(OnSignalBackWindow).AddTo(_disposables);
             _signalBus.GetStreamId<SignalCloseWindow>(_windowLayer).Subscribe(OnSignalCloseWindow).AddTo(_disposables);
         }
 
-        public void Dispose() => _disposables.Dispose();
+        public void Dispose()
+        {
+            _disposables.Dispose();
+            _waitInitializationDisposable?.Dispose();
+        }
 
         private void OnSignalOpenWindow(SignalOpenWindow signal)
         {
@@ -49,9 +52,29 @@ namespace KoboldUi.Managers
                 currentWindow.SetState(isNextWindowPopUp ? EWindowState.NonFocused : EWindowState.Closed);
             }
 
-            _windowsStack.Push(nextWindow);
-            nextWindow.SetState(EWindowState.Active);
-            nextWindow.SetAsLastSibling();
+            if (!nextWindow.IsInitialized.Value)
+            {
+                _waitInitializationDisposable?.Dispose();
+                _waitInitializationDisposable = nextWindow.IsInitialized.Subscribe(isInitilized =>
+                {
+                    if(!isInitilized)
+                        return;
+                    
+                    ShowWindow(nextWindow);
+                    
+                    _waitInitializationDisposable?.Dispose();
+                });
+                return;
+            }
+            
+            ShowWindow(nextWindow);
+        }
+
+        private void ShowWindow(IWindow window)
+        {
+            _windowsStack.Push(window);
+            window.SetState(EWindowState.Active);
+            window.SetAsLastSibling();
         }
 
         private void OnSignalBackWindow(SignalBackWindow signalBackWindow)
