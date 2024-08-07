@@ -22,6 +22,7 @@ namespace KoboldUi.Element.Animations.Impl
             
             _currentAnimation = _canvasGroup.DOFade(FADE_APPEAR_VALUE, AnimationParameters.AppearDuration)
                 .SetEase(AnimationParameters.Ease)
+                .SetUpdate(true)
                 .SetLink(_canvasGroup.gameObject);
         }
 
@@ -31,6 +32,7 @@ namespace KoboldUi.Element.Animations.Impl
 
             _currentAnimation = _canvasGroup.DOFade(FADE_DISAPPEAR_VALUE, AnimationParameters.DisappearDuration)
                 .SetEase(AnimationParameters.Ease)
+                .SetUpdate(true)
                 .SetLink(_canvasGroup.gameObject)
                 .OnComplete(callback.Invoke);
         }

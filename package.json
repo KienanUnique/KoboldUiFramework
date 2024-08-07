@@ -1,7 +1,7 @@
 ﻿{
   "name": "com.kienanunique.kobolduiframework",
   "displayName": "KoboldUiFramework",
-  "version": "0.0.1-preview",
+  "version": "0.0.2-preview",
   "description": "Simple Ui framework with animations",
   "keywords": [
     "ui",

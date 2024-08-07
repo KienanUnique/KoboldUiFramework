@@ -21,7 +21,9 @@ namespace KoboldUi.Element.Animations.Impl
             _rectTransform.anchoredPosition = startPosition;
 
             _rectTransform.DOAnchorPos(_originalAnchoredPosition, AnimationParameters.AppearDuration)
-                .SetEase(AnimationParameters.AppearEase).SetLink(gameObject);
+                .SetUpdate(true)
+                .SetEase(AnimationParameters.AppearEase)
+                .SetLink(gameObject);
         }
 
         protected override void AnimateDisappear(Action callback)
@@ -31,7 +33,9 @@ namespace KoboldUi.Element.Animations.Impl
             var endPosition = CalculateTargetPoint(AnimationParameters.DisappearTarget);
 
             _rectTransform.DOAnchorPos(endPosition, AnimationParameters.DisappearDuration)
-                .SetEase(AnimationParameters.DisappearEase).SetLink(gameObject);
+                .SetEase(AnimationParameters.DisappearEase)
+                .SetUpdate(true)
+                .SetLink(gameObject);
         }
 
         private void Awake()

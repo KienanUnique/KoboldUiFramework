@@ -20,6 +20,7 @@ namespace KoboldUi.Element.Animations.Impl
             
             _currentAnimation = transform.DOScale(_appearScale, AnimationParameters.Duration)
                 .SetEase(AnimationParameters.AppearEase)
+                .SetUpdate(true)
                 .SetLink(gameObject);
         }
 
@@ -29,6 +30,7 @@ namespace KoboldUi.Element.Animations.Impl
             
             _currentAnimation = transform.DOScale(_disappearScale, AnimationParameters.Duration)
                 .SetEase(AnimationParameters.DisappearEase)
+                .SetUpdate(true)
                 .SetLink(gameObject)
                 .OnComplete(callback.Invoke);;
         }
