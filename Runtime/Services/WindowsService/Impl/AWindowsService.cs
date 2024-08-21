@@ -1,49 +1,36 @@
 ﻿using System;
 using System.Collections.Generic;
 using KoboldUi.Interfaces;
-using KoboldUi.Signals;
 using KoboldUi.Utils;
 using KoboldUi.Windows;
 using UniRx;
 using Zenject;
 
-namespace KoboldUi.Managers
-{   
-    public class ConcreteLayerWindowsManager : IDisposable
+namespace KoboldUi.Services.WindowsService.Impl
+{
+    public abstract class AWindowsService : IWindowsService, IDisposable
     {
         private readonly Stack<IWindow> _windowsStack = new();
-        private readonly CompositeDisposable _disposables = new();
 
         private readonly DiContainer _diContainer;
-        private readonly SignalBus _signalBus;
-        private readonly EWindowLayer _windowLayer;
 
         private IDisposable _waitInitializationDisposable;
 
-        public ConcreteLayerWindowsManager(
-            DiContainer diContainer,
-            SignalBus signalBus,
-            EWindowLayer windowLayer
-        )
+        public IWindow CurrentWindow => _windowsStack.Peek();
+
+        protected AWindowsService(DiContainer diContainer)
         {
             _diContainer = diContainer;
-            _signalBus = signalBus;
-            _windowLayer = windowLayer;
-            
-            _signalBus.GetStreamId<SignalOpenWindow>(_windowLayer).Subscribe(OnSignalOpenWindow).AddTo(_disposables);
-            _signalBus.GetStreamId<SignalBackWindow>(_windowLayer).Subscribe(OnSignalBackWindow).AddTo(_disposables);
-            _signalBus.GetStreamId<SignalCloseWindow>(_windowLayer).Subscribe(OnSignalCloseWindow).AddTo(_disposables);
         }
 
         public void Dispose()
         {
-            _disposables.Dispose();
             _waitInitializationDisposable?.Dispose();
         }
 
-        private void OnSignalOpenWindow(SignalOpenWindow signal)
+        public void OpenWindow<TWindow>() where TWindow : IWindow
         {
-            var nextWindow = _diContainer.Resolve(signal.WindowType) as IWindow;
+            var nextWindow = _diContainer.Resolve(typeof(TWindow)) as IWindow;
 
             var isNextWindowPopUp = nextWindow is IPopUp;
             if (_windowsStack.Count > 0)
@@ -57,27 +44,20 @@ namespace KoboldUi.Managers
                 _waitInitializationDisposable?.Dispose();
                 _waitInitializationDisposable = nextWindow.IsInitialized.Subscribe(isInitilized =>
                 {
-                    if(!isInitilized)
+                    if (!isInitilized)
                         return;
-                    
+
                     ShowWindow(nextWindow);
-                    
+
                     _waitInitializationDisposable?.Dispose();
                 });
                 return;
             }
-            
+
             ShowWindow(nextWindow);
         }
 
-        private void ShowWindow(IWindow window)
-        {
-            _windowsStack.Push(window);
-            window.SetState(EWindowState.Active);
-            window.SetAsLastSibling();
-        }
-
-        private void OnSignalBackWindow(SignalBackWindow signalBackWindow)
+        public void BackWindow()
         {
             if (_windowsStack.Count == 0)
                 return;
@@ -92,7 +72,7 @@ namespace KoboldUi.Managers
             OpenPreviousWindow();
         }
 
-        private void OnSignalCloseWindow(SignalCloseWindow signalCloseWindow)
+        public void ForceCloseWindow()
         {
             if (_windowsStack.Count == 0)
                 return;
@@ -100,6 +80,13 @@ namespace KoboldUi.Managers
             var currentWindow = _windowsStack.Pop();
             currentWindow.SetState(EWindowState.Closed);
             OpenPreviousWindow();
+        }
+
+        private void ShowWindow(IWindow window)
+        {
+            _windowsStack.Push(window);
+            window.SetState(EWindowState.Active);
+            window.SetAsLastSibling();
         }
 
         private void OpenPreviousWindow()
