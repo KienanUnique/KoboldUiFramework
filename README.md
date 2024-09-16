@@ -2,7 +2,7 @@
 
 В проекте предусмотрены два сервиса для работы с окнами: ILocalWindowsService и IProjectWindowsService. Оба сервиса предлагают следующие методы:
 
-- **OpenWindow&lt;TWindow>(EWindowLayer windowLayer = EWindowLayer.Local)**: Открывает указанное окно. Параметр windowLayer определяет слой окна, по умолчанию используется Local.
+- **OpenWindow<TWindow>(EWindowLayer windowLayer = EWindowLayer.Local)**: Открывает указанное окно. Параметр windowLayer определяет слой окна, по умолчанию используется Local.
 ```c#
   _service.OpenWindow<MainMenuWindow>();
 ```
@@ -38,9 +38,9 @@ public class GameplayWindow : AWindow
 
     protected override void AddControllers()
     {
-        AddController&lt;ScoreCounterController, ScoreCounterView>(scoreCounterView);
-        AddController&lt;HealthController, HealthView>(healthView);
-        AddController&lt;TimerController, TimerView>(timerView);
+        AddController<ScoreCounterController, ScoreCounterView>(scoreCounterView);
+        AddController<HealthController, HealthView>(healthView);
+        AddController<TimerController, TimerView>(timerView);
     }
 }
 ```
