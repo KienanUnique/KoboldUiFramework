@@ -15,7 +15,8 @@ namespace KoboldUi.Windows
         }
         
         public IReactiveProperty<bool> IsInitialized => _isInitialized;
-        
+        public virtual string Name => gameObject.name;
+
         public abstract void InstallBindings(DiContainer container);
 
         public abstract void SetState(EWindowState state);

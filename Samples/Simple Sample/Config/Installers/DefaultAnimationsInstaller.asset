@@ -1,0 +1,17 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e531160202a3ff448eef42b9a0ef51a, type: 3}
+  m_Name: DefaultAnimationsInstaller
+  m_EditorClassIdentifier: 
+  fadeAnimationParameters: {fileID: 11400000, guid: 476f68e062010d6438c00f583f14043f, type: 2}
+  scaleAnimationParameters: {fileID: 11400000, guid: 8abb3920e929dec48896a06a88efbe23, type: 2}
+  slideAnimationParameters: {fileID: 11400000, guid: ff53c5c00f39ec94bb54a3b4921d7a69, type: 2}
