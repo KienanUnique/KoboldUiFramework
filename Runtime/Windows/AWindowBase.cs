@@ -7,8 +7,6 @@ namespace KoboldUi.Windows
 {
     public abstract class AWindowBase : MonoBehaviour, IWindow, IInitializable
     {
-        
-        // TODO: add window animations or waiting views animations logic
         private readonly ReactiveProperty<bool> _isInitialized = new(false);
 
         public virtual void Initialize()

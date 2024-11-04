@@ -26,7 +26,7 @@
 
         public sealed override void CloseInstantly()
         {
-            base.CloseInstantly();
+            gameObject.SetActive(false);
         }
     }
 }

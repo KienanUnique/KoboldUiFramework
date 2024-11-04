@@ -45,7 +45,7 @@ namespace KoboldUi.Element.Animations
 
         public override void Disappear()
         {
-            AnimateDisappear(OnDisappearAnimationEnd);
+            AnimateDisappear(DisappearInstantly);
         }
         
         public override void AnimateFocusReturn()
@@ -55,13 +55,13 @@ namespace KoboldUi.Element.Animations
         public override void AnimateFocusRemoved()
         {
         }
-        
-        protected abstract void AnimateAppear();
-        protected abstract void AnimateDisappear(Action callback);
 
-        private void OnDisappearAnimationEnd()
+        public override void DisappearInstantly()
         {
             gameObject.SetActive(false);
         }
+        
+        protected abstract void AnimateAppear();
+        protected abstract void AnimateDisappear(Action callback);
     }
 }

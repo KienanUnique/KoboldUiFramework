@@ -8,5 +8,6 @@ namespace KoboldUi.Element.Animations
         public abstract void AnimateFocusReturn();
         public abstract void AnimateFocusRemoved();
         public abstract void Disappear();
+        public abstract void DisappearInstantly();
     }
 }
