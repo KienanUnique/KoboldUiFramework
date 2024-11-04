@@ -1,4 +1,5 @@
 ﻿using System;
+using Cysharp.Threading.Tasks;
 using DG.Tweening;
 using KoboldUi.Element.Animations.Parameters.Impl;
 using KoboldUi.Utils;
@@ -13,29 +14,38 @@ namespace KoboldUi.Element.Animations.Impl
         private Vector2 _originalAnchoredPosition;
         private RectTransform _rectTransform;
 
-        protected override void AnimateAppear()
+
+        protected override void PrepareToAppear()
+        {
+            var startPosition = CalculateTargetPoint(AnimationParameters.AppearTarget);
+            _rectTransform.anchoredPosition = startPosition;
+        }
+
+        protected override UniTask AnimateAppear()
         {
             _currentAnimation?.Kill();
 
-            var startPosition = CalculateTargetPoint(AnimationParameters.AppearTarget);
-            _rectTransform.anchoredPosition = startPosition;
-
-            _rectTransform.DOAnchorPos(_originalAnchoredPosition, AnimationParameters.AppearDuration)
+            _currentAnimation = _rectTransform
+                .DOAnchorPos(_originalAnchoredPosition, AnimationParameters.AppearDuration)
                 .SetUpdate(true)
                 .SetEase(AnimationParameters.AppearEase)
                 .SetLink(gameObject);
+
+            return _currentAnimation.ToUniTask();
         }
 
-        protected override void AnimateDisappear(Action callback)
+        protected override UniTask AnimateDisappear(Action callback)
         {
             _currentAnimation?.Kill();
 
             var endPosition = CalculateTargetPoint(AnimationParameters.DisappearTarget);
 
-            _rectTransform.DOAnchorPos(endPosition, AnimationParameters.DisappearDuration)
+            _currentAnimation = _rectTransform.DOAnchorPos(endPosition, AnimationParameters.DisappearDuration)
                 .SetEase(AnimationParameters.DisappearEase)
                 .SetUpdate(true)
                 .SetLink(gameObject);
+
+            return _currentAnimation.ToUniTask();
         }
 
         private void Awake()

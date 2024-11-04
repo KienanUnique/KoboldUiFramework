@@ -1,27 +1,29 @@
-﻿namespace KoboldUi.Element.View
+﻿using Cysharp.Threading.Tasks;
+
+namespace KoboldUi.Element.View
 {
     public class AUiSimpleView : AUiView
     {
-        public sealed override void Open()
+        public sealed override UniTask Open()
         {
             gameObject.SetActive(true);
-            base.Open();
+            return base.Open();
         }
         
-        public sealed override void ReturnFocus()
+        public sealed override UniTask ReturnFocus()
         {
-            base.ReturnFocus();
+            return base.ReturnFocus();
         }
 
-        public sealed override void RemoveFocus()
+        public sealed override UniTask RemoveFocus()
         {
-            base.RemoveFocus();
+            return base.RemoveFocus();
         }
 
-        public sealed override void Close()
+        public sealed override UniTask Close()
         {
             gameObject.SetActive(false);
-            base.Close();
+            return base.Close();
         }
 
         public sealed override void CloseInstantly()

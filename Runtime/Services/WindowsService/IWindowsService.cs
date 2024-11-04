@@ -1,4 +1,5 @@
-﻿using KoboldUi.Windows;
+﻿using System;
+using KoboldUi.Windows;
 
 namespace KoboldUi.Services.WindowsService
 {
@@ -6,13 +7,13 @@ namespace KoboldUi.Services.WindowsService
     {
         IWindow CurrentWindow { get; }
         
-        void OpenWindow<TWindow>() where TWindow : IWindow;
-        bool TryBackWindow();
-        bool TryBackToWindow<TWindow>();
-        bool TryBackWindows(int countOfWindowsToClose);
+        void OpenWindow<TWindow>(Action onComplete = default) where TWindow : IWindow;
+        void TryBackWindow(Action<bool> onComplete = default);
+        void TryBackToWindow<TWindow>(Action<bool> onComplete = default);
+        void TryBackWindows(int countOfWindowsToClose, Action<bool> onComplete = default);
         
-        void CloseWindow();
-        void CloseToWindow<TWindow>();
-        void CloseWindows(int countOfWindowsToClose);
+        void CloseWindow(Action onComplete = default);
+        void CloseToWindow<TWindow>(Action onComplete = default);
+        void CloseWindows(int countOfWindowsToClose, Action onComplete = default);
     }
 }

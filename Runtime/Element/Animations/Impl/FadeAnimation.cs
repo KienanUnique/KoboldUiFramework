@@ -1,4 +1,5 @@
 ﻿using System;
+using Cysharp.Threading.Tasks;
 using DG.Tweening;
 using KoboldUi.Element.Animations.Parameters.Impl;
 using UnityEngine;
@@ -14,19 +15,25 @@ namespace KoboldUi.Element.Animations.Impl
         private Tween _currentAnimation;
         
         private CanvasGroup _canvasGroup;
-        protected override void AnimateAppear()
+        
+        protected override void PrepareToAppear()
+        {
+            _canvasGroup.alpha = FADE_DISAPPEAR_VALUE;
+        }
+
+        protected override UniTask AnimateAppear()
         {
             _currentAnimation?.Kill();
 
-            _canvasGroup.alpha = FADE_DISAPPEAR_VALUE;
-            
             _currentAnimation = _canvasGroup.DOFade(FADE_APPEAR_VALUE, AnimationParameters.AppearDuration)
                 .SetEase(AnimationParameters.Ease)
                 .SetUpdate(true)
                 .SetLink(_canvasGroup.gameObject);
+
+            return _currentAnimation.ToUniTask();
         }
 
-        protected override void AnimateDisappear(Action callback)
+        protected override UniTask AnimateDisappear(Action callback)
         {
             _currentAnimation?.Kill();
 
@@ -35,6 +42,8 @@ namespace KoboldUi.Element.Animations.Impl
                 .SetUpdate(true)
                 .SetLink(_canvasGroup.gameObject)
                 .OnComplete(callback.Invoke);
+            
+            return _currentAnimation.ToUniTask();
         }
 
         private void Awake()

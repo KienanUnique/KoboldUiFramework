@@ -1,4 +1,5 @@
 ﻿using System;
+using Cysharp.Threading.Tasks;
 using DG.Tweening;
 using UnityEngine;
 using Zenject;
@@ -37,31 +38,36 @@ namespace KoboldUi.Element.Animations
         
         public bool NeedUseCustomParameters() => !useDefaultParameters;
 
-        public override void Appear()
+        public override UniTask Appear()
         {
-            AnimateAppear();
+            PrepareToAppear();
             gameObject.SetActive(true);
+            return AnimateAppear();
         }
 
-        public override void Disappear()
+        public override UniTask Disappear()
         {
-            AnimateDisappear(DisappearInstantly);
+            return AnimateDisappear(DisappearInstantly);
         }
         
-        public override void AnimateFocusReturn()
+        public override UniTask AnimateFocusReturn()
         {
+            return UniTask.NextFrame(); // TODO: refactor this
         }
 
-        public override void AnimateFocusRemoved()
+        public override UniTask AnimateFocusRemoved()
         {
+            return UniTask.NextFrame(); // TODO: refactor this
         }
-
+        
         public override void DisappearInstantly()
         {
             gameObject.SetActive(false);
         }
         
-        protected abstract void AnimateAppear();
-        protected abstract void AnimateDisappear(Action callback);
+        
+        protected abstract void PrepareToAppear();
+        protected abstract UniTask AnimateAppear();
+        protected abstract UniTask AnimateDisappear(Action callback);
     }
 }

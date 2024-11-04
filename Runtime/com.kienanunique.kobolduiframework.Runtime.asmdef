@@ -5,7 +5,9 @@
         "Alchemy",
         "UniRx",
         "Zenject",
-        "DOTween.Modules"
+        "DOTween.Modules",
+        "UniTask",
+        "UniTask.DOTween"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

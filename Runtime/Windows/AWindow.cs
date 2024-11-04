@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 using KoboldUi.Element.Controller;
 using KoboldUi.Element.Controller.Impl;
 using KoboldUi.Element.View;
@@ -31,7 +32,7 @@ namespace KoboldUi.Windows
             base.Initialize();
         }
 
-        public override void SetState(EWindowState state)
+        public override UniTask SetState(EWindowState state)
         {
             switch (state)
             {
@@ -44,10 +45,12 @@ namespace KoboldUi.Windows
                     break;
             }
 
-            foreach (var controller in _childControllers)
-            {
-                controller.SetState(state);
-            }
+            var tasks = new List<UniTask>();
+            
+            foreach (var controller in _childControllers) 
+                tasks.Add(controller.SetState(state));
+
+            return UniTask.WhenAll(tasks);
         }
 
         public sealed override void ApplyOrder(int order)

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 using KoboldUi.Interfaces;
 using KoboldUi.Utils;
 using KoboldUi.Windows;
@@ -14,8 +15,6 @@ namespace KoboldUi.Services.WindowsService.Impl
 
         private readonly DiContainer _diContainer;
 
-        private IDisposable _waitInitializationDisposable;
-
         public IWindow CurrentWindow => _windowsStack.Peek();
 
         protected AWindowsService(DiContainer diContainer)
@@ -25,167 +24,212 @@ namespace KoboldUi.Services.WindowsService.Impl
 
         public void Dispose()
         {
-            _waitInitializationDisposable?.Dispose();
         }
 
-        public void OpenWindow<TWindow>() where TWindow : IWindow
+        public void OpenWindow<TWindow>(Action onComplete) where TWindow : IWindow
         {
-            var nextWindow = _diContainer.Resolve(typeof(TWindow)) as IWindow;
-
-            var isNextWindowPopUp = nextWindow is IPopUp;
-            if (_windowsStack.Count > 0)
-            {
-                var currentWindow = _windowsStack.Peek();
-                currentWindow.SetState(isNextWindowPopUp ? EWindowState.NonFocused : EWindowState.Closed);
-            }
-
-            if (!nextWindow!.IsInitialized.Value)
-            {
-                _waitInitializationDisposable?.Dispose();
-                _waitInitializationDisposable = nextWindow.IsInitialized.Subscribe(isInitilized =>
-                {
-                    if (!isInitilized)
-                        return;
-
-                    OpenNewWindow(nextWindow);
-
-                    _waitInitializationDisposable?.Dispose();
-                });
-                return;
-            }
-
-            OpenNewWindow(nextWindow);
-
+            OpenWindowImpl().Forget();
             return;
 
-            void OpenNewWindow(IWindow window)
+            async UniTaskVoid OpenWindowImpl()
             {
-                WindowsOrdersManager.HandleWindowAppear(_windowsStack, window);
+                var nextWindow = _diContainer.Resolve(typeof(TWindow)) as IWindow;
 
-                _windowsStack.Push(window);
-                window.SetState(EWindowState.Active);
+                var isNextWindowPopUp = nextWindow is IPopUp;
+                if (_windowsStack.Count > 0)
+                {
+                    var currentWindow = _windowsStack.Peek();
+                    await currentWindow.SetState(isNextWindowPopUp ? EWindowState.NonFocused : EWindowState.Closed);
+                }
+
+                if (!nextWindow!.IsInitialized)
+                {
+                    await nextWindow.WaitInitialization();
+                }
+
+                WindowsOrdersManager.HandleWindowAppear(_windowsStack, nextWindow);
+
+                _windowsStack.Push(nextWindow);
+                await nextWindow.SetState(EWindowState.Active);
+
+                onComplete?.Invoke();
             }
         }
 
-        public bool TryBackWindow()
+        public void TryBackWindow(Action<bool> onComplete)
         {
-            if (_windowsStack.Count == 0)
-                return false;
+            TryBackWindowImpl().Forget();
+            return;
 
-            var currentWindow = _windowsStack.Pop();
-
-            var windowIgnoreBackSignal = currentWindow is IBackLogicIgnorable;
-            if (windowIgnoreBackSignal)
-                return false;
-
-            currentWindow.SetState(EWindowState.Closed);
-            WindowsOrdersManager.HandleWindowDisappear(_windowsStack, currentWindow);
-            OpenPreviousWindow();
-            
-            return true;
-        }
-
-        public bool TryBackToWindow<TWindow>()
-        {
-            var needWindow = _diContainer.Resolve(typeof(TWindow)) as IWindow;
-            if(needWindow == null)
-                throw new Exception($"Window {typeof(TWindow).Name} was not found");
-            
-            while (CurrentWindow != needWindow)
+            async UniTaskVoid TryBackWindowImpl()
             {
-                var currentWindow = _windowsStack.Peek();
+                if (_windowsStack.Count == 0)
+                {
+                    onComplete?.Invoke(false);
+                    return;
+                }
+
+                var currentWindow = _windowsStack.Pop();
 
                 var windowIgnoreBackSignal = currentWindow is IBackLogicIgnorable;
                 if (windowIgnoreBackSignal)
-                    return false;
+                {
+                    onComplete?.Invoke(false);
+                    return;
+                }
 
-                _windowsStack.Pop();
-                currentWindow.SetState(EWindowState.Closed);
+                await currentWindow.SetState(EWindowState.Closed);
+                WindowsOrdersManager.HandleWindowDisappear(_windowsStack, currentWindow);
+                await OpenPreviousWindow();
+
+                onComplete?.Invoke(false);
             }
-
-            WindowsOrdersManager.UpdateWindowsLayers(_windowsStack);
-            OpenPreviousWindow();
-            
-            return true;
         }
 
-        public bool TryBackWindows(int countOfWindowsToClose)
+        public void TryBackToWindow<TWindow>(Action<bool> onComplete)
         {
-            if (_windowsStack.Count < countOfWindowsToClose)
-                throw new Exception(
-                    $"Can not close {countOfWindowsToClose} windows because of only {_windowsStack.Count} opened");
-            
-            for (var i = 0; i < countOfWindowsToClose; i++)
+            TryBackToWindowImpl().Forget();
+            return;
+
+            async UniTaskVoid TryBackToWindowImpl()
             {
-                var currentWindow = _windowsStack.Peek();
+                var needWindow = _diContainer.Resolve(typeof(TWindow)) as IWindow;
+                if (needWindow == null)
+                    throw new Exception($"Window {typeof(TWindow).Name} was not found");
 
-                var windowIgnoreBackSignal = currentWindow is IBackLogicIgnorable;
-                if (windowIgnoreBackSignal)
-                    return false;
+                while (CurrentWindow != needWindow)
+                {
+                    var currentWindow = _windowsStack.Peek();
 
-                _windowsStack.Pop();
-                currentWindow.SetState(EWindowState.Closed);
+                    var windowIgnoreBackSignal = currentWindow is IBackLogicIgnorable;
+                    if (windowIgnoreBackSignal)
+                    {
+                        onComplete?.Invoke(false);
+                        return;
+                    }
+
+                    _windowsStack.Pop();
+                    await currentWindow.SetState(EWindowState.Closed);
+                }
+
+                WindowsOrdersManager.UpdateWindowsLayers(_windowsStack);
+                await OpenPreviousWindow();
+
+                onComplete?.Invoke(true);
             }
-
-            WindowsOrdersManager.UpdateWindowsLayers(_windowsStack);
-            OpenPreviousWindow();
-            
-            return true;
         }
 
-        public void CloseWindow()
+        public void TryBackWindows(int countOfWindowsToClose, Action<bool> onComplete)
+        {
+            TryBackWindowsImpl().Forget();
+            return;
+
+            async UniTaskVoid TryBackWindowsImpl()
+            {
+                if (_windowsStack.Count < countOfWindowsToClose)
+                    throw new Exception(
+                        $"Can not close {countOfWindowsToClose} windows because of only {_windowsStack.Count} opened");
+
+                for (var i = 0; i < countOfWindowsToClose; i++)
+                {
+                    var currentWindow = _windowsStack.Peek();
+
+                    var windowIgnoreBackSignal = currentWindow is IBackLogicIgnorable;
+                    if (windowIgnoreBackSignal)
+                    {
+                        onComplete?.Invoke(false);
+                        return;
+                    }
+
+                    _windowsStack.Pop();
+                    await currentWindow.SetState(EWindowState.Closed);
+                }
+
+                WindowsOrdersManager.UpdateWindowsLayers(_windowsStack);
+                await OpenPreviousWindow();
+
+                onComplete?.Invoke(true);
+            }
+        }
+
+        public void CloseWindow(Action onComplete)
         {
             if (_windowsStack.Count == 0)
-                return;
+                throw new Exception("There is no opened windows, so nothing to close");
 
-            var currentWindow = _windowsStack.Pop();
-            currentWindow.SetState(EWindowState.Closed);
-            WindowsOrdersManager.HandleWindowDisappear(_windowsStack, currentWindow);
-            
-            OpenPreviousWindow();
-        }
+            CloseWindowImpl().Forget();
+            return;
 
-        public void CloseWindows(int countOfWindowsToClose)
-        {
-            if (_windowsStack.Count < countOfWindowsToClose)
-                throw new Exception(
-                    $"Can not close {countOfWindowsToClose} windows because of only {_windowsStack.Count} opened");
-            
-            for (var i = 0; i < countOfWindowsToClose; i++)
+            async UniTaskVoid CloseWindowImpl()
             {
                 var currentWindow = _windowsStack.Pop();
-                currentWindow.SetState(EWindowState.Closed);
+                await currentWindow.SetState(EWindowState.Closed);
+                WindowsOrdersManager.HandleWindowDisappear(_windowsStack, currentWindow);
+
+                await OpenPreviousWindow();
+                onComplete?.Invoke();
             }
-            
-            WindowsOrdersManager.UpdateWindowsLayers(_windowsStack);
-            OpenPreviousWindow();
         }
-        
-        public void CloseToWindow<TWindow>()
+
+        public void CloseWindows(int countOfWindowsToClose, Action onComplete)
         {
-            var needWindow = _diContainer.Resolve(typeof(TWindow)) as IWindow;
-            if(needWindow == null)
-                throw new Exception($"Window {typeof(TWindow).Name} was not found");
-            
-            while (CurrentWindow != needWindow)
+            CloseWindowImpl().Forget();
+            return;
+
+            async UniTaskVoid CloseWindowImpl()
             {
-                var currentWindow = _windowsStack.Peek();
+                if (_windowsStack.Count < countOfWindowsToClose)
+                    throw new Exception(
+                        $"Can not close {countOfWindowsToClose} windows because of only {_windowsStack.Count} opened");
 
-                _windowsStack.Pop();
-                currentWindow.SetState(EWindowState.Closed);
+                for (var i = 0; i < countOfWindowsToClose; i++)
+                {
+                    var currentWindow = _windowsStack.Pop();
+                    await currentWindow.SetState(EWindowState.Closed);
+                }
+
+                WindowsOrdersManager.UpdateWindowsLayers(_windowsStack);
+                await OpenPreviousWindow();
+
+                onComplete?.Invoke();
             }
-
-            WindowsOrdersManager.UpdateWindowsLayers(_windowsStack);
-            OpenPreviousWindow();
         }
 
-        private void OpenPreviousWindow()
+        public void CloseToWindow<TWindow>(Action onComplete)
+        {
+            CloseWindowImpl().Forget();
+            return;
+
+            async UniTaskVoid CloseWindowImpl()
+            {
+                {
+                    var needWindow = _diContainer.Resolve(typeof(TWindow)) as IWindow;
+                    if (needWindow == null)
+                        throw new Exception($"Window {typeof(TWindow).Name} was not found");
+
+                    while (CurrentWindow != needWindow)
+                    {
+                        var currentWindow = _windowsStack.Peek();
+
+                        _windowsStack.Pop();
+                        await currentWindow.SetState(EWindowState.Closed);
+                    }
+
+                    WindowsOrdersManager.UpdateWindowsLayers(_windowsStack);
+                    await OpenPreviousWindow();
+                    
+                    onComplete?.Invoke();
+                }
+            }
+        }
+
+        private async UniTask OpenPreviousWindow()
         {
             if (_windowsStack.Count == 0)
                 return;
 
             var currentWindow = _windowsStack.Peek();
-            currentWindow.SetState(EWindowState.Active);
+            await currentWindow.SetState(EWindowState.Active);
         }
     }
 }

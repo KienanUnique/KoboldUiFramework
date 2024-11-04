@@ -5,7 +5,8 @@
         "com.kienanunique.kobolduiframework",
         "UniRx",
         "Zenject",
-        "Unity.TextMeshPro"
+        "Unity.TextMeshPro",
+        "Alchemy"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

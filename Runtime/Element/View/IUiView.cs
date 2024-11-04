@@ -1,11 +1,13 @@
-﻿namespace KoboldUi.Element.View
+﻿using Cysharp.Threading.Tasks;
+
+namespace KoboldUi.Element.View
 {
     public interface IUiView
     {
-        void Open();
-        void ReturnFocus();
-        void RemoveFocus();
-        void Close();
+        UniTask Open();
+        UniTask ReturnFocus();
+        UniTask RemoveFocus();
+        UniTask Close();
         void CloseInstantly();
     }
 }
