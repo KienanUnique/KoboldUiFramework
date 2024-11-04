@@ -43,10 +43,16 @@ namespace KoboldUi.Windows
                     _canvasGroup.interactable = false;
                     break;
             }
+
             foreach (var controller in _childControllers)
             {
                 controller.SetState(state);
             }
+        }
+
+        public sealed override void ApplyOrder(int order)
+        {
+            transform.SetSiblingIndex(order);
         }
 
         protected abstract void AddControllers();
@@ -64,7 +70,7 @@ namespace KoboldUi.Windows
             }
 
             var controller = _container.Instantiate<TController>(new List<object> {viewInstance});
-            
+
             _childControllers.Add(controller);
             controller.Initialize();
             controller.CloseInstantly();
@@ -75,7 +81,7 @@ namespace KoboldUi.Windows
             _canvasGroup = GetComponent<CanvasGroup>();
             _canvasGroup.interactable = false;
         }
-        
+
         private void AddEmptyElements()
         {
             foreach (var animatedEmptyView in animatedEmptyViews)

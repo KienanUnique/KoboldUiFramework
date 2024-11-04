@@ -377,7 +377,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d6fdc6f80f7e5c5449df0f017bda5449, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  animatedEmptyViews: []
+  animatedEmptyViews:
+  - {fileID: 1443296625380073115}
   settingsView: {fileID: 1050919525886959326}
 --- !u!1 &2137542828619430749
 GameObject:
@@ -1908,6 +1909,9 @@ GameObject:
   - component: {fileID: 8938536880318768950}
   - component: {fileID: 2645958051593572127}
   - component: {fileID: 2863951800246699627}
+  - component: {fileID: 1443296625380073115}
+  - component: {fileID: 7862880983320069007}
+  - component: {fileID: 8767934107846186101}
   m_Layer: 0
   m_Name: Background
   m_TagString: Untagged
@@ -1972,6 +1976,46 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &1443296625380073115
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8925739905980518693}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8c4dd4464ed132a46805b764d5e4d455, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  openAnimation: {fileID: 8767934107846186101}
+  closeAnimation: {fileID: 8767934107846186101}
+--- !u!225 &7862880983320069007
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8925739905980518693}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
+--- !u!114 &8767934107846186101
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8925739905980518693}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ef78c9a177e395d4e80b339c1559889e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  useDefaultParameters: 1
+  animationParameters: {fileID: 0}
 --- !u!1 &9179356502162431454
 GameObject:
   m_ObjectHideFlags: 0

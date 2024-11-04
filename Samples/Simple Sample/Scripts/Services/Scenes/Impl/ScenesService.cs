@@ -19,7 +19,12 @@ namespace Samples.Simple_Sample.Scripts.Services.Scenes.Impl
 
         public IReactiveProperty<float> LoadingProgress => _loadingProgress;
         public IReactiveProperty<bool> IsLoadingCompleted => _isLoadingCompleted;
-        
+
+        public ScenesService(IProjectWindowsService projectWindowsService)
+        {
+            _projectWindowsService = projectWindowsService;
+        }
+
         public void ReloadCurrentScene()
         {
             var currentScene = SceneManager.GetActiveScene().name;

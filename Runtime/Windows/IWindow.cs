@@ -9,7 +9,6 @@ namespace KoboldUi.Windows
         string Name { get; }
 
         void SetState(EWindowState state);
-        void SetAsLastSibling();
-        void SetAsTheSecondLastSibling();
+        void ApplyOrder(int order);
     }
 }

@@ -39,7 +39,7 @@ namespace KoboldUi.Services.WindowsService.Impl
                 currentWindow.SetState(isNextWindowPopUp ? EWindowState.NonFocused : EWindowState.Closed);
             }
 
-            if (!nextWindow.IsInitialized.Value)
+            if (!nextWindow!.IsInitialized.Value)
             {
                 _waitInitializationDisposable?.Dispose();
                 _waitInitializationDisposable = nextWindow.IsInitialized.Subscribe(isInitilized =>
@@ -47,14 +47,24 @@ namespace KoboldUi.Services.WindowsService.Impl
                     if (!isInitilized)
                         return;
 
-                    ShowWindow(nextWindow);
+                    OpenNewWindow(nextWindow);
 
                     _waitInitializationDisposable?.Dispose();
                 });
                 return;
             }
 
-            ShowWindow(nextWindow);
+            OpenNewWindow(nextWindow);
+
+            return;
+
+            void OpenNewWindow(IWindow window)
+            {
+                WindowsOrdersManager.HandleWindowAppear(_windowsStack, window);
+
+                _windowsStack.Push(window);
+                window.SetState(EWindowState.Active);
+            }
         }
 
         public bool TryBackWindow()
@@ -69,7 +79,9 @@ namespace KoboldUi.Services.WindowsService.Impl
                 return false;
 
             currentWindow.SetState(EWindowState.Closed);
+            WindowsOrdersManager.HandleWindowDisappear(_windowsStack, currentWindow);
             OpenPreviousWindow();
+            
             return true;
         }
 
@@ -91,7 +103,9 @@ namespace KoboldUi.Services.WindowsService.Impl
                 currentWindow.SetState(EWindowState.Closed);
             }
 
+            WindowsOrdersManager.UpdateWindowsLayers(_windowsStack);
             OpenPreviousWindow();
+            
             return true;
         }
 
@@ -113,7 +127,9 @@ namespace KoboldUi.Services.WindowsService.Impl
                 currentWindow.SetState(EWindowState.Closed);
             }
 
+            WindowsOrdersManager.UpdateWindowsLayers(_windowsStack);
             OpenPreviousWindow();
+            
             return true;
         }
 
@@ -124,6 +140,8 @@ namespace KoboldUi.Services.WindowsService.Impl
 
             var currentWindow = _windowsStack.Pop();
             currentWindow.SetState(EWindowState.Closed);
+            WindowsOrdersManager.HandleWindowDisappear(_windowsStack, currentWindow);
+            
             OpenPreviousWindow();
         }
 
@@ -138,7 +156,8 @@ namespace KoboldUi.Services.WindowsService.Impl
                 var currentWindow = _windowsStack.Pop();
                 currentWindow.SetState(EWindowState.Closed);
             }
-
+            
+            WindowsOrdersManager.UpdateWindowsLayers(_windowsStack);
             OpenPreviousWindow();
         }
         
@@ -156,14 +175,8 @@ namespace KoboldUi.Services.WindowsService.Impl
                 currentWindow.SetState(EWindowState.Closed);
             }
 
+            WindowsOrdersManager.UpdateWindowsLayers(_windowsStack);
             OpenPreviousWindow();
-        }
-
-        private void ShowWindow(IWindow window)
-        {
-            _windowsStack.Push(window);
-            window.SetState(EWindowState.Active);
-            window.SetAsLastSibling();
         }
 
         private void OpenPreviousWindow()
@@ -173,8 +186,6 @@ namespace KoboldUi.Services.WindowsService.Impl
 
             var currentWindow = _windowsStack.Peek();
             currentWindow.SetState(EWindowState.Active);
-
-            currentWindow.SetAsTheSecondLastSibling();
         }
     }
 }
