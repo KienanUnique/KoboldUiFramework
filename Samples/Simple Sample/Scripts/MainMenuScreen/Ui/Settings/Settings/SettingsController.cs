@@ -70,6 +70,8 @@ namespace Samples.Simple_Sample.Scripts.MainMenuScreen.Ui.Settings.Settings
         {
             _settingsStorageService.ForgetUnsavedSettings();
             ResetSettings();
+            
+            _localWindowsService.TryBackWindow();
         }
 
         private void OnApplyButtonClick()

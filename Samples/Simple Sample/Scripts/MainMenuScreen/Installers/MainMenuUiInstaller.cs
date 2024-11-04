@@ -1,5 +1,4 @@
 ﻿using KoboldUi.Utils;
-using Samples.Simple_Sample.Scripts.MainMenuScreen.Ui.DoesntMatter;
 using Samples.Simple_Sample.Scripts.MainMenuScreen.Ui.MainMenu;
 using Samples.Simple_Sample.Scripts.MainMenuScreen.Ui.Settings;
 using Samples.Simple_Sample.Scripts.MainMenuScreen.Ui.SettingsChangeConfirmation;
@@ -16,7 +15,6 @@ namespace Samples.Simple_Sample.Scripts.MainMenuScreen.Installers
         
         [Header("Windows")]
         [SerializeField] private MainMenuWindow mainMenuWindow;
-        [SerializeField] private DoesntMatterWindow doesntMatterWindow;
         [SerializeField] private SettingsWindow settingsWindow;
         [SerializeField] private SettingsChangeConfirmationWindow settingsChangeConfirmationWindow;
 
@@ -25,7 +23,6 @@ namespace Samples.Simple_Sample.Scripts.MainMenuScreen.Installers
             var canvasInstance = Instantiate(canvas);
             
             Container.BindWindowFromPrefab(canvasInstance, mainMenuWindow);
-            Container.BindWindowFromPrefab(canvasInstance, doesntMatterWindow);
             Container.BindWindowFromPrefab(canvasInstance, settingsWindow);
             Container.BindWindowFromPrefab(canvasInstance, settingsChangeConfirmationWindow);
 
