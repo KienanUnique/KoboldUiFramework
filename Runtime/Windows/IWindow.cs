@@ -6,9 +6,9 @@ namespace KoboldUi.Windows
     public interface IWindow
     {
         IReactiveProperty<bool> IsInitialized { get; }
+        string Name { get; }
 
         void SetState(EWindowState state);
-        void SetAsLastSibling();
-        void SetAsTheSecondLastSibling();
+        void ApplyOrder(int order);
     }
 }

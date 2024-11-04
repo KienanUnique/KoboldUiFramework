@@ -35,7 +35,7 @@ namespace KoboldUi.Element.View
         
         public sealed override void CloseInstantly()
         {
-            base.CloseInstantly();
+            closeAnimation.DisappearInstantly();
         }
     }
 }

@@ -39,7 +39,7 @@ namespace KoboldUi.Services.WindowsService.Impl
                 currentWindow.SetState(isNextWindowPopUp ? EWindowState.NonFocused : EWindowState.Closed);
             }
 
-            if (!nextWindow.IsInitialized.Value)
+            if (!nextWindow!.IsInitialized.Value)
             {
                 _waitInitializationDisposable?.Dispose();
                 _waitInitializationDisposable = nextWindow.IsInitialized.Subscribe(isInitilized =>
@@ -47,46 +47,136 @@ namespace KoboldUi.Services.WindowsService.Impl
                     if (!isInitilized)
                         return;
 
-                    ShowWindow(nextWindow);
+                    OpenNewWindow(nextWindow);
 
                     _waitInitializationDisposable?.Dispose();
                 });
                 return;
             }
 
-            ShowWindow(nextWindow);
+            OpenNewWindow(nextWindow);
+
+            return;
+
+            void OpenNewWindow(IWindow window)
+            {
+                WindowsOrdersManager.HandleWindowAppear(_windowsStack, window);
+
+                _windowsStack.Push(window);
+                window.SetState(EWindowState.Active);
+            }
         }
 
-        public void BackWindow()
+        public bool TryBackWindow()
         {
             if (_windowsStack.Count == 0)
-                return;
+                return false;
 
             var currentWindow = _windowsStack.Pop();
 
             var windowIgnoreBackSignal = currentWindow is IBackLogicIgnorable;
             if (windowIgnoreBackSignal)
-                return;
+                return false;
 
             currentWindow.SetState(EWindowState.Closed);
+            WindowsOrdersManager.HandleWindowDisappear(_windowsStack, currentWindow);
             OpenPreviousWindow();
+            
+            return true;
         }
 
-        public void ForceCloseWindow()
+        public bool TryBackToWindow<TWindow>()
+        {
+            var needWindow = _diContainer.Resolve(typeof(TWindow)) as IWindow;
+            if(needWindow == null)
+                throw new Exception($"Window {typeof(TWindow).Name} was not found");
+            
+            while (CurrentWindow != needWindow)
+            {
+                var currentWindow = _windowsStack.Peek();
+
+                var windowIgnoreBackSignal = currentWindow is IBackLogicIgnorable;
+                if (windowIgnoreBackSignal)
+                    return false;
+
+                _windowsStack.Pop();
+                currentWindow.SetState(EWindowState.Closed);
+            }
+
+            WindowsOrdersManager.UpdateWindowsLayers(_windowsStack);
+            OpenPreviousWindow();
+            
+            return true;
+        }
+
+        public bool TryBackWindows(int countOfWindowsToClose)
+        {
+            if (_windowsStack.Count < countOfWindowsToClose)
+                throw new Exception(
+                    $"Can not close {countOfWindowsToClose} windows because of only {_windowsStack.Count} opened");
+            
+            for (var i = 0; i < countOfWindowsToClose; i++)
+            {
+                var currentWindow = _windowsStack.Peek();
+
+                var windowIgnoreBackSignal = currentWindow is IBackLogicIgnorable;
+                if (windowIgnoreBackSignal)
+                    return false;
+
+                _windowsStack.Pop();
+                currentWindow.SetState(EWindowState.Closed);
+            }
+
+            WindowsOrdersManager.UpdateWindowsLayers(_windowsStack);
+            OpenPreviousWindow();
+            
+            return true;
+        }
+
+        public void CloseWindow()
         {
             if (_windowsStack.Count == 0)
                 return;
 
             var currentWindow = _windowsStack.Pop();
             currentWindow.SetState(EWindowState.Closed);
+            WindowsOrdersManager.HandleWindowDisappear(_windowsStack, currentWindow);
+            
             OpenPreviousWindow();
         }
 
-        private void ShowWindow(IWindow window)
+        public void CloseWindows(int countOfWindowsToClose)
         {
-            _windowsStack.Push(window);
-            window.SetState(EWindowState.Active);
-            window.SetAsLastSibling();
+            if (_windowsStack.Count < countOfWindowsToClose)
+                throw new Exception(
+                    $"Can not close {countOfWindowsToClose} windows because of only {_windowsStack.Count} opened");
+            
+            for (var i = 0; i < countOfWindowsToClose; i++)
+            {
+                var currentWindow = _windowsStack.Pop();
+                currentWindow.SetState(EWindowState.Closed);
+            }
+            
+            WindowsOrdersManager.UpdateWindowsLayers(_windowsStack);
+            OpenPreviousWindow();
+        }
+        
+        public void CloseToWindow<TWindow>()
+        {
+            var needWindow = _diContainer.Resolve(typeof(TWindow)) as IWindow;
+            if(needWindow == null)
+                throw new Exception($"Window {typeof(TWindow).Name} was not found");
+            
+            while (CurrentWindow != needWindow)
+            {
+                var currentWindow = _windowsStack.Peek();
+
+                _windowsStack.Pop();
+                currentWindow.SetState(EWindowState.Closed);
+            }
+
+            WindowsOrdersManager.UpdateWindowsLayers(_windowsStack);
+            OpenPreviousWindow();
         }
 
         private void OpenPreviousWindow()
@@ -96,8 +186,6 @@ namespace KoboldUi.Services.WindowsService.Impl
 
             var currentWindow = _windowsStack.Peek();
             currentWindow.SetState(EWindowState.Active);
-
-            currentWindow.SetAsTheSecondLastSibling();
         }
     }
 }

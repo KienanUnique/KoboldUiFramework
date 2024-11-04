@@ -24,10 +24,7 @@ namespace KoboldUi.Element.View
             OnClose();
         }
 
-        public virtual void CloseInstantly()
-        {
-            gameObject.SetActive(false);
-        }
+        public abstract void CloseInstantly();
 
         protected virtual void OnOpen()
         {

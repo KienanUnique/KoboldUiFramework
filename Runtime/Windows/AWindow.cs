@@ -1,6 +1,8 @@
 ﻿using System.Collections.Generic;
 using KoboldUi.Element.Controller;
+using KoboldUi.Element.Controller.Impl;
 using KoboldUi.Element.View;
+using KoboldUi.Element.View.Impl;
 using KoboldUi.Utils;
 using UnityEngine;
 using Zenject;
@@ -10,6 +12,8 @@ namespace KoboldUi.Windows
     [RequireComponent(typeof(CanvasGroup))]
     public abstract class AWindow : AWindowBase
     {
+        [SerializeField] private List<AnimatedEmptyView> animatedEmptyViews;
+
         private readonly List<IUIController> _childControllers = new();
 
         private DiContainer _container;
@@ -23,6 +27,7 @@ namespace KoboldUi.Windows
         public sealed override void Initialize()
         {
             AddControllers();
+            AddEmptyElements();
             base.Initialize();
         }
 
@@ -38,10 +43,16 @@ namespace KoboldUi.Windows
                     _canvasGroup.interactable = false;
                     break;
             }
+
             foreach (var controller in _childControllers)
             {
                 controller.SetState(state);
             }
+        }
+
+        public sealed override void ApplyOrder(int order)
+        {
+            transform.SetSiblingIndex(order);
         }
 
         protected abstract void AddControllers();
@@ -59,7 +70,7 @@ namespace KoboldUi.Windows
             }
 
             var controller = _container.Instantiate<TController>(new List<object> {viewInstance});
-            
+
             _childControllers.Add(controller);
             controller.Initialize();
             controller.CloseInstantly();
@@ -69,6 +80,12 @@ namespace KoboldUi.Windows
         {
             _canvasGroup = GetComponent<CanvasGroup>();
             _canvasGroup.interactable = false;
+        }
+
+        private void AddEmptyElements()
+        {
+            foreach (var animatedEmptyView in animatedEmptyViews)
+                AddController<AnimatedEmptyController, AnimatedEmptyView>(animatedEmptyView);
         }
     }
 }
