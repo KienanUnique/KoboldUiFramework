@@ -1,5 +1,6 @@
 ﻿using KoboldUi.Element.Controller;
 using KoboldUi.Services.WindowsService;
+using KoboldUi.Utils;
 using Samples.Simple_Sample.Scripts.MainMenuScreen.Ui.MainMenu;
 using Samples.Simple_Sample.Scripts.Services.SettingsStorage;
 using UniRx;
@@ -34,7 +35,7 @@ namespace Samples.Simple_Sample.Scripts.MainMenuScreen.Ui.SettingsChangeConfirma
         private void OnYesButtonClicked()
         {
             _settingsStorageService.ApplyUnsavedSettings();
-            _localWindowsService.TryBackToWindow<MainMenuWindow>();
+            _localWindowsService.TryBackToWindow<MainMenuWindow>(previousWindowsPolitic: EAnimationPolitic.DoNotWait);
         }
     }
 }

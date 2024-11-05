@@ -4,12 +4,11 @@ using Cysharp.Threading.Tasks;
 using KoboldUi.Interfaces;
 using KoboldUi.Utils;
 using KoboldUi.Windows;
-using UniRx;
 using Zenject;
 
 namespace KoboldUi.Services.WindowsService.Impl
 {
-    public abstract class AWindowsService : IWindowsService, IDisposable
+    public abstract class AWindowsService : IWindowsService
     {
         private readonly Stack<IWindow> _windowsStack = new();
 
@@ -22,11 +21,8 @@ namespace KoboldUi.Services.WindowsService.Impl
             _diContainer = diContainer;
         }
 
-        public void Dispose()
-        {
-        }
-
-        public void OpenWindow<TWindow>(Action onComplete) where TWindow : IWindow
+        public void OpenWindow<TWindow>(Action onComplete, EAnimationPolitic previousWindowPolitic)
+            where TWindow : IWindow
         {
             OpenWindowImpl().Forget();
             return;
@@ -39,7 +35,8 @@ namespace KoboldUi.Services.WindowsService.Impl
                 if (_windowsStack.Count > 0)
                 {
                     var currentWindow = _windowsStack.Peek();
-                    await currentWindow.SetState(isNextWindowPopUp ? EWindowState.NonFocused : EWindowState.Closed);
+                    var newState = isNextWindowPopUp ? EWindowState.NonFocused : EWindowState.Closed;
+                    await ChangeWindowState(currentWindow, newState, previousWindowPolitic);
                 }
 
                 if (!nextWindow!.IsInitialized)
@@ -56,7 +53,8 @@ namespace KoboldUi.Services.WindowsService.Impl
             }
         }
 
-        public void TryBackWindow(Action<bool> onComplete)
+        public void TryBackWindow(Action<bool> onComplete,
+            EAnimationPolitic previousWindowPolitic = EAnimationPolitic.Wait)
         {
             TryBackWindowImpl().Forget();
             return;
@@ -78,7 +76,8 @@ namespace KoboldUi.Services.WindowsService.Impl
                     return;
                 }
 
-                await currentWindow.SetState(EWindowState.Closed);
+                await ChangeWindowState(currentWindow, EWindowState.Closed, previousWindowPolitic);
+
                 WindowsOrdersManager.HandleWindowDisappear(_windowsStack, currentWindow);
                 await OpenPreviousWindow();
 
@@ -86,7 +85,7 @@ namespace KoboldUi.Services.WindowsService.Impl
             }
         }
 
-        public void TryBackToWindow<TWindow>(Action<bool> onComplete)
+        public void TryBackToWindow<TWindow>(Action<bool> onComplete, EAnimationPolitic previousWindowsPolitic)
         {
             TryBackToWindowImpl().Forget();
             return;
@@ -109,7 +108,7 @@ namespace KoboldUi.Services.WindowsService.Impl
                     }
 
                     _windowsStack.Pop();
-                    await currentWindow.SetState(EWindowState.Closed);
+                    await ChangeWindowState(currentWindow, EWindowState.Closed, previousWindowsPolitic);
                 }
 
                 WindowsOrdersManager.UpdateWindowsLayers(_windowsStack);
@@ -119,7 +118,8 @@ namespace KoboldUi.Services.WindowsService.Impl
             }
         }
 
-        public void TryBackWindows(int countOfWindowsToClose, Action<bool> onComplete)
+        public void TryBackWindows(int countOfWindowsToClose, Action<bool> onComplete,
+            EAnimationPolitic previousWindowsPolitic)
         {
             TryBackWindowsImpl().Forget();
             return;
@@ -142,7 +142,7 @@ namespace KoboldUi.Services.WindowsService.Impl
                     }
 
                     _windowsStack.Pop();
-                    await currentWindow.SetState(EWindowState.Closed);
+                    await ChangeWindowState(currentWindow, EWindowState.Closed, previousWindowsPolitic);
                 }
 
                 WindowsOrdersManager.UpdateWindowsLayers(_windowsStack);
@@ -152,7 +152,7 @@ namespace KoboldUi.Services.WindowsService.Impl
             }
         }
 
-        public void CloseWindow(Action onComplete)
+        public void CloseWindow(Action onComplete, EAnimationPolitic previousWindowPolitic)
         {
             if (_windowsStack.Count == 0)
                 throw new Exception("There is no opened windows, so nothing to close");
@@ -163,15 +163,17 @@ namespace KoboldUi.Services.WindowsService.Impl
             async UniTaskVoid CloseWindowImpl()
             {
                 var currentWindow = _windowsStack.Pop();
-                await currentWindow.SetState(EWindowState.Closed);
+
+                await ChangeWindowState(currentWindow, EWindowState.Closed, previousWindowPolitic);
                 WindowsOrdersManager.HandleWindowDisappear(_windowsStack, currentWindow);
 
                 await OpenPreviousWindow();
+
                 onComplete?.Invoke();
             }
         }
 
-        public void CloseWindows(int countOfWindowsToClose, Action onComplete)
+        public void CloseWindows(int countOfWindowsToClose, Action onComplete, EAnimationPolitic previousWindowsPolitic)
         {
             CloseWindowImpl().Forget();
             return;
@@ -185,7 +187,7 @@ namespace KoboldUi.Services.WindowsService.Impl
                 for (var i = 0; i < countOfWindowsToClose; i++)
                 {
                     var currentWindow = _windowsStack.Pop();
-                    await currentWindow.SetState(EWindowState.Closed);
+                    await ChangeWindowState(currentWindow, EWindowState.Closed, previousWindowsPolitic);
                 }
 
                 WindowsOrdersManager.UpdateWindowsLayers(_windowsStack);
@@ -195,7 +197,8 @@ namespace KoboldUi.Services.WindowsService.Impl
             }
         }
 
-        public void CloseToWindow<TWindow>(Action onComplete)
+        public void CloseToWindow<TWindow>(Action onComplete, EAnimationPolitic previousWindowsPolitic)
+            where TWindow : IWindow
         {
             CloseWindowImpl().Forget();
             return;
@@ -212,12 +215,12 @@ namespace KoboldUi.Services.WindowsService.Impl
                         var currentWindow = _windowsStack.Peek();
 
                         _windowsStack.Pop();
-                        await currentWindow.SetState(EWindowState.Closed);
+                        await ChangeWindowState(currentWindow, EWindowState.Closed, previousWindowsPolitic);
                     }
 
                     WindowsOrdersManager.UpdateWindowsLayers(_windowsStack);
                     await OpenPreviousWindow();
-                    
+
                     onComplete?.Invoke();
                 }
             }
@@ -230,6 +233,24 @@ namespace KoboldUi.Services.WindowsService.Impl
 
             var currentWindow = _windowsStack.Peek();
             await currentWindow.SetState(EWindowState.Active);
+        }
+
+        private static async UniTask ChangeWindowState(IWindow window, EWindowState state,
+            EAnimationPolitic animationPolitic)
+        {
+            var changeStateTask = window.SetState(state);
+
+            switch (animationPolitic)
+            {
+                case EAnimationPolitic.Wait:
+                    await changeStateTask;
+                    break;
+                case EAnimationPolitic.DoNotWait:
+                    changeStateTask.Forget();
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(animationPolitic), animationPolitic, null);
+            }
         }
     }
 }
