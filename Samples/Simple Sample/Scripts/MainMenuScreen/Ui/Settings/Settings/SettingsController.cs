@@ -32,6 +32,8 @@ namespace Samples.Simple_Sample.Scripts.MainMenuScreen.Ui.Settings.Settings
             View.applyButton.OnClickAsObservable().Subscribe(_ => OnApplyButtonClick()).AddTo(View);
             View.cancelButton.OnClickAsObservable().Subscribe(_ => OnCancelButtonClick()).AddTo(View);
             View.closeButton.OnClickAsObservable().Subscribe(_ => OnCloseButtonClick()).AddTo(View);
+            
+            _settingsStorageService.UnsavedSettingsForgotten.Subscribe(_ => ResetSettings()).AddTo(View);
 
             _wasSomethingChanged.Subscribe(OnSomethingChanged).AddTo(View);
         }

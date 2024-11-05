@@ -1,4 +1,6 @@
-﻿using Samples.Simple_Sample.Scripts.Utils;
+﻿using System;
+using Samples.Simple_Sample.Scripts.Utils;
+using UniRx;
 
 namespace Samples.Simple_Sample.Scripts.Services.SettingsStorage
 {
@@ -6,7 +8,8 @@ namespace Samples.Simple_Sample.Scripts.Services.SettingsStorage
     {
         SettingsData CurrentSettings { get; }
         SettingsData? UnsavedSettings { get; }
-        
+        IObservable<Unit> UnsavedSettingsForgotten { get; }
+
         void ApplySettings(SettingsData settingsData);
         void RememberUnsavedSettings(SettingsData settingsData);
         void ApplyUnsavedSettings();

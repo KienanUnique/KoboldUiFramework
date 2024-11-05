@@ -35,7 +35,7 @@ namespace Samples.Simple_Sample.Scripts.MainMenuScreen.Ui.SettingsChangeConfirma
         private void OnYesButtonClicked()
         {
             _settingsStorageService.ApplyUnsavedSettings();
-            _localWindowsService.TryBackToWindow<MainMenuWindow>(previousWindowsPolitic: EAnimationPolitic.DoNotWait);
+            _localWindowsService.TryBackToWindow<MainMenuWindow>(previousWindowsPolitic: EAnimationPolitic.Wait);
         }
     }
 }
