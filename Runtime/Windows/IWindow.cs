@@ -1,14 +1,15 @@
-﻿using KoboldUi.Utils;
-using UniRx;
+﻿using Cysharp.Threading.Tasks;
+using KoboldUi.Utils;
 
 namespace KoboldUi.Windows
 {
     public interface IWindow
     {
-        IReactiveProperty<bool> IsInitialized { get; }
+        bool IsInitialized { get; }
         string Name { get; }
 
-        void SetState(EWindowState state);
+        UniTask WaitInitialization();
+        UniTask SetState(EWindowState state);
         void ApplyOrder(int order);
     }
 }

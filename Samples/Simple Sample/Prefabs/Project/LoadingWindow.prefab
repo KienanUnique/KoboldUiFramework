@@ -133,6 +133,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   useDefaultParameters: 1
   animationParameters: {fileID: 0}
+  fromAppearAnchoredPosition: {x: 150, y: 150}
+  disappearToTheSamePlace: 1
+  toDisappearAnchoredPosition: {x: 0, y: 0}
 --- !u!1 &7036190254731834736
 GameObject:
   m_ObjectHideFlags: 0

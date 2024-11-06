@@ -70,8 +70,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 85535bd58ab1f264ca3bca0573cd91b4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  useDefaultParameters: 0
+  useDefaultParameters: 1
   animationParameters: {fileID: 11400000, guid: 4436d7a0447b2f24e9dc1be9995b29d8, type: 2}
+  fromAppearAnchoredPosition: {x: 0, y: 200}
+  disappearToTheSamePlace: 1
+  toDisappearAnchoredPosition: {x: 0, y: 0}
 --- !u!1 &1956988710411454622
 GameObject:
   m_ObjectHideFlags: 0
@@ -325,8 +328,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 85535bd58ab1f264ca3bca0573cd91b4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  useDefaultParameters: 0
+  useDefaultParameters: 1
   animationParameters: {fileID: 11400000, guid: 4436d7a0447b2f24e9dc1be9995b29d8, type: 2}
+  fromAppearAnchoredPosition: {x: -500, y: 30}
+  disappearToTheSamePlace: 1
+  toDisappearAnchoredPosition: {x: 0, y: 0}
 --- !u!1 &6958439458489925681
 GameObject:
   m_ObjectHideFlags: 0

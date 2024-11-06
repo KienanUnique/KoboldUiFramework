@@ -16,6 +16,7 @@ namespace Samples.Simple_Sample.Scripts.Installers
         public override void InstallBindings()
         {
             var canvasInstance = Instantiate(canvas);
+            DontDestroyOnLoad(canvasInstance);
             
             Container.BindWindowFromPrefab(canvasInstance, loadingWindow);
         }

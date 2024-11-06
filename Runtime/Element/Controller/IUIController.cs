@@ -1,9 +1,10 @@
-﻿using KoboldUi.Utils;
+﻿using Cysharp.Threading.Tasks;
+using KoboldUi.Utils;
 
 namespace KoboldUi.Element.Controller
 {
     public interface IUIController
     {
-        void SetState(EWindowState state);
+        UniTask SetState(EWindowState state);
     }
 }
