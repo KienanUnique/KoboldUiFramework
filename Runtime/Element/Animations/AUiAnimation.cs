@@ -52,12 +52,12 @@ namespace KoboldUi.Element.Animations
         
         public override UniTask AnimateFocusReturn()
         {
-            return UniTask.NextFrame(); // TODO: refactor this
+            return UniTask.NextFrame();
         }
 
         public override UniTask AnimateFocusRemoved()
         {
-            return UniTask.NextFrame(); // TODO: refactor this
+            return UniTask.NextFrame();
         }
         
         public override void DisappearInstantly()

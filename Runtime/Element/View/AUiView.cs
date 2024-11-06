@@ -17,22 +17,22 @@ namespace KoboldUi.Element.View
 
         protected virtual UniTask OnOpen()
         {
-            return UniTask.NextFrame(); // TODO: refactor this
+            return UniTask.NextFrame();
         }
         
         protected virtual UniTask OnReturnFocus()
         {
-            return UniTask.NextFrame(); // TODO: refactor this
+            return UniTask.NextFrame();
         }
         
         protected virtual UniTask OnRemoveFocus()
         {
-            return UniTask.NextFrame(); // TODO: refactor this
+            return UniTask.NextFrame();
         }
         
         protected virtual UniTask OnClose()
         {
-            return UniTask.NextFrame(); // TODO: refactor this
+            return UniTask.NextFrame();
         }
     }
 }
