@@ -1,4 +1,5 @@
 ﻿using System;
+using Cysharp.Threading.Tasks;
 using KoboldUi.Services.WindowsService;
 using Samples.Simple_Sample.Scripts.Ui.LoadingWindow;
 using UniRx;
@@ -42,6 +43,8 @@ namespace Samples.Simple_Sample.Scripts.Services.Scenes.Impl
             if(!_isLoadingCompleted.Value)
                 return;
             
+            Debug.Log("Start Loading");
+            
             _isLoadingCompleted.Value = false;
             
             _loadingProgress.Value = 0f;
@@ -66,10 +69,24 @@ namespace Samples.Simple_Sample.Scripts.Services.Scenes.Impl
             _loadingOperation = null;
             
             _updateLoadingDisposable.Dispose();
-            _loadingProgress.Value = 1f;
             
-            _projectWindowsService.CloseWindow();
-            _isLoadingCompleted.Value = true;
+            FakeLoading().Forget();
+
+            return;
+
+            async UniTask FakeLoading()
+            {
+                for (var i = 0f; i < 1; i += 0.01f)
+                {
+                    _loadingProgress.Value = i;
+                    await UniTask.Delay(TimeSpan.FromSeconds(0.05f));
+                }
+
+                _projectWindowsService.CloseWindow();
+                _isLoadingCompleted.Value = true;
+                
+                Debug.Log("Finish Loading");
+            }
         }
     }
 }

@@ -9,8 +9,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 08a1ff0bf9430fc45b1178a32b20475b, type: 3}
-  m_Name: ProjectUiInstaller
+  m_Script: {fileID: 11500000, guid: ad017fbd2cf9ff54987b38257a1be319, type: 3}
+  m_Name: RightLeftSlideAnimationParameters
   m_EditorClassIdentifier: 
-  canvas: {fileID: 6088143201520821822, guid: f743096c62523334aa2bf186517c15f5, type: 3}
-  loadingWindow: {fileID: 7439459236722400659, guid: 98de444a0c44bfd4893a6ce7ec784773, type: 3}
+  appearTarget: 1
+  appearEase: 27
+  appearDuration: 0.4
+  disappearTarget: 0
+  disappearEase: 26
+  disappearDuration: 0.4

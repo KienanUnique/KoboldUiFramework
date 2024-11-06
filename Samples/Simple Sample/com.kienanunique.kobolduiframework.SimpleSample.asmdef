@@ -6,7 +6,8 @@
         "UniRx",
         "Zenject",
         "Unity.TextMeshPro",
-        "Alchemy"
+        "Alchemy",
+        "UniTask"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
