@@ -15,8 +15,8 @@ namespace Samples.Simple_Sample.Scripts.Services.LevelProgression.Impl
         {
             const int levelsCount = 12;
 
-            var firstLockedLevel = Random.Range(6, levelsCount);
-            var lastPassedLevel = Random.Range(1, firstLockedLevel - 1);
+            var firstLockedLevel = Random.Range(6, levelsCount - 1);
+            var lastPassedLevel = firstLockedLevel - 1;
 
             for (var i = 1; i < levelsCount; i++)
             {
@@ -26,15 +26,15 @@ namespace Samples.Simple_Sample.Scripts.Services.LevelProgression.Impl
                 if (i <= lastPassedLevel)
                 {
                     var starsCount = Random.Range(1, 3);
-                    newLevelData = new LevelData(name, true, true, starsCount);
+                    newLevelData = new LevelData(name, true, starsCount);
                 }
                 else if (i <= firstLockedLevel)
                 {
-                    newLevelData = new LevelData(name, true, false, -1);
+                    newLevelData = new LevelData(name, true, 0);
                 }
                 else
                 {
-                    newLevelData = new LevelData(name, false, false, -1);
+                    newLevelData = new LevelData(name, false, -1);
                 }
                 
                 _progression.Add(newLevelData);
