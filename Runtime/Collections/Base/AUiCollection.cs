@@ -6,7 +6,7 @@ using Zenject;
 
 namespace KoboldUi.Collections.Base
 {
-    public abstract class AUiCollection<TView> : MonoBehaviour, IUiCollectionBase<TView>
+    public abstract class AUiCollection<TView> : MonoBehaviour, IUiCollection<TView>
         where TView : MonoBehaviour, IUiView
     {
         [SerializeField] protected TView prefab; // TODO: add alchemy support

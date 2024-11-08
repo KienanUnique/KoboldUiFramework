@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace KoboldUi.Collections.Concrete.Impl
 {
-    public abstract class AUiListCollection<TView> : AUiCollection<TView>, IUiListCollectionBase<TView>
+    public abstract class AUiListCollection<TView> : AUiCollection<TView>, IUiListCollection<TView>
         where TView : MonoBehaviour, IUiView
     {
         private readonly List<TView> _views = new();

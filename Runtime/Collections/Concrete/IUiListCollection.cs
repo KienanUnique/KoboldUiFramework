@@ -3,7 +3,7 @@ using KoboldUi.Element.View;
 
 namespace KoboldUi.Collections.Concrete
 {
-    public interface IUiListCollectionBase<TView> : IUiFactory<TView>, IUiCollectionBase<TView> where TView : IUiView
+    public interface IUiListCollection<TView> : IUiFactory<TView>, IUiCollection<TView> where TView : IUiView
     {
         TView this[int index] { get; }
 
