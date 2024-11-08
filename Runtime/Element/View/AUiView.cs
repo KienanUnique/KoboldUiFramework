@@ -15,21 +15,31 @@ namespace KoboldUi.Element.View
 
         public abstract void CloseInstantly();
 
+        public void SetParent(Transform parent)
+        {
+            transform.SetParent(parent);
+        }
+
+        public void Destroy()
+        {
+            Destroy(this);
+        }
+
         protected virtual UniTask OnOpen()
         {
             return UniTask.NextFrame();
         }
-        
+
         protected virtual UniTask OnReturnFocus()
         {
             return UniTask.NextFrame();
         }
-        
+
         protected virtual UniTask OnRemoveFocus()
         {
             return UniTask.NextFrame();
         }
-        
+
         protected virtual UniTask OnClose()
         {
             return UniTask.NextFrame();

@@ -1,4 +1,5 @@
 ﻿using Cysharp.Threading.Tasks;
+using UnityEngine;
 
 namespace KoboldUi.Element.View
 {
@@ -9,5 +10,7 @@ namespace KoboldUi.Element.View
         UniTask RemoveFocus();
         UniTask Close();
         void CloseInstantly();
+        void SetParent(Transform parent);
+        void Destroy();
     }
 }
