@@ -18,12 +18,9 @@ namespace KoboldUi.Collections.Concrete.Impl
 
         public override void Clear()
         {
-            var begin = _views.Count;
             foreach (var item in _views)
                 item.Destroy();
             _views.Clear();
-            
-            Debug.Log($"@@@ {begin} {_views.Count}");
         }
 
         public override int Count => _views.Count;
