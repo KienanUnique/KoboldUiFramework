@@ -59,6 +59,11 @@ namespace Samples.Simple_Sample.Scripts.MainMenuScreen.Ui.LevelSelector.Selector
 
         private void OnItemClicked(LevelItemView item)
         {
+            var levelData = item.Data;
+            
+            if (!levelData.IsUnlocked)
+                return;
+
             if(_selectedItem != null)
                 _selectedItem.SetSelectionState(false);
             

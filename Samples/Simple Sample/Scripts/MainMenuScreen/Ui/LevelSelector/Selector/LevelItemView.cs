@@ -19,11 +19,14 @@ namespace Samples.Simple_Sample.Scripts.MainMenuScreen.Ui.LevelSelector.Selector
         [SerializeField] private Button button;
 
         public IObservable<Unit> OnClick => button.OnClickAsObservable();
+        public LevelData Data { get; private set; }
 
         public void SetLevelData(LevelData levelData)
         {
-            nameText.text = levelData.Name;
+            Data = levelData;
             
+            nameText.text = levelData.Name;
+
             lockedContainer.SetActive(!levelData.IsUnlocked);
             unlockedContainer.SetActive(levelData.IsUnlocked);
 
