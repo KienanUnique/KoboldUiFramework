@@ -64,15 +64,9 @@ namespace KoboldUi.Windows
             where TView : IUiView
             where TController : AUiController<TView>
         {
-            if (viewInstance is AUiAnimatedView viewAsAnimatedView)
-            {
-                foreach (var aUiAnimationBase in viewAsAnimatedView.AnimationsForInjecting)
-                {
-                    _container.Inject(aUiAnimationBase);
-                }
-            }
-
             var controller = _container.Instantiate<TController>(new List<object> {viewInstance});
+
+            _container.InjectGameObject(gameObject);
 
             _childControllers.Add(controller);
             controller.Initialize();
