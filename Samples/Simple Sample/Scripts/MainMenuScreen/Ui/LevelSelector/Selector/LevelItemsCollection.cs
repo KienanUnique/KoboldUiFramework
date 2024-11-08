@@ -2,8 +2,7 @@
 
 namespace Samples.Simple_Sample.Scripts.MainMenuScreen.Ui.LevelSelector.Selector
 {
-    public class LevelItemsCollection : UiListCollection<LevelItemView>
+    public class LevelItemsCollection : AUiListCollection<LevelItemView>
     {
-        
     }
 }
