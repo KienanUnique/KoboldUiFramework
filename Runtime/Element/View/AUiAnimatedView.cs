@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using Cysharp.Threading.Tasks;
+﻿using Cysharp.Threading.Tasks;
 using KoboldUi.Element.Animations;
 using UnityEngine;
 
@@ -9,8 +8,6 @@ namespace KoboldUi.Element.View
     {
         [SerializeField] private AUiAnimationBase openAnimation;
         [SerializeField] private AUiAnimationBase closeAnimation;
-        
-        public HashSet<AUiAnimationBase> AnimationsForInjecting => new() {openAnimation, closeAnimation};
 
         public sealed override UniTask Open()
         {

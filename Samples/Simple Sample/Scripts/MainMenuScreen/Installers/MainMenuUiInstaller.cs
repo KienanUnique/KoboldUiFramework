@@ -1,4 +1,5 @@
 ﻿using KoboldUi.Utils;
+using Samples.Simple_Sample.Scripts.MainMenuScreen.Ui.LevelSelector;
 using Samples.Simple_Sample.Scripts.MainMenuScreen.Ui.MainMenu;
 using Samples.Simple_Sample.Scripts.MainMenuScreen.Ui.Settings;
 using Samples.Simple_Sample.Scripts.MainMenuScreen.Ui.SettingsChangeConfirmation;
@@ -17,6 +18,7 @@ namespace Samples.Simple_Sample.Scripts.MainMenuScreen.Installers
         [SerializeField] private MainMenuWindow mainMenuWindow;
         [SerializeField] private SettingsWindow settingsWindow;
         [SerializeField] private SettingsChangeConfirmationWindow settingsChangeConfirmationWindow;
+        [SerializeField] private LevelSelectorWindow levelSelectorWindow;
 
         public override void InstallBindings()
         {
@@ -25,6 +27,7 @@ namespace Samples.Simple_Sample.Scripts.MainMenuScreen.Installers
             Container.BindWindowFromPrefab(canvasInstance, mainMenuWindow);
             Container.BindWindowFromPrefab(canvasInstance, settingsWindow);
             Container.BindWindowFromPrefab(canvasInstance, settingsChangeConfirmationWindow);
+            Container.BindWindowFromPrefab(canvasInstance, levelSelectorWindow);
 
             Container.BindInterfacesTo<Bootstrap>().AsSingle().NonLazy(); // TODO: move this logic to other place
         }

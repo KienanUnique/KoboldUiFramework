@@ -1,5 +1,6 @@
 ﻿using KoboldUi.Element.Controller;
 using KoboldUi.Services.WindowsService;
+using Samples.Simple_Sample.Scripts.MainMenuScreen.Ui.LevelSelector;
 using Samples.Simple_Sample.Scripts.MainMenuScreen.Ui.Settings;
 using Samples.Simple_Sample.Scripts.Services.Scenes;
 using UniRx;
@@ -28,7 +29,8 @@ namespace Samples.Simple_Sample.Scripts.MainMenuScreen.Ui.MainMenu.Menu
             View.exitButton.OnClickAsObservable().Subscribe(_ => OnExitButtonClick()).AddTo(View);
         }
 
-        private void OnStartButtonClick() => _scenesService.ReloadCurrentScene(); // TODO: change to select level
+        private void OnStartButtonClick() => _localWindowsService.OpenWindow<LevelSelectorWindow>();
+
         private void OnSettingsButtonClick() => _localWindowsService.OpenWindow<SettingsWindow>();
         private void OnExitButtonClick() => Application.Quit();
     }

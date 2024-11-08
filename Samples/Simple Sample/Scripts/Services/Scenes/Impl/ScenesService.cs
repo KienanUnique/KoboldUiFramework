@@ -42,9 +42,7 @@ namespace Samples.Simple_Sample.Scripts.Services.Scenes.Impl
         {
             if(!_isLoadingCompleted.Value)
                 return;
-            
-            Debug.Log("Start Loading");
-            
+
             _isLoadingCompleted.Value = false;
             
             _loadingProgress.Value = 0f;
@@ -84,8 +82,6 @@ namespace Samples.Simple_Sample.Scripts.Services.Scenes.Impl
 
                 _projectWindowsService.CloseWindow();
                 _isLoadingCompleted.Value = true;
-                
-                Debug.Log("Finish Loading");
             }
         }
     }
