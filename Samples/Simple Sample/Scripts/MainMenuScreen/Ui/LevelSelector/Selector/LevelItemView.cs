@@ -1,7 +1,10 @@
-﻿using KoboldUi.Element.View;
+﻿using System;
+using KoboldUi.Element.View;
 using Samples.Simple_Sample.Scripts.Utils;
 using TMPro;
+using UniRx;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace Samples.Simple_Sample.Scripts.MainMenuScreen.Ui.LevelSelector.Selector
 {
@@ -10,7 +13,12 @@ namespace Samples.Simple_Sample.Scripts.MainMenuScreen.Ui.LevelSelector.Selector
         [SerializeField] private TextMeshProUGUI name;
         [SerializeField] private GameObject lockedContainer;
         [SerializeField] private GameObject unlockedContainer;
+        [SerializeField] private GameObject selectedBackground;
+        [SerializeField] private GameObject unselectedBackground;
         [SerializeField] private StarGroup[] stars;
+        [SerializeField] private Button button;
+
+        public IObservable<Unit> OnClick => button.OnClickAsObservable();
 
         public void SetLevelData(LevelData levelData)
         {
@@ -24,6 +32,12 @@ namespace Samples.Simple_Sample.Scripts.MainMenuScreen.Ui.LevelSelector.Selector
                 var isAchieved = i < levelData.StarsCount;  
                 stars[i].SetState(isAchieved);
             }
+        }
+
+        public void SetSelectionState(bool isSelected)
+        {
+            selectedBackground.SetActive(isSelected);
+            unselectedBackground.SetActive(!isSelected);
         }
     }
 }
