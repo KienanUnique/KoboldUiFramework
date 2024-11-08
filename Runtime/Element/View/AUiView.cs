@@ -22,7 +22,7 @@ namespace KoboldUi.Element.View
 
         public void Destroy()
         {
-            Destroy(this);
+            Destroy(gameObject);
         }
 
         protected virtual UniTask OnOpen()
