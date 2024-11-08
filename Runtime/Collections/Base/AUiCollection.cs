@@ -9,7 +9,7 @@ namespace KoboldUi.Collections.Base
     public abstract class AUiCollection<TView> : MonoBehaviour, IUiCollection<TView>
         where TView : MonoBehaviour, IUiView
     {
-        [SerializeField] protected TView prefab; // TODO: add alchemy support
+        [SerializeField] protected TView prefab;
         [SerializeField] protected Transform collectionContainer;
 
         [Inject] protected IInstantiator Instantiator;

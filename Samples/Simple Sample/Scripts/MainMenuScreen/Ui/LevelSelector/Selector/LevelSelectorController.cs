@@ -3,7 +3,6 @@ using KoboldUi.Services.WindowsService;
 using Samples.Simple_Sample.Scripts.Services.LevelProgression;
 using Samples.Simple_Sample.Scripts.Services.Scenes;
 using UniRx;
-using UniRx.Triggers;
 
 namespace Samples.Simple_Sample.Scripts.MainMenuScreen.Ui.LevelSelector.Selector
 {
@@ -75,7 +74,7 @@ namespace Samples.Simple_Sample.Scripts.MainMenuScreen.Ui.LevelSelector.Selector
 
         private void OnLoadButtonPressed()
         {
-            _scenesService.ReloadCurrentScene(); // TODO: change this logic
+            _scenesService.ReloadCurrentScene();
         }
 
         private void OnCancelButtonPressed()
