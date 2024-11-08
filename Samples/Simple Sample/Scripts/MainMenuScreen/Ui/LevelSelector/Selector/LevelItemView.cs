@@ -8,9 +8,9 @@ using UnityEngine.UI;
 
 namespace Samples.Simple_Sample.Scripts.MainMenuScreen.Ui.LevelSelector.Selector
 {
-    public class LevelItemView : AUiAnimatedView
+    public class LevelItemView : AUiSimpleView
     {
-        [SerializeField] private TextMeshProUGUI name;
+        [SerializeField] private TextMeshProUGUI nameText;
         [SerializeField] private GameObject lockedContainer;
         [SerializeField] private GameObject unlockedContainer;
         [SerializeField] private GameObject selectedBackground;
@@ -22,7 +22,7 @@ namespace Samples.Simple_Sample.Scripts.MainMenuScreen.Ui.LevelSelector.Selector
 
         public void SetLevelData(LevelData levelData)
         {
-            name.text = levelData.Name;
+            nameText.text = levelData.Name;
             
             lockedContainer.SetActive(!levelData.IsUnlocked);
             unlockedContainer.SetActive(levelData.IsUnlocked);

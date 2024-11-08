@@ -236,7 +236,6 @@ GameObject:
   m_Component:
   - component: {fileID: 288143066061975871}
   - component: {fileID: 6413887621983181501}
-  - component: {fileID: 1628302336641350880}
   - component: {fileID: 8742928237073908917}
   m_Layer: 0
   m_Name: LevelItemView
@@ -279,9 +278,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 24b52853e3f94f86a6384167b18136ee, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  openAnimation: {fileID: 1628302336641350880}
-  closeAnimation: {fileID: 1628302336641350880}
-  name: {fileID: 8589860576843916861}
+  nameText: {fileID: 8589860576843916861}
   lockedContainer: {fileID: 7160453150514984514}
   unlockedContainer: {fileID: 1089212750412183870}
   selectedBackground: {fileID: 8133426371583007182}
@@ -294,20 +291,6 @@ MonoBehaviour:
   - achievedState: {fileID: 2269860668496143357}
     nonAchievedState: {fileID: 51584881766707093}
   button: {fileID: 8742928237073908917}
---- !u!114 &1628302336641350880
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1956988710411454622}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 20957ee893fd5094bb194e9f872b29af, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  useDefaultParameters: 1
-  animationParameters: {fileID: 0}
 --- !u!114 &8742928237073908917
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -802,7 +785,7 @@ GameObject:
   - component: {fileID: 5003930332782750322}
   - component: {fileID: 8589860576843916861}
   m_Layer: 0
-  m_Name: Text
+  m_Name: NameText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
