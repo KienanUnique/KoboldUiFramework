@@ -96,41 +96,11 @@ namespace KoboldUi.Services.WindowsService.Impl
                 if (needWindow == null)
                     throw new Exception($"Window {typeof(TWindow).Name} was not found");
 
-                while (CurrentWindow != needWindow)
-                {
-                    var currentWindow = _windowsStack.Peek();
-
-                    var windowIgnoreBackSignal = currentWindow is IBackLogicIgnorable;
-                    if (windowIgnoreBackSignal)
-                    {
-                        onComplete?.Invoke(false);
-                        return;
-                    }
-
-                    _windowsStack.Pop();
-                    await ChangeWindowState(currentWindow, EWindowState.Closed, previousWindowsPolitic);
-                }
-
-                WindowsOrdersManager.UpdateWindowsLayers(_windowsStack);
-                await OpenPreviousWindow();
-
-                onComplete?.Invoke(true);
-            }
-        }
-
-        public void TryBackWindows(int countOfWindowsToClose, Action<bool> onComplete,
-            EAnimationPolitic previousWindowsPolitic)
-        {
-            TryBackWindowsImpl().Forget();
-            return;
-
-            async UniTaskVoid TryBackWindowsImpl()
-            {
-                if (_windowsStack.Count < countOfWindowsToClose)
+                if (!_windowsStack.Contains(needWindow))
                     throw new Exception(
-                        $"Can not close {countOfWindowsToClose} windows because of only {_windowsStack.Count} opened");
+                        $"Window {typeof(TWindow).Name} was not found in stack. It means that window wasn't previously opened");
 
-                for (var i = 0; i < countOfWindowsToClose; i++)
+                while (CurrentWindow != needWindow)
                 {
                     var currentWindow = _windowsStack.Peek();
 
@@ -173,30 +143,6 @@ namespace KoboldUi.Services.WindowsService.Impl
             }
         }
 
-        public void CloseWindows(int countOfWindowsToClose, Action onComplete, EAnimationPolitic previousWindowsPolitic)
-        {
-            CloseWindowImpl().Forget();
-            return;
-
-            async UniTaskVoid CloseWindowImpl()
-            {
-                if (_windowsStack.Count < countOfWindowsToClose)
-                    throw new Exception(
-                        $"Can not close {countOfWindowsToClose} windows because of only {_windowsStack.Count} opened");
-
-                for (var i = 0; i < countOfWindowsToClose; i++)
-                {
-                    var currentWindow = _windowsStack.Pop();
-                    await ChangeWindowState(currentWindow, EWindowState.Closed, previousWindowsPolitic);
-                }
-
-                WindowsOrdersManager.UpdateWindowsLayers(_windowsStack);
-                await OpenPreviousWindow();
-
-                onComplete?.Invoke();
-            }
-        }
-
         public void CloseToWindow<TWindow>(Action onComplete, EAnimationPolitic previousWindowsPolitic)
             where TWindow : IWindow
         {
@@ -209,6 +155,10 @@ namespace KoboldUi.Services.WindowsService.Impl
                     var needWindow = _diContainer.Resolve(typeof(TWindow)) as IWindow;
                     if (needWindow == null)
                         throw new Exception($"Window {typeof(TWindow).Name} was not found");
+                    
+                    if (!_windowsStack.Contains(needWindow))
+                        throw new Exception(
+                            $"Window {typeof(TWindow).Name} was not found in stack. It means that window wasn't previously opened");
 
                     while (CurrentWindow != needWindow)
                     {
