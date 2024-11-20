@@ -1,7 +1,7 @@
 {
   "name": "com.kienanunique.kobolduiframework",
   "displayName": "KoboldUiFramework",
-  "version": "0.0.2-preview",
+  "version": "1.0.0",
   "description": "Simple Ui framework with animations for Unity",
   "keywords": [
     "ui",
@@ -21,4 +21,4 @@
       "path": "Samples~/SimpleSample"
     }
   ]
-}
+} 

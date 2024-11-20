@@ -2,6 +2,7 @@
 <br>
     <h1>Kobold UI</h1>
     <img src="Documentation~/Images/kobold_logo.png" width = "256" />
+    <h2>uGUI framework for Unity</h2>
     <br>
 </div>
 
