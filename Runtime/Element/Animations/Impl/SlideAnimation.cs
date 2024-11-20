@@ -1,9 +1,9 @@
 ﻿using System;
-using Alchemy.Inspector;
+using KoboldUi.Element.Animations.Parameters.Impl;
 using Cysharp.Threading.Tasks;
 using DG.Tweening;
 #if KOBOLD_ALCHEMY_SUPPORT
-using KoboldUi.Element.Animations.Parameters.Impl;
+using Alchemy.Inspector;
 #endif
 using UnityEngine;
 
