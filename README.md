@@ -28,8 +28,8 @@
 
 
 # Useful Links
-- [Documentation (En)](https://github.com/KienanUnique/KoboldUiFramework/Documentation~/DocumentationEn.md)
-- [Documentation (Ru)](https://github.com/KienanUnique/KoboldUiFramework/Documentation~/DocumentationRu.md)
+- [Documentation (En)](https://github.com/KienanUnique/KoboldUiFramework/blob/main/Documentation~/DocumentationEn.md)
+- [Documentation (Ru)](https://github.com/KienanUnique/KoboldUiFramework/blob/main/Documentation~/DocumentationRu.md)
 
 <div align="center" valign="middle" style="page-break-after: always;">
 <br>
