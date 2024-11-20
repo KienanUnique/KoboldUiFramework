@@ -3,11 +3,11 @@
     "rootNamespace": "",
     "references": [
         "com.kienanunique.kobolduiframework",
-        "UniRx",
         "Zenject",
         "Unity.TextMeshPro",
         "Alchemy",
-        "UniTask"
+        "UniTask",
+        "SampleUniRx"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

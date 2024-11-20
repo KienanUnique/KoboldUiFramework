@@ -1,6 +1,6 @@
 ﻿using System;
 using Samples.Simple_Sample.Scripts.Utils;
-using UniRx;
+using SampleUnirx;
 
 namespace Samples.Simple_Sample.Scripts.Services.SettingsStorage
 {

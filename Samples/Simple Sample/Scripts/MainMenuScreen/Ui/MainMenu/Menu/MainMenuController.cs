@@ -2,23 +2,17 @@
 using KoboldUi.Services.WindowsService;
 using Samples.Simple_Sample.Scripts.MainMenuScreen.Ui.LevelSelector;
 using Samples.Simple_Sample.Scripts.MainMenuScreen.Ui.Settings;
-using Samples.Simple_Sample.Scripts.Services.Scenes;
-using UniRx;
+using SampleUnirx;
 using UnityEngine;
 
 namespace Samples.Simple_Sample.Scripts.MainMenuScreen.Ui.MainMenu.Menu
 {
     public class MainMenuController : AUiController<MainMenuView>
     {
-        private readonly IScenesService _scenesService;
         private readonly ILocalWindowsService _localWindowsService;
 
-        public MainMenuController(
-            IScenesService scenesService, 
-            ILocalWindowsService localWindowsService
-        )
+        public MainMenuController(ILocalWindowsService localWindowsService)
         {
-            _scenesService = scenesService;
             _localWindowsService = localWindowsService;
         }
 

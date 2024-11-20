@@ -17,16 +17,10 @@ namespace KoboldUi.Services.WindowsService
         void TryBackToWindow<TWindow>(Action<bool> onComplete = default,
             EAnimationPolitic previousWindowsPolitic = EAnimationPolitic.Wait);
 
-        void TryBackWindows(int countOfWindowsToClose, Action<bool> onComplete = default,
-            EAnimationPolitic previousWindowsPolitic = EAnimationPolitic.Wait);
-
         void CloseWindow(Action onComplete = default,
             EAnimationPolitic previousWindowPolitic = EAnimationPolitic.Wait);
 
         void CloseToWindow<TWindow>(Action onComplete = default,
             EAnimationPolitic previousWindowsPolitic = EAnimationPolitic.Wait) where TWindow : IWindow;
-
-        void CloseWindows(int countOfWindowsToClose, Action onComplete = default,
-            EAnimationPolitic previousWindowsPolitic = EAnimationPolitic.Wait);
     }
 }

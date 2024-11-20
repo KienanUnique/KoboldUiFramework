@@ -3,7 +3,6 @@
     "rootNamespace": "KoboldUi",
     "references": [
         "Alchemy",
-        "UniRx",
         "Zenject",
         "DOTween.Modules",
         "UniTask",

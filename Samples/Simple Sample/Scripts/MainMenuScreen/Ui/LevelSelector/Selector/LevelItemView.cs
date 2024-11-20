@@ -2,7 +2,7 @@
 using KoboldUi.Element.View;
 using Samples.Simple_Sample.Scripts.Utils;
 using TMPro;
-using UniRx;
+using SampleUnirx;
 using UnityEngine;
 using UnityEngine.UI;
 
