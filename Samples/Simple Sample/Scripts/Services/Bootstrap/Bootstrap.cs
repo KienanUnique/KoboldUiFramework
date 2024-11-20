@@ -2,7 +2,7 @@
 using KoboldUi.Services.WindowsService;
 using Samples.Simple_Sample.Scripts.MainMenuScreen.Ui.MainMenu;
 using Samples.Simple_Sample.Scripts.Services.Scenes;
-using UniRx;
+using SampleUnirx;
 using Zenject;
 
 namespace Samples.Simple_Sample.Scripts.Services.Bootstrap

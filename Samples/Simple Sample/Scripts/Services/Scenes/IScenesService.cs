@@ -1,4 +1,4 @@
-﻿using UniRx;
+﻿using SampleUnirx;
 
 namespace Samples.Simple_Sample.Scripts.Services.Scenes
 {

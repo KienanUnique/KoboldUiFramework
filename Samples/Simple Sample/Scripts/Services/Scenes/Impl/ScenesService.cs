@@ -2,7 +2,7 @@
 using Cysharp.Threading.Tasks;
 using KoboldUi.Services.WindowsService;
 using Samples.Simple_Sample.Scripts.Ui.LoadingWindow;
-using UniRx;
+using SampleUnirx;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 

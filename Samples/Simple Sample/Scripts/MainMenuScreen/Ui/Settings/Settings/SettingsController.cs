@@ -3,7 +3,7 @@ using KoboldUi.Services.WindowsService;
 using Samples.Simple_Sample.Scripts.MainMenuScreen.Ui.SettingsChangeConfirmation;
 using Samples.Simple_Sample.Scripts.Services.SettingsStorage;
 using Samples.Simple_Sample.Scripts.Utils;
-using UniRx;
+using SampleUnirx;
 
 namespace Samples.Simple_Sample.Scripts.MainMenuScreen.Ui.Settings.Settings
 {

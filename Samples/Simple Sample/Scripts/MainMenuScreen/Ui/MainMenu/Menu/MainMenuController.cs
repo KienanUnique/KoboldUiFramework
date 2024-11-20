@@ -2,7 +2,7 @@
 using KoboldUi.Services.WindowsService;
 using Samples.Simple_Sample.Scripts.MainMenuScreen.Ui.LevelSelector;
 using Samples.Simple_Sample.Scripts.MainMenuScreen.Ui.Settings;
-using UniRx;
+using SampleUnirx;
 using UnityEngine;
 
 namespace Samples.Simple_Sample.Scripts.MainMenuScreen.Ui.MainMenu.Menu

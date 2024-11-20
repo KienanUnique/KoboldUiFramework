@@ -1,6 +1,6 @@
 ﻿using KoboldUi.Element.Controller;
 using Samples.Simple_Sample.Scripts.Services.Scenes;
-using UniRx;
+using SampleUnirx;
 using UnityEngine;
 
 namespace Samples.Simple_Sample.Scripts.Ui.LoadingWindow.LoadingIndicator

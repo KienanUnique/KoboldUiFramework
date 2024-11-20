@@ -2,7 +2,7 @@
 using KoboldUi.Services.WindowsService;
 using Samples.Simple_Sample.Scripts.Services.LevelProgression;
 using Samples.Simple_Sample.Scripts.Services.Scenes;
-using UniRx;
+using SampleUnirx;
 
 namespace Samples.Simple_Sample.Scripts.MainMenuScreen.Ui.LevelSelector.Selector
 {
