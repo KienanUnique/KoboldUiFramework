@@ -1,0 +1,21 @@
+{
+    "name": "SimpleSample",
+    "rootNamespace": "",
+    "references": [
+        "com.kienanunique.kobolduiframework",
+        "Zenject",
+        "Unity.TextMeshPro",
+        "Alchemy",
+        "UniTask",
+        "SampleUniRx"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

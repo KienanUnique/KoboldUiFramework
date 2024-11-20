@@ -1,10 +1,12 @@
-﻿namespace KoboldUi.Element.Animations
+﻿using Cysharp.Threading.Tasks;
+
+namespace KoboldUi.Element.Animations
 {
     public interface IUiAnimation
     {
-        void Appear();
-        void AnimateFocusReturn();
-        void AnimateFocusRemoved();
-        void Disappear();
+        UniTask Appear();
+        UniTask AnimateFocusReturn();
+        UniTask AnimateFocusRemoved();
+        UniTask Disappear();
     }
 }

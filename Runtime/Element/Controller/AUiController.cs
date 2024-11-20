@@ -1,4 +1,6 @@
-﻿using KoboldUi.Element.View;
+﻿using System;
+using Cysharp.Threading.Tasks;
+using KoboldUi.Element.View;
 using KoboldUi.Utils;
 using Zenject;
 
@@ -10,37 +12,40 @@ namespace KoboldUi.Element.Controller
 
         protected bool IsOpened { get; private set; }
         protected bool IsInFocus { get; private set; }
-        
+
         public virtual void Initialize()
         {
         }
 
-        public void SetState(EWindowState state)
+        public UniTask SetState(EWindowState state)
         {
+            UniTask animationTask;
             switch (state)
             {
                 case EWindowState.Active:
-                    if(IsOpened)
-                        View.ReturnFocus();
-                    else
-                        View.Open();
+                    animationTask = IsOpened ? View.ReturnFocus() : View.Open();
                     IsOpened = true;
                     IsInFocus = true;
                     OnOpen();
                     break;
                 case EWindowState.NonFocused:
-                    View.RemoveFocus();
+                    animationTask = View.RemoveFocus();
                     IsOpened = true;
                     IsInFocus = false;
                     OnFocusRemove();
                     break;
                 case EWindowState.Closed:
-                    View.Close();
+                    animationTask = View.Close();
                     IsOpened = false;
                     IsInFocus = false;
                     OnClose();
                     break;
+
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(state), state, null);
             }
+
+            return animationTask;
         }
 
         public void CloseInstantly()

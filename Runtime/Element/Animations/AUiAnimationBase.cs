@@ -1,12 +1,14 @@
-﻿using UnityEngine;
+﻿using Cysharp.Threading.Tasks;
+using UnityEngine;
 
 namespace KoboldUi.Element.Animations
 {
     public abstract class AUiAnimationBase : MonoBehaviour, IUiAnimation 
     {
-        public abstract void Appear();
-        public abstract void AnimateFocusReturn();
-        public abstract void AnimateFocusRemoved();
-        public abstract void Disappear();
-    }
+        public abstract UniTask Appear();
+        public abstract UniTask AnimateFocusReturn();
+        public abstract UniTask AnimateFocusRemoved();
+        public abstract UniTask Disappear();
+        public abstract void DisappearInstantly();
+}
 }

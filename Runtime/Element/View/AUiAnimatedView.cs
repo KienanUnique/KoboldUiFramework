@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+﻿using Cysharp.Threading.Tasks;
 using KoboldUi.Element.Animations;
 using UnityEngine;
 
@@ -8,34 +8,30 @@ namespace KoboldUi.Element.View
     {
         [SerializeField] private AUiAnimationBase openAnimation;
         [SerializeField] private AUiAnimationBase closeAnimation;
-        
-        public HashSet<AUiAnimationBase> AnimationsForInjecting => new() {openAnimation, closeAnimation};
 
-        public sealed override void Open()
+        public sealed override UniTask Open()
         {
-            openAnimation.Appear();
-            base.Open();
+            return UniTask.WhenAll(openAnimation.Appear(), base.Open());
         }
         
-        public sealed override void ReturnFocus()
+        public sealed override UniTask ReturnFocus()
         {
-            base.ReturnFocus();
+            return base.ReturnFocus();
         }
 
-        public sealed override void RemoveFocus()
+        public sealed override UniTask RemoveFocus()
         {
-            base.RemoveFocus();
+            return base.RemoveFocus();
         }
 
-        public sealed override void Close()
+        public sealed override UniTask Close()
         {
-            closeAnimation.Disappear();
-            base.Close();
+            return UniTask.WhenAll(openAnimation.Disappear(), base.Close());
         }
         
         public sealed override void CloseInstantly()
         {
-            base.CloseInstantly();
+            closeAnimation.DisappearInstantly();
         }
     }
 }

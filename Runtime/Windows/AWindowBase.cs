@@ -1,5 +1,5 @@
-﻿using KoboldUi.Utils;
-using UniRx;
+﻿using Cysharp.Threading.Tasks;
+using KoboldUi.Utils;
 using UnityEngine;
 using Zenject;
 
@@ -7,28 +7,19 @@ namespace KoboldUi.Windows
 {
     public abstract class AWindowBase : MonoBehaviour, IWindow, IInitializable
     {
-        private readonly ReactiveProperty<bool> _isInitialized = new(false);
-
         public virtual void Initialize()
         {
-            _isInitialized.Value = true;
+            IsInitialized = true;
         }
-        
-        public IReactiveProperty<bool> IsInitialized => _isInitialized;
+
+        public bool IsInitialized { get; private set; }
+        public virtual string Name => gameObject.name;
+
+        public UniTask WaitInitialization() => UniTask.WaitUntil(() => IsInitialized,
+            cancellationToken: this.GetCancellationTokenOnDestroy());
         
         public abstract void InstallBindings(DiContainer container);
-
-        public abstract void SetState(EWindowState state);
-
-        public void SetAsLastSibling()
-        {
-            transform.SetAsLastSibling();
-        }
-
-        public void SetAsTheSecondLastSibling()
-        {
-            var childCount = transform.childCount;
-            transform.SetSiblingIndex(childCount - 1);
-        }
+        public abstract UniTask SetState(EWindowState state);
+        public abstract void ApplyOrder(int order);
     }
 }
