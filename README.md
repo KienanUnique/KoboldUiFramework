@@ -1,7 +1,7 @@
 <div align="center" valign="middle" style="page-break-after: always;">
 <br>
     <h1>Kobold UI</h1>
-    <img src="~Documentation/Images/kobold_logo.png" width = "256" />
+    <img src="Documentation~/Images/kobold_logo.png" width = "256" />
     <br>
 </div>
 
@@ -27,11 +27,11 @@
 
 
 # Useful Links
-- [Documentation (En)](https://github.com/KienanUnique/KoboldUiFramework/~Documentation/DocumentationEn.md)
-- [Documentation (Ru)](https://github.com/KienanUnique/KoboldUiFramework/~Documentation/DocumentationRu.md)
+- [Documentation (En)](https://github.com/KienanUnique/KoboldUiFramework/Documentation~/DocumentationEn.md)
+- [Documentation (Ru)](https://github.com/KienanUnique/KoboldUiFramework/Documentation~/DocumentationRu.md)
 
 <div align="center" valign="middle" style="page-break-after: always;">
 <br>
-    <img src="~Documentation/Images/demonstration.gif" width = "780" />
+    <img src="Documentation~/Images/demonstration.gif" width = "780" />
 <br>
 </div>
