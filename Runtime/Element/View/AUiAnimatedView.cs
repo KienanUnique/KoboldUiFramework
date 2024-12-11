@@ -26,7 +26,7 @@ namespace KoboldUi.Element.View
 
         public sealed override UniTask Close()
         {
-            return UniTask.WhenAll(openAnimation.Disappear(), base.Close());
+            return UniTask.WhenAll(closeAnimation.Disappear(), base.Close());
         }
         
         public sealed override void CloseInstantly()

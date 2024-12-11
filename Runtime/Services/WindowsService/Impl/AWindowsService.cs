@@ -14,16 +14,27 @@ namespace KoboldUi.Services.WindowsService.Impl
 
         private readonly DiContainer _diContainer;
 
-        public IWindow CurrentWindow => _windowsStack.Peek();
+        public IWindow CurrentWindow => _windowsStack.Count > 0 ? _windowsStack.Peek() : null;
 
         protected AWindowsService(DiContainer diContainer)
         {
             _diContainer = diContainer;
         }
 
+        public bool IsOpened<TWindow>() where TWindow : IWindow
+        {
+            return _windowsStack.Count > 0 && _windowsStack.Peek() is TWindow;
+        }
+
         public void OpenWindow<TWindow>(Action onComplete, EAnimationPolitic previousWindowPolitic)
             where TWindow : IWindow
         {
+            if (IsOpened<TWindow>())
+            {
+                onComplete?.Invoke();
+                return;
+            }
+            
             OpenWindowImpl().Forget();
             return;
 
