@@ -6,7 +6,13 @@ using KoboldUi.Element.View;
 using KoboldUi.Element.View.Impl;
 using KoboldUi.Utils;
 using UnityEngine;
+using VContainer.Unity;
+
+#if KOBOLD_ZENJECT_SUPPORT
 using Zenject;
+#elif KOBOLD_VCONTAINER_SUPPORT
+using VContainer;
+#endif
 
 namespace KoboldUi.Windows
 {
@@ -17,13 +23,25 @@ namespace KoboldUi.Windows
 
         private readonly List<IUIController> _childControllers = new();
 
+#if KOBOLD_ZENJECT_SUPPORT
         private DiContainer _container;
+#elif KOBOLD_VCONTAINER_SUPPORT
+        private IObjectResolver _objectResolver;
+#endif
+        
         private CanvasGroup _canvasGroup;
 
+#if KOBOLD_ZENJECT_SUPPORT
         public sealed override void InstallBindings(DiContainer container)
         {
             _container = container;
         }
+#elif KOBOLD_VCONTAINER_SUPPORT
+        public sealed override void InstallBindings(IObjectResolver objectResolver)
+        {
+            _objectResolver = objectResolver;
+        }
+#endif
 
         public sealed override void Initialize()
         {
@@ -64,9 +82,17 @@ namespace KoboldUi.Windows
             where TView : IUiView
             where TController : AUiController<TView>
         {
+#if KOBOLD_ZENJECT_SUPPORT
             var controller = _container.Instantiate<TController>(new List<object> {viewInstance});
 
             _container.InjectGameObject(gameObject);
+#elif KOBOLD_VCONTAINER_SUPPORT
+            var scope = _objectResolver.CreateScope(builder => builder.RegisterInstance(viewInstance));
+            var controller = scope.Resolve<TController>();
+
+            _objectResolver.InjectGameObject(gameObject);
+            scope.Dispose();
+#endif
 
             _childControllers.Add(controller);
             controller.Initialize();

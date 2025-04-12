@@ -3,6 +3,11 @@ using KoboldUi.Collections.Base;
 using KoboldUi.Element.View;
 using UnityEngine;
 
+#if KOBOLD_ZENJECT_SUPPORT
+#elif KOBOLD_VCONTAINER_SUPPORT
+using VContainer.Unity;
+#endif
+
 namespace KoboldUi.Collections.Concrete.Impl
 {
     public abstract class AUiListCollection<TView> : AUiCollection<TView>, IUiListCollection<TView>
@@ -44,7 +49,12 @@ namespace KoboldUi.Collections.Concrete.Impl
 
         public TView Create()
         {
+            
+#if KOBOLD_ZENJECT_SUPPORT
             var view = Instantiator.InstantiatePrefabForComponent<TView>(prefab);
+#elif KOBOLD_VCONTAINER_SUPPORT
+            var view = ObjectResolver.Instantiate(prefab).GetComponent<TView>();
+#endif
             OnCreated(view);
             return view;
         }

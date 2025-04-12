@@ -1,6 +1,7 @@
 ﻿using KoboldUi.Element.Animations.Parameters.Impl;
-using KoboldUi.Utils;
 using UnityEngine;
+
+#if KOBOLD_ZENJECT_SUPPORT
 using Zenject;
 
 namespace KoboldUi.Installers
@@ -21,3 +22,26 @@ namespace KoboldUi.Installers
         }
     }
 }
+
+#elif KOBOLD_VCONTAINER_SUPPORT
+using VContainer;
+using VContainer.Unity;
+
+
+namespace KoboldUi.Installers
+{
+    public class DefaultAnimationsInstaller : LifetimeScope
+    {
+        [SerializeField] private FadeAnimationParameters fadeAnimationParameters;
+        [SerializeField] private ScaleAnimationParameters scaleAnimationParameters;
+        [SerializeField] private SlideAnimationParameters slideAnimationParameters;
+
+        protected override void Configure(IContainerBuilder builder)
+        {
+            builder.RegisterInstance(fadeAnimationParameters);
+            builder.RegisterInstance(scaleAnimationParameters);
+            builder.RegisterInstance(slideAnimationParameters);
+        }
+    }
+}
+#endif

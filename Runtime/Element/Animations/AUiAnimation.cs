@@ -2,7 +2,13 @@
 using Cysharp.Threading.Tasks;
 using DG.Tweening;
 using UnityEngine;
+
+#if KOBOLD_ZENJECT_SUPPORT
 using Zenject;
+#elif KOBOLD_VCONTAINER_SUPPORT
+using VContainer;
+#endif
+
 #if KOBOLD_ALCHEMY_SUPPORT
 using Alchemy.Inspector;
 #endif
@@ -18,7 +24,11 @@ namespace KoboldUi.Element.Animations
 #endif
         [SerializeField] private TParams animationParameters;
 
+#if KOBOLD_ZENJECT_SUPPORT
         [InjectOptional] private TParams _defaultAnimationParameters;
+#elif KOBOLD_VCONTAINER_SUPPORT
+        [Inject] private TParams _defaultAnimationParameters;
+#endif
 
         private Sequence _sequence;
 

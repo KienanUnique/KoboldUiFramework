@@ -1,4 +1,5 @@
-﻿using KoboldUi.Services.WindowsService.Impl;
+﻿#if KOBOLD_ZENJECT_SUPPORT
+using KoboldUi.Services.WindowsService.Impl;
 using Zenject;
 
 namespace KoboldUi.Installers
@@ -11,3 +12,19 @@ namespace KoboldUi.Installers
         }
     }
 }
+#elif KOBOLD_VCONTAINER_SUPPORT
+using KoboldUi.Services.WindowsService.Impl;
+using VContainer;
+using VContainer.Unity;
+
+namespace KoboldUi.Installers
+{
+    public class ProjectWindowsServiceInstaller : LifetimeScope
+    {
+        protected override void Configure(IContainerBuilder builder)
+        {
+            builder.Register<ProjectWindowsService>(Lifetime.Singleton).AsImplementedInterfaces();
+        }
+    }
+}
+#endif

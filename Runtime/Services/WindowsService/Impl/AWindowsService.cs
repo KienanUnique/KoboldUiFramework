@@ -4,22 +4,38 @@ using Cysharp.Threading.Tasks;
 using KoboldUi.Interfaces;
 using KoboldUi.Utils;
 using KoboldUi.Windows;
+
+#if KOBOLD_ZENJECT_SUPPORT
 using Zenject;
+#elif KOBOLD_VCONTAINER_SUPPORT
+using VContainer;
+#endif
 
 namespace KoboldUi.Services.WindowsService.Impl
 {
     public abstract class AWindowsService : IWindowsService
     {
         private readonly Stack<IWindow> _windowsStack = new();
-
+#if KOBOLD_ZENJECT_SUPPORT
         private readonly DiContainer _diContainer;
+#elif KOBOLD_VCONTAINER_SUPPORT
+        private readonly IObjectResolver _diContainer;
+#endif
 
         public IWindow CurrentWindow => _windowsStack.Count > 0 ? _windowsStack.Peek() : null;
 
+#if KOBOLD_ZENJECT_SUPPORT
         protected AWindowsService(DiContainer diContainer)
         {
             _diContainer = diContainer;
         }
+#elif KOBOLD_VCONTAINER_SUPPORT
+        protected AWindowsService(IObjectResolver diContainer)
+        {
+            _diContainer = diContainer;
+        }
+#endif
+
 
         public bool IsOpened<TWindow>() where TWindow : IWindow
         {

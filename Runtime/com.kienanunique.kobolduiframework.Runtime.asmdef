@@ -6,7 +6,8 @@
         "Zenject",
         "DOTween.Modules",
         "UniTask",
-        "UniTask.DOTween"
+        "UniTask.DOTween",
+        "VContainer"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

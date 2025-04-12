@@ -2,7 +2,13 @@
 using Cysharp.Threading.Tasks;
 using KoboldUi.Element.View;
 using KoboldUi.Utils;
+
+#if KOBOLD_ZENJECT_SUPPORT
 using Zenject;
+#elif KOBOLD_VCONTAINER_SUPPORT
+using VContainer;
+using VContainer.Unity;
+#endif
 
 namespace KoboldUi.Element.Controller
 {
