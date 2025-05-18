@@ -1,14 +1,14 @@
-﻿using Cysharp.Threading.Tasks;
+﻿using KoboldUi.UiAction;
 using UnityEngine;
 
 namespace KoboldUi.Element.View
 {
     public interface IUiView
     {
-        UniTask Open();
-        UniTask ReturnFocus();
-        UniTask RemoveFocus();
-        UniTask Close();
+        IUiAction Open();
+        IUiAction ReturnFocus();
+        IUiAction RemoveFocus();
+        IUiAction Close();
         void CloseInstantly();
         void SetParent(Transform parent);
         void Destroy();

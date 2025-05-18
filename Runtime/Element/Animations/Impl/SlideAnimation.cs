@@ -1,7 +1,8 @@
 ﻿using System;
 using KoboldUi.Element.Animations.Parameters.Impl;
-using Cysharp.Threading.Tasks;
 using DG.Tweening;
+using KoboldUi.UiAction;
+using KoboldUi.UiAction.Impl;
 #if KOBOLD_ALCHEMY_SUPPORT
 using Alchemy.Inspector;
 #endif
@@ -33,7 +34,7 @@ namespace KoboldUi.Element.Animations.Impl
             _rectTransform.anchoredPosition = fromAppearAnchoredPosition;
         }
 
-        protected override UniTask AnimateAppear()
+        protected override IUiAction AnimateAppear()
         {
             _currentAnimation?.Kill();
 
@@ -43,10 +44,12 @@ namespace KoboldUi.Element.Animations.Impl
                 .SetEase(AnimationParameters.AppearEase)
                 .SetLink(gameObject);
 
-            return _currentAnimation.ToUniTask();
+            var tweenAction = new TweenAction();
+            tweenAction.Setup(_currentAnimation);
+            return tweenAction;
         }
 
-        protected override UniTask AnimateDisappear(Action callback)
+        protected override IUiAction AnimateDisappear(Action callback)
         {
             _currentAnimation?.Kill();
 
@@ -58,7 +61,9 @@ namespace KoboldUi.Element.Animations.Impl
                 .SetLink(gameObject)
                 .OnComplete(base.DisappearInstantly);
 
-            return _currentAnimation.ToUniTask();
+            var tweenAction = new TweenAction();
+            tweenAction.Setup(_currentAnimation);
+            return tweenAction;
         }
 
         private void Awake()

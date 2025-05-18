@@ -1,17 +1,19 @@
 ﻿using Cysharp.Threading.Tasks;
+using KoboldUi.UiAction;
+using KoboldUi.UiAction.Impl;
 using UnityEngine;
 
 namespace KoboldUi.Element.View
 {
     public abstract class AUiView : MonoBehaviour, IUiView
     {
-        public virtual UniTask Open() => OnOpen();
+        public virtual IUiAction Open() => OnOpen();
 
-        public virtual UniTask ReturnFocus() => OnReturnFocus();
+        public virtual IUiAction ReturnFocus() => OnReturnFocus();
 
-        public virtual UniTask RemoveFocus() => OnRemoveFocus();
+        public virtual IUiAction RemoveFocus() => OnRemoveFocus();
 
-        public virtual UniTask Close() => OnClose();
+        public virtual IUiAction Close() => OnClose();
 
         public abstract void CloseInstantly();
 
@@ -25,24 +27,24 @@ namespace KoboldUi.Element.View
             Destroy(gameObject);
         }
 
-        protected virtual UniTask OnOpen()
+        protected virtual IUiAction OnOpen()
         {
-            return UniTask.NextFrame();
+            return new EmptyAction();
         }
 
-        protected virtual UniTask OnReturnFocus()
+        protected virtual IUiAction OnReturnFocus()
         {
-            return UniTask.NextFrame();
+            return new EmptyAction();
         }
 
-        protected virtual UniTask OnRemoveFocus()
+        protected virtual IUiAction OnRemoveFocus()
         {
-            return UniTask.NextFrame();
+            return new EmptyAction();
         }
 
-        protected virtual UniTask OnClose()
+        protected virtual IUiAction OnClose()
         {
-            return UniTask.NextFrame();
+            return new EmptyAction();
         }
     }
 }

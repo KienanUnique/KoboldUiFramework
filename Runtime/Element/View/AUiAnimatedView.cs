@@ -1,5 +1,5 @@
-﻿using Cysharp.Threading.Tasks;
-using KoboldUi.Element.Animations;
+﻿using KoboldUi.Element.Animations;
+using KoboldUi.UiAction;
 using UnityEngine;
 
 namespace KoboldUi.Element.View
@@ -9,24 +9,24 @@ namespace KoboldUi.Element.View
         [SerializeField] private AUiAnimationBase openAnimation;
         [SerializeField] private AUiAnimationBase closeAnimation;
 
-        public sealed override UniTask Open()
+        public sealed override IUiAction Open()
         {
-            return UniTask.WhenAll(openAnimation.Appear(), base.Open());
+            return openAnimation.Appear();
         }
         
-        public sealed override UniTask ReturnFocus()
+        public sealed override IUiAction ReturnFocus()
         {
             return base.ReturnFocus();
         }
 
-        public sealed override UniTask RemoveFocus()
+        public sealed override IUiAction RemoveFocus()
         {
             return base.RemoveFocus();
         }
 
-        public sealed override UniTask Close()
+        public sealed override IUiAction Close()
         {
-            return UniTask.WhenAll(closeAnimation.Disappear(), base.Close());
+            return closeAnimation.Disappear();
         }
         
         public sealed override void CloseInstantly()

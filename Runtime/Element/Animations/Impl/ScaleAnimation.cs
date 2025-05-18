@@ -1,7 +1,8 @@
 ﻿using System;
-using Cysharp.Threading.Tasks;
 using DG.Tweening;
 using KoboldUi.Element.Animations.Parameters.Impl;
+using KoboldUi.UiAction;
+using KoboldUi.UiAction.Impl;
 using UnityEngine;
 
 namespace KoboldUi.Element.Animations.Impl
@@ -18,7 +19,7 @@ namespace KoboldUi.Element.Animations.Impl
             transform.localScale = _disappearScale;
         }
 
-        protected override UniTask AnimateAppear()
+        protected override IUiAction AnimateAppear()
         {
             _currentAnimation?.Kill();
 
@@ -27,10 +28,12 @@ namespace KoboldUi.Element.Animations.Impl
                 .SetUpdate(true)
                 .SetLink(gameObject);
 
-            return _currentAnimation.ToUniTask();
+            var tweenAction = new TweenAction();
+            tweenAction.Setup(_currentAnimation);
+            return tweenAction;
         }
 
-        protected override UniTask AnimateDisappear(Action callback)
+        protected override IUiAction AnimateDisappear(Action callback)
         {
             _currentAnimation?.Kill();
 
@@ -39,9 +42,10 @@ namespace KoboldUi.Element.Animations.Impl
                 .SetUpdate(true)
                 .SetLink(gameObject)
                 .OnComplete(callback.Invoke);
-            ;
 
-            return _currentAnimation.ToUniTask();
+            var tweenAction = new TweenAction();
+            tweenAction.Setup(_currentAnimation);
+            return tweenAction;
         }
     }
 }

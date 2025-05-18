@@ -1,4 +1,5 @@
-﻿using Cysharp.Threading.Tasks;
+﻿using KoboldUi.UiAction;
+using KoboldUi.UiAction.Impl;
 using KoboldUi.Utils;
 using UnityEngine;
 using Zenject;
@@ -15,11 +16,15 @@ namespace KoboldUi.Windows
         public bool IsInitialized { get; private set; }
         public virtual string Name => gameObject.name;
 
-        public UniTask WaitInitialization() => UniTask.WaitUntil(() => IsInitialized,
-            cancellationToken: this.GetCancellationTokenOnDestroy());
-        
+        public IUiAction WaitInitialization()
+        {
+            var action = new WaitInitializationAction();
+            action.Setup(this);
+            return action;
+        }
+
         public abstract void InstallBindings(DiContainer container);
-        public abstract UniTask SetState(EWindowState state);
+        public abstract IUiAction SetState(EWindowState state);
         public abstract void ApplyOrder(int order);
     }
 }

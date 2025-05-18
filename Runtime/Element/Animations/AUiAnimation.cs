@@ -1,6 +1,7 @@
 ﻿using System;
-using Cysharp.Threading.Tasks;
 using DG.Tweening;
+using KoboldUi.UiAction;
+using KoboldUi.UiAction.Impl;
 using UnityEngine;
 using Zenject;
 #if KOBOLD_ALCHEMY_SUPPORT
@@ -38,27 +39,21 @@ namespace KoboldUi.Element.Animations
         
         public bool NeedUseCustomParameters() => !useDefaultParameters;
 
-        public override UniTask Appear()
+        public override IUiAction Appear()
         {
             PrepareToAppear();
             gameObject.SetActive(true);
             return AnimateAppear();
         }
 
-        public override UniTask Disappear()
+        public override IUiAction Disappear()
         {
             return AnimateDisappear(DisappearInstantly);
         }
         
-        public override UniTask AnimateFocusReturn()
-        {
-            return UniTask.NextFrame();
-        }
+        public override IUiAction AnimateFocusReturn() => new EmptyAction();
 
-        public override UniTask AnimateFocusRemoved()
-        {
-            return UniTask.NextFrame();
-        }
+        public override IUiAction AnimateFocusRemoved() => new EmptyAction();
         
         public override void DisappearInstantly()
         {
@@ -67,7 +62,7 @@ namespace KoboldUi.Element.Animations
         
         
         protected abstract void PrepareToAppear();
-        protected abstract UniTask AnimateAppear();
-        protected abstract UniTask AnimateDisappear(Action callback);
+        protected abstract IUiAction AnimateAppear();
+        protected abstract IUiAction AnimateDisappear(Action callback);
     }
 }
