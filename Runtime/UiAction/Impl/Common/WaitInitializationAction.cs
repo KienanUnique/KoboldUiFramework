@@ -2,7 +2,7 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using KoboldUi.Windows;
 
-namespace KoboldUi.UiAction.Impl
+namespace KoboldUi.UiAction.Impl.Common
 {
     public class WaitInitializationAction : IUiAction
     {

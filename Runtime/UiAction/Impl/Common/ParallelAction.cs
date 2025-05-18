@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 
-namespace KoboldUi.UiAction.Impl
+namespace KoboldUi.UiAction.Impl.Common
 {
     public class ParallelAction : IUiAction
     {

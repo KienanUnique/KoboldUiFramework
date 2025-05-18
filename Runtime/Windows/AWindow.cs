@@ -4,7 +4,7 @@ using KoboldUi.Element.Controller.Impl;
 using KoboldUi.Element.View;
 using KoboldUi.Element.View.Impl;
 using KoboldUi.UiAction;
-using KoboldUi.UiAction.Impl;
+using KoboldUi.UiAction.Impl.Common;
 using KoboldUi.Utils;
 using UnityEngine;
 using Zenject;

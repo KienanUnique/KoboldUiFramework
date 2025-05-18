@@ -1,7 +1,7 @@
 ﻿using System;
 using DG.Tweening;
 using KoboldUi.UiAction;
-using KoboldUi.UiAction.Impl;
+using KoboldUi.UiAction.Impl.Common;
 using UnityEngine;
 using Zenject;
 #if KOBOLD_ALCHEMY_SUPPORT

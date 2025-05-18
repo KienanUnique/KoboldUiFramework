@@ -7,21 +7,13 @@ namespace KoboldUi.WindowsStack.Impl
     {
         private readonly Stack<IWindow> _windowsStack = new();
         
-        public IWindow CurrentWindow => _windowsStack.Count > 0 ? _windowsStack.Peek() : null;
-        
-        public bool IsOpened<TWindow>() where TWindow : IWindow
-        {
-            return _windowsStack.Count > 0 && _windowsStack.Peek() is TWindow;
-        }
-        
-        public void HandleWindowOpen(IWindow window)
-        {
-            
-        }
+        public IWindow CurrentWindow => IsEmpty ? null : _windowsStack.Peek();
+        public bool IsEmpty => _windowsStack.Count <= 0;
+        public IReadOnlyCollection<IWindow> Stack => _windowsStack;
 
-        public void HandleWindowClose(IWindow window)
-        {
-            
-        }
+        public bool IsOpened<TWindow>() where TWindow : IWindow => !IsEmpty && _windowsStack.Peek() is TWindow;
+        public bool IsOpened(IWindow window) => !IsEmpty && _windowsStack.Peek() == window;
+        public void Push(IWindow window) => _windowsStack.Push(window);
+        public IWindow Pop() => _windowsStack.Pop();
     }
 }

@@ -1,6 +1,6 @@
 ﻿using Cysharp.Threading.Tasks;
 using KoboldUi.UiAction;
-using KoboldUi.UiAction.Impl;
+using KoboldUi.UiAction.Impl.Common;
 using UnityEngine;
 
 namespace KoboldUi.Element.View

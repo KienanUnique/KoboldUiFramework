@@ -2,7 +2,7 @@
 using KoboldUi.Element.Animations.Parameters.Impl;
 using DG.Tweening;
 using KoboldUi.UiAction;
-using KoboldUi.UiAction.Impl;
+using KoboldUi.UiAction.Impl.Common;
 #if KOBOLD_ALCHEMY_SUPPORT
 using Alchemy.Inspector;
 #endif

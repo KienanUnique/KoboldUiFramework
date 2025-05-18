@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 
-namespace KoboldUi.UiAction.Impl
+namespace KoboldUi.UiAction.Impl.Common
 {
     public class SequenceAction : IUiAction
     {
@@ -18,8 +18,11 @@ namespace KoboldUi.UiAction.Impl
 
         public void Dispose()
         {
-            foreach (var uiAction in _actionsQueue) 
-                uiAction.Dispose();
+            if (_actionsQueue != null)
+            {
+                foreach (var uiAction in _actionsQueue)
+                    uiAction.Dispose();
+            }
             
             _actionsQueue = null;
             _cancellationTokenSource.Cancel();

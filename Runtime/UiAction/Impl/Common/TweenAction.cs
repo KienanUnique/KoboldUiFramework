@@ -1,7 +1,7 @@
 using Cysharp.Threading.Tasks;
 using DG.Tweening;
 
-namespace KoboldUi.UiAction.Impl
+namespace KoboldUi.UiAction.Impl.Common
 {
     public class TweenAction : IUiAction
     {

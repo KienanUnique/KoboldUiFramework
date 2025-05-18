@@ -2,7 +2,7 @@
 using DG.Tweening;
 using KoboldUi.Element.Animations.Parameters.Impl;
 using KoboldUi.UiAction;
-using KoboldUi.UiAction.Impl;
+using KoboldUi.UiAction.Impl.Common;
 using UnityEngine;
 
 namespace KoboldUi.Element.Animations.Impl

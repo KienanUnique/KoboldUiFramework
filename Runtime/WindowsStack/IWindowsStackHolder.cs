@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using KoboldUi.Windows;
 
 namespace KoboldUi.WindowsStack
@@ -5,8 +6,12 @@ namespace KoboldUi.WindowsStack
     public interface IWindowsStackHolder
     {
         IWindow CurrentWindow { get; }
+        bool IsEmpty { get; }
+        
         bool IsOpened<TWindow>() where TWindow : IWindow;
-        void HandleWindowOpen(IWindow window);
-        void HandleWindowClose(IWindow window);
+        bool IsOpened(IWindow window);
+        void Push(IWindow window);
+        IWindow Pop();
+        IReadOnlyCollection<IWindow> Stack { get; }
     }
 }

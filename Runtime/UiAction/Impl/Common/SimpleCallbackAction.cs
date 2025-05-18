@@ -1,7 +1,7 @@
 using System;
 using Cysharp.Threading.Tasks;
 
-namespace KoboldUi.UiAction.Impl
+namespace KoboldUi.UiAction.Impl.Common
 {
     public class SimpleCallbackAction : IUiAction
     {

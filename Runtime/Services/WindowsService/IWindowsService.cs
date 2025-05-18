@@ -10,10 +10,10 @@ namespace KoboldUi.Services.WindowsService
 
         void OpenWindow<TWindow>(Action onComplete = null) where TWindow : IWindow;
 
-        void TryBackWindow(Action<bool> onComplete = null);
-        void TryBackToWindow<TWindow>(Action<bool> onComplete = null);
-        
-        void CloseWindow(Action onComplete = null);
-        void CloseToWindow<TWindow>(Action onComplete = null) where TWindow : IWindow;
+        void BackWindow(Action onComplete = null);
+        // void TryBackToWindow<TWindow>(Action<bool> onComplete = null);
+        //
+        // void CloseWindow(Action onComplete = null);
+        // void CloseToWindow<TWindow>(Action onComplete = null) where TWindow : IWindow;
     }
 }

@@ -1,6 +1,6 @@
 using Cysharp.Threading.Tasks;
 
-namespace KoboldUi.UiAction.Impl
+namespace KoboldUi.UiAction.Impl.Common
 {
     public class EmptyAction : IUiAction
     {
