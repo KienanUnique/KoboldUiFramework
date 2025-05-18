@@ -6,7 +6,7 @@ namespace KoboldUi.UiAction.Impl
     {
         public UniTask Start()
         {
-            return UniTask.NextFrame();
+            return UniTask.CompletedTask;
         }
 
         public void Dispose()

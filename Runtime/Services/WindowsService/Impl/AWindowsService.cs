@@ -2,14 +2,17 @@
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using KoboldUi.Interfaces;
+using KoboldUi.TasksRunner;
+using KoboldUi.TasksRunner.Impl;
 using KoboldUi.Utils;
 using KoboldUi.Windows;
 using Zenject;
 
 namespace KoboldUi.Services.WindowsService.Impl
 {
-    public abstract class AWindowsService : IWindowsService
+    public abstract class AWindowsService : IWindowsService, IDisposable
     {
+        private readonly ITasksRunner _tasksRunner = new TaskRunner();
         private readonly Stack<IWindow> _windowsStack = new();
 
         private readonly DiContainer _diContainer;
@@ -26,7 +29,7 @@ namespace KoboldUi.Services.WindowsService.Impl
             return _windowsStack.Count > 0 && _windowsStack.Peek() is TWindow;
         }
 
-        public void OpenWindow<TWindow>(Action onComplete, EAnimationPolitic previousWindowPolitic)
+        public void OpenWindow<TWindow>(Action onComplete)
             where TWindow : IWindow
         {
             if (IsOpened<TWindow>())
@@ -196,8 +199,7 @@ namespace KoboldUi.Services.WindowsService.Impl
             await currentWindow.SetState(EWindowState.Active);
         }
 
-        private static async UniTask ChangeWindowState(IWindow window, EWindowState state,
-            EAnimationPolitic animationPolitic)
+        private static async UniTask ChangeWindowState(IWindow window, EWindowState state)
         {
             var changeStateTask = window.SetState(state);
 
@@ -212,6 +214,11 @@ namespace KoboldUi.Services.WindowsService.Impl
                 default:
                     throw new ArgumentOutOfRangeException(nameof(animationPolitic), animationPolitic, null);
             }
+        }
+
+        public void Dispose()
+        {
+            _tasksRunner?.Dispose();
         }
     }
 }
