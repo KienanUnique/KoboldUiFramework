@@ -1,7 +1,5 @@
-﻿using System.Collections.Generic;
-using Cysharp.Threading.Tasks;
+﻿using Cysharp.Threading.Tasks;
 using KoboldUi.Interfaces;
-using KoboldUi.UiAction.Impl.Common;
 using KoboldUi.Utils;
 using KoboldUi.Windows;
 using KoboldUi.WindowsStack;
@@ -10,16 +8,18 @@ namespace KoboldUi.UiAction.Impl.Service
 {
     public class TryBackWindowAction: IUiAction
     {
+        private IWindow _windowToClose;
         private IWindowsStackHolder _windowsStackHolder;
 
         public void Setup(IWindowsStackHolder windowsStackHolder)
         {
             _windowsStackHolder = windowsStackHolder;
+            _windowToClose = windowsStackHolder.CurrentWindow;
         }
 
         public UniTask Start()
         {
-            if (_windowsStackHolder.IsEmpty)
+            if (_windowToClose == null || _windowsStackHolder.IsEmpty || _windowsStackHolder.CurrentWindow != _windowToClose)
                 return UniTask.CompletedTask;
 
             var currentWindow = _windowsStackHolder.CurrentWindow;
