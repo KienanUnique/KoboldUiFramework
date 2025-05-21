@@ -16,6 +16,7 @@ namespace KoboldUi.UiAction.Impl.Common
         public void Setup(Tween tween)
         {
             tween.Pause();
+            _tween = tween;
         }
 
         public void Dispose()

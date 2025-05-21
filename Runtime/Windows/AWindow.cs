@@ -47,6 +47,9 @@ namespace KoboldUi.Windows
             }
 
             var actions = new List<IUiAction>();
+
+            if (!IsInitialized)
+                Debug.LogError($"[Kobold Ui {nameof(AWindow)}] | {gameObject.name} is not initialized. Change State logic is invalid!");
             
             foreach (var controller in _childControllers) 
                 actions.Add(controller.SetState(state));

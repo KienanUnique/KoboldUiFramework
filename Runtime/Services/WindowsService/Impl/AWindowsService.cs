@@ -33,46 +33,31 @@ namespace KoboldUi.Services.WindowsService.Impl
 
         public void OpenWindow<TWindow>(Action onComplete) where TWindow : IWindow
         {
-            var actionsQueue = new Queue<IUiAction>();
-
             var openAction = new OpenWindowAction();
             var nextWindow = _diContainer.Resolve(typeof(TWindow)) as IWindow;
             openAction.Setup(nextWindow, _windowsStackHolder);
-            actionsQueue.Enqueue(openAction);
+            _tasksRunner.AddToQueue(openAction);
 
-            if (onComplete != null)
-            {
-                var callbackAction = new SimpleCallbackAction();
-                callbackAction.Setup(onComplete);
-                actionsQueue.Enqueue(callbackAction);
-            }
-
-            var sequentialAction = new SequenceAction();
-            sequentialAction.Setup(actionsQueue);
+            if (onComplete == null)
+                return;
             
-            _tasksRunner.AddToQueue(sequentialAction);
+            var callbackAction = new SimpleCallbackAction();
+            callbackAction.Setup(onComplete);
+            _tasksRunner.AddToQueue(callbackAction);
         }
 
         public void BackWindow(Action onComplete)
         {
-            var actionsQueue = new Queue<IUiAction>();
-
             var tryBackWindowAction = new TryBackWindowAction();
             tryBackWindowAction.Setup(_windowsStackHolder);
-            actionsQueue.Enqueue(tryBackWindowAction);
-            
-            if (onComplete != null)
-            {
-                var callbackAction = new SimpleCallbackAction();
-                callbackAction.Setup(onComplete);
-                actionsQueue.Enqueue(callbackAction);
-            }
+            _tasksRunner.AddToQueue(tryBackWindowAction);
 
+            if (onComplete == null) 
+                return;
             
-            var sequentialAction = new SequenceAction();
-            sequentialAction.Setup(actionsQueue);
-            
-            _tasksRunner.AddToQueue(sequentialAction);
+            var callbackAction = new SimpleCallbackAction();
+            callbackAction.Setup(onComplete);
+            _tasksRunner.AddToQueue(callbackAction);
         }
 
         // public void TryBackToWindow<TWindow>(Action<bool> onComplete, EAnimationPolitic previousWindowsPolitic)

@@ -3,6 +3,7 @@ using Cysharp.Threading.Tasks;
 using KoboldUi.Interfaces;
 using KoboldUi.UiAction.Impl.Common;
 using KoboldUi.Utils;
+using KoboldUi.Windows;
 using KoboldUi.WindowsStack;
 
 namespace KoboldUi.UiAction.Impl.Service
@@ -15,37 +16,35 @@ namespace KoboldUi.UiAction.Impl.Service
         {
             _windowsStackHolder = windowsStackHolder;
         }
-        
+
         public UniTask Start()
         {
             if (_windowsStackHolder.IsEmpty)
                 return UniTask.CompletedTask;
-            
-            var actionsQueue = new Queue<IUiAction>();
-            
-            var currentWindow = _windowsStackHolder.Pop();
-            
+
+            var currentWindow = _windowsStackHolder.CurrentWindow;
+
             var isWindowIgnoreBackSignal = currentWindow is IBackLogicIgnorable;
             if (isWindowIgnoreBackSignal)
                 return UniTask.CompletedTask;
 
-            actionsQueue.Enqueue(currentWindow.SetState(EWindowState.Closed));
-
-            WindowsOrdersManager.HandleWindowDisappear(_windowsStackHolder.Stack, currentWindow);
-            var openPreviousWindow = new OpenPreviousWindow();
-            openPreviousWindow.Setup(_windowsStackHolder);
-
-            actionsQueue.Enqueue(openPreviousWindow);
-            
-            var sequentialAction = new SequenceAction();
-            sequentialAction.Setup(actionsQueue);
-            
-            return sequentialAction.Start();
+            return BackWindow(_windowsStackHolder.Pop());
         }
 
         public void Dispose()
         {
             // TODO release managed resources here
+        }
+
+        private async UniTask BackWindow(IWindow currentWindow)
+        {
+            await currentWindow.SetState(EWindowState.Closed).Start();
+
+            WindowsOrdersManager.HandleWindowDisappear(_windowsStackHolder.Stack, currentWindow);
+            var openPreviousWindow = new OpenPreviousWindow();
+            openPreviousWindow.Setup(_windowsStackHolder);
+
+            await openPreviousWindow.Start();
         }
     }
 }

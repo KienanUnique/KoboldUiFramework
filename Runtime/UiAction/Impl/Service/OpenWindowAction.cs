@@ -1,7 +1,5 @@
-﻿using System.Collections.Generic;
-using Cysharp.Threading.Tasks;
+﻿using Cysharp.Threading.Tasks;
 using KoboldUi.Interfaces;
-using KoboldUi.UiAction.Impl.Common;
 using KoboldUi.Utils;
 using KoboldUi.Windows;
 using KoboldUi.WindowsStack;
@@ -29,34 +27,23 @@ namespace KoboldUi.UiAction.Impl.Service
             _windowToOpen = null;
         }
 
-        private UniTask OpenWindow()
+        private async UniTask OpenWindow()
         {
-            var actionsQueue = new Queue<IUiAction>();
             var isNextWindowPopUp = _windowToOpen is IPopUp;
             if (!_windowsStackHolder.IsEmpty)
             {
                 var currentWindow = _windowsStackHolder.CurrentWindow;
                 var newState = isNextWindowPopUp ? EWindowState.NonFocused : EWindowState.Closed;
-                actionsQueue.Enqueue(currentWindow.SetState(newState));
+                await currentWindow.SetState(newState).Start();
             }
 
             if (!_windowToOpen.IsInitialized)
-                actionsQueue.Enqueue(_windowToOpen.WaitInitialization());
+                await _windowToOpen.WaitInitialization().Start();
 
-            var callbackAction = new SimpleCallbackAction();
-            callbackAction.Setup(() =>
-            {
-                WindowsOrdersManager.HandleWindowAppear(_windowsStackHolder.Stack, _windowToOpen);
-                _windowsStackHolder.Push(_windowToOpen);
-            });
-            actionsQueue.Enqueue(callbackAction);
+            WindowsOrdersManager.HandleWindowAppear(_windowsStackHolder.Stack, _windowToOpen);
+            _windowsStackHolder.Push(_windowToOpen);
 
-            actionsQueue.Enqueue(_windowToOpen.SetState(EWindowState.Active));
-
-            var sequenceAction = new SequenceAction();
-            sequenceAction.Setup(actionsQueue);
-
-            return sequenceAction.Start();
+            await _windowToOpen.SetState(EWindowState.Active).Start();
         }
     }
 }

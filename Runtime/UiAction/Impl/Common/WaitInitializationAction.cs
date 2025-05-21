@@ -29,7 +29,6 @@ namespace KoboldUi.UiAction.Impl.Common
 
         public void Dispose()
         {
-            // Cancel the ongoing wait operation
             _linkedTokenSource?.Cancel();
             _linkedTokenSource?.Dispose();
             _linkedTokenSource = null;

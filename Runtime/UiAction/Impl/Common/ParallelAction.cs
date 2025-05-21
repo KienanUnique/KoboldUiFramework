@@ -13,8 +13,10 @@ namespace KoboldUi.UiAction.Impl.Common
         }
         public UniTask Start()
         {
-            var tasks = new List<UniTask>();
+            if (_actions.Count == 0)
+                return UniTask.CompletedTask;
             
+            var tasks = new List<UniTask>();
             foreach (var uiAction in _actions) 
                 tasks.Add(uiAction.Start());
             
