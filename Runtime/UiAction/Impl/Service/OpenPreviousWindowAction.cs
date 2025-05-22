@@ -1,22 +1,36 @@
 ﻿using Cysharp.Threading.Tasks;
+using KoboldUi.UiAction.Pool;
 using KoboldUi.Utils;
 using KoboldUi.Windows;
 using KoboldUi.WindowsStack;
 
 namespace KoboldUi.UiAction.Impl.Service
 {
-    public class OpenPreviousWindow : IUiAction
+    public class OpenPreviousWindowAction : AUiAction
     {
+        private readonly IWindowsStackHolder _windowsStackHolder;
+        
         private IWindow _windowToOpen;
-        private IWindowsStackHolder _windowsStackHolder;
 
-        public void Setup(IWindowsStackHolder windowsStackHolder)
+        public OpenPreviousWindowAction(
+            IUiActionsPool pool, 
+            IWindowsStackHolder windowsStackHolder
+        ) : base(pool)
         {
             _windowsStackHolder = windowsStackHolder;
-            _windowToOpen = windowsStackHolder.CurrentWindow;
         }
 
-        public UniTask Start()
+        public void Setup()
+        {
+            _windowToOpen = _windowsStackHolder.CurrentWindow;
+        }
+
+        public override void Dispose()
+        {
+            _windowToOpen = null;
+        }
+
+        protected override UniTask HandleStart()
         {
             if (_windowToOpen == null || _windowsStackHolder.IsEmpty || _windowsStackHolder.CurrentWindow != _windowToOpen)
                 return UniTask.CompletedTask;
@@ -26,9 +40,6 @@ namespace KoboldUi.UiAction.Impl.Service
             return action.Start();
         }
 
-        public void Dispose()
-        {
-            // TODO release managed resources here
-        }
+        protected override void ReturnToPool() => Pool.ReturnAction(this);
     }
 }

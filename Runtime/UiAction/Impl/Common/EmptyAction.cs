@@ -1,16 +1,15 @@
 using Cysharp.Threading.Tasks;
+using KoboldUi.UiAction.Pool;
 
 namespace KoboldUi.UiAction.Impl.Common
 {
-    public class EmptyAction : IUiAction
+    public class EmptyAction : AUiAction
     {
-        public UniTask Start()
+        public EmptyAction(IUiActionsPool pool) : base(pool)
         {
-            return UniTask.CompletedTask;
         }
 
-        public void Dispose()
-        {
-        }
+        protected override UniTask HandleStart() => UniTask.CompletedTask;
+        protected override void ReturnToPool() => Pool.ReturnAction(this);
     }
 }

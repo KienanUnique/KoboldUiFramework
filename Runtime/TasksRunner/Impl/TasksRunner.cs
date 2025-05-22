@@ -33,15 +33,12 @@ namespace KoboldUi.TasksRunner.Impl
                 {
                     try
                     {
+                        UnityEngine.Debug.Log($"Running action {action.GetType().Name}");
                         await action.Start();
                     }
                     catch (Exception e)
                     {
                         UnityEngine.Debug.LogError($"[Kobold Ui {nameof(TaskRunner)}] | Error executing UI action: {e}");
-                    }
-                    finally
-                    {
-                        action.Dispose();
                     }
                 }
             }
@@ -53,6 +50,10 @@ namespace KoboldUi.TasksRunner.Impl
                 {
                     StartProcessing().Forget();
                 }
+                else
+                {
+                    UnityEngine.Debug.Log($"Tasks runner stopped");
+                }
             }
         }
 
@@ -61,10 +62,8 @@ namespace KoboldUi.TasksRunner.Impl
             _cancellationTokenSource.Cancel();
             _cancellationTokenSource.Dispose();
             
-            while (_actionQueue.TryDequeue(out var action))
-            {
+            while (_actionQueue.TryDequeue(out var action)) 
                 action.Dispose();
-            }
         }
     }
 }

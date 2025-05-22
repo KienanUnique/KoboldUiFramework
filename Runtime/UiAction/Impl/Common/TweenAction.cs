@@ -1,16 +1,15 @@
 using Cysharp.Threading.Tasks;
 using DG.Tweening;
+using KoboldUi.UiAction.Pool;
 
 namespace KoboldUi.UiAction.Impl.Common
 {
-    public class TweenAction : IUiAction
+    public class TweenAction : AUiAction
     {
         private Tween _tween;
 
-        public UniTask Start()
+        public TweenAction(IUiActionsPool pool) : base(pool)
         {
-            _tween.Play();
-            return _tween.ToUniTask();
         }
 
         public void Setup(Tween tween)
@@ -19,7 +18,15 @@ namespace KoboldUi.UiAction.Impl.Common
             _tween = tween;
         }
 
-        public void Dispose()
+        protected override UniTask HandleStart()
+        {
+            _tween.Play();
+            return _tween.ToUniTask();
+        }
+        
+        protected override void ReturnToPool() => Pool.ReturnAction(this);
+
+        public override void Dispose()
         {
             _tween?.Kill();
             _tween = null;

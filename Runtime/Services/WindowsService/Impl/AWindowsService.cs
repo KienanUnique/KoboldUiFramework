@@ -7,6 +7,8 @@ using KoboldUi.TasksRunner.Impl;
 using KoboldUi.UiAction;
 using KoboldUi.UiAction.Impl.Common;
 using KoboldUi.UiAction.Impl.Service;
+using KoboldUi.UiAction.Pool;
+using KoboldUi.UiAction.Pool.Impl;
 using KoboldUi.Utils;
 using KoboldUi.Windows;
 using KoboldUi.WindowsStack;
@@ -19,6 +21,7 @@ namespace KoboldUi.Services.WindowsService.Impl
     {
         private readonly ITasksRunner _tasksRunner = new TaskRunner();
         private readonly IWindowsStackHolder _windowsStackHolder = new WindowsStackHolder();
+        private readonly IUiActionsPool _uiActionsPool;
 
         private readonly DiContainer _diContainer;
 
@@ -27,35 +30,33 @@ namespace KoboldUi.Services.WindowsService.Impl
         protected AWindowsService(DiContainer diContainer)
         {
             _diContainer = diContainer;
+            _uiActionsPool = new UiActionsPool(_windowsStackHolder);
         }
 
         public bool IsOpened<TWindow>() where TWindow : IWindow => _windowsStackHolder.IsOpened<TWindow>();
 
         public void OpenWindow<TWindow>(Action onComplete) where TWindow : IWindow
         {
-            var openAction = new OpenWindowAction();
             var nextWindow = _diContainer.Resolve(typeof(TWindow)) as IWindow;
-            openAction.Setup(nextWindow, _windowsStackHolder);
+            _uiActionsPool.GetAction(out OpenWindowAction openAction, nextWindow);
             _tasksRunner.AddToQueue(openAction);
 
             if (onComplete == null)
                 return;
             
-            var callbackAction = new SimpleCallbackAction();
-            callbackAction.Setup(onComplete);
+            _uiActionsPool.GetAction(out SimpleCallbackAction callbackAction, onComplete);
             _tasksRunner.AddToQueue(callbackAction);
         }
 
         public void BackWindow(Action onComplete)
         {
-            var tryBackWindowAction = new TryBackWindowAction();
-            tryBackWindowAction.Setup(_windowsStackHolder);
+            _uiActionsPool.GetAction(out TryBackWindowAction tryBackWindowAction);
             _tasksRunner.AddToQueue(tryBackWindowAction);
 
             if (onComplete == null) 
                 return;
             
-            var callbackAction = new SimpleCallbackAction();
+            _uiActionsPool.GetAction(out SimpleCallbackAction callbackAction, onComplete);
             callbackAction.Setup(onComplete);
             _tasksRunner.AddToQueue(callbackAction);
         }

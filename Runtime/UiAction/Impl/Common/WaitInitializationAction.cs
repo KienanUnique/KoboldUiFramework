@@ -1,20 +1,34 @@
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using KoboldUi.UiAction.Pool;
 using KoboldUi.Windows;
 
 namespace KoboldUi.UiAction.Impl.Common
 {
-    public class WaitInitializationAction : IUiAction
+    public class WaitInitializationAction : AUiAction
     {
         private AWindowBase _window;
         private CancellationTokenSource _linkedTokenSource;
+
+        public WaitInitializationAction(IUiActionsPool pool) : base(pool)
+        {
+        }
 
         public void Setup(AWindowBase window)
         {
             _window = window;
         }
 
-        public UniTask Start()
+        public override void Dispose()
+        {
+            _linkedTokenSource?.Cancel();
+            _linkedTokenSource?.Dispose();
+            _linkedTokenSource = null;
+        
+            _window = null;
+        }
+
+        protected override UniTask HandleStart()
         {
             if (_window.IsInitialized)
                 return UniTask.CompletedTask;
@@ -27,13 +41,6 @@ namespace KoboldUi.UiAction.Impl.Common
                 cancellationToken: _linkedTokenSource.Token);
         }
 
-        public void Dispose()
-        {
-            _linkedTokenSource?.Cancel();
-            _linkedTokenSource?.Dispose();
-            _linkedTokenSource = null;
-        
-            _window = null;
-        }
+        protected override void ReturnToPool() => Pool.ReturnAction(this);
     }
 }

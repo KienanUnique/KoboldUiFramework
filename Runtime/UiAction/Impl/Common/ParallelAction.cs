@@ -1,17 +1,25 @@
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
+using KoboldUi.UiAction.Pool;
 
 namespace KoboldUi.UiAction.Impl.Common
 {
-    public class ParallelAction : IUiAction
+    public class ParallelAction : AUiAction
     {
         private IReadOnlyList<IUiAction> _actions;
+
+        public ParallelAction(IUiActionsPool pool) : base(pool)
+        {
+        }
 
         public void Setup(IReadOnlyList<IUiAction> actions)
         {
             _actions = actions;
         }
-        public UniTask Start()
+        
+        protected override void ReturnToPool() => Pool.ReturnAction(this);
+        
+        protected override UniTask HandleStart()
         {
             if (_actions.Count == 0)
                 return UniTask.CompletedTask;
@@ -23,7 +31,7 @@ namespace KoboldUi.UiAction.Impl.Common
             return UniTask.WhenAll(tasks);
         }
 
-        public void Dispose()
+        public override void Dispose()
         {
             foreach (var uiAction in _actions) 
                 uiAction.Dispose();

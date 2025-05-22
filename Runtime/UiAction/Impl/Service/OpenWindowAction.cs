@@ -1,31 +1,42 @@
 ﻿using Cysharp.Threading.Tasks;
 using KoboldUi.Interfaces;
+using KoboldUi.UiAction.Pool;
 using KoboldUi.Utils;
 using KoboldUi.Windows;
 using KoboldUi.WindowsStack;
 
 namespace KoboldUi.UiAction.Impl.Service
 {
-    public class OpenWindowAction : IUiAction
+    public class OpenWindowAction : AUiAction
     {
+        private readonly IWindowsStackHolder _windowsStackHolder;
+        
         private IWindow _windowToOpen;
-        private IWindowsStackHolder _windowsStackHolder;
 
-        public void Setup(IWindow windowToOpen, IWindowsStackHolder windowsStackHolder)
+        public OpenWindowAction(
+            IUiActionsPool pool, 
+            IWindowsStackHolder windowsStackHolder
+        ) : base(pool)
         {
-            _windowToOpen = windowToOpen;
             _windowsStackHolder = windowsStackHolder;
         }
 
-        public UniTask Start()
+        public void Setup(IWindow windowToOpen)
         {
-            return _windowsStackHolder.IsOpened(_windowToOpen) ? UniTask.CompletedTask : OpenWindow();
+            _windowToOpen = windowToOpen;
         }
 
-        public void Dispose()
+        public override void Dispose()
         {
             _windowToOpen = null;
         }
+
+        protected override UniTask HandleStart()
+        {
+            return _windowsStackHolder.IsOpened(_windowToOpen) ? UniTask.CompletedTask : OpenWindow();
+        }
+        
+        protected override void ReturnToPool() => Pool.ReturnAction(this);
 
         private async UniTask OpenWindow()
         {

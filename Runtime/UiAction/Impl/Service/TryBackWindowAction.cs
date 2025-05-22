@@ -1,23 +1,37 @@
 ﻿using Cysharp.Threading.Tasks;
 using KoboldUi.Interfaces;
+using KoboldUi.UiAction.Pool;
 using KoboldUi.Utils;
 using KoboldUi.Windows;
 using KoboldUi.WindowsStack;
 
 namespace KoboldUi.UiAction.Impl.Service
 {
-    public class TryBackWindowAction: IUiAction
+    public class TryBackWindowAction: AUiAction
     {
+        private readonly IWindowsStackHolder _windowsStackHolder;
+        
         private IWindow _windowToClose;
-        private IWindowsStackHolder _windowsStackHolder;
 
-        public void Setup(IWindowsStackHolder windowsStackHolder)
+        public TryBackWindowAction(
+            IUiActionsPool pool, 
+            IWindowsStackHolder windowsStackHolder
+        ) : base(pool)
         {
             _windowsStackHolder = windowsStackHolder;
-            _windowToClose = windowsStackHolder.CurrentWindow;
         }
 
-        public UniTask Start()
+        public void Setup()
+        {
+            _windowToClose = _windowsStackHolder.CurrentWindow;
+        }
+
+        public override void Dispose()
+        {
+            _windowToClose = null;
+        }
+
+        protected override UniTask HandleStart()
         {
             if (_windowToClose == null || _windowsStackHolder.IsEmpty || _windowsStackHolder.CurrentWindow != _windowToClose)
                 return UniTask.CompletedTask;
@@ -30,19 +44,15 @@ namespace KoboldUi.UiAction.Impl.Service
 
             return BackWindow(_windowsStackHolder.Pop());
         }
-
-        public void Dispose()
-        {
-            // TODO release managed resources here
-        }
+        
+        protected override void ReturnToPool() => Pool.ReturnAction(this);
 
         private async UniTask BackWindow(IWindow currentWindow)
         {
             await currentWindow.SetState(EWindowState.Closed).Start();
 
             WindowsOrdersManager.HandleWindowDisappear(_windowsStackHolder.Stack, currentWindow);
-            var openPreviousWindow = new OpenPreviousWindow();
-            openPreviousWindow.Setup(_windowsStackHolder);
+            Pool.GetAction(out OpenPreviousWindowAction openPreviousWindow);
 
             await openPreviousWindow.Start();
         }
