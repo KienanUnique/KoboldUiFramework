@@ -9,7 +9,14 @@ namespace KoboldUi.UiAction.Impl.Common
         {
         }
 
-        protected override UniTask HandleStart() => UniTask.CompletedTask;
-        protected override void ReturnToPool() => Pool.ReturnAction(this);
+        protected override UniTask HandleStart()
+        {
+            return UniTask.CompletedTask;
+        }
+
+        protected override void ReturnToPool()
+        {
+            Pool.ReturnAction(this);
+        }
     }
 }

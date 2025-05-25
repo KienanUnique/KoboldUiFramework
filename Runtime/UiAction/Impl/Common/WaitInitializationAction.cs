@@ -7,8 +7,8 @@ namespace KoboldUi.UiAction.Impl.Common
 {
     public class WaitInitializationAction : AUiAction
     {
-        private AWindowBase _window;
         private CancellationTokenSource _linkedTokenSource;
+        private AWindowBase _window;
 
         public WaitInitializationAction(IUiActionsPool pool) : base(pool)
         {
@@ -24,7 +24,7 @@ namespace KoboldUi.UiAction.Impl.Common
             _linkedTokenSource?.Cancel();
             _linkedTokenSource?.Dispose();
             _linkedTokenSource = null;
-        
+
             _window = null;
         }
 
@@ -32,10 +32,10 @@ namespace KoboldUi.UiAction.Impl.Common
         {
             if (_window.IsInitialized)
                 return UniTask.CompletedTask;
-            
+
             _linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(
                 _window.GetCancellationTokenOnDestroy());
-            
+
             return UniTask.WaitUntil(
                 () => _window.IsInitialized,
                 cancellationToken: _linkedTokenSource.Token);
@@ -46,9 +46,9 @@ namespace KoboldUi.UiAction.Impl.Common
             _linkedTokenSource?.Cancel();
             _linkedTokenSource?.Dispose();
             _linkedTokenSource = null;
-        
+
             _window = null;
-            
+
             Pool.ReturnAction(this);
         }
     }

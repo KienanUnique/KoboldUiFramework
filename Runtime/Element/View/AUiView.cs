@@ -11,13 +11,25 @@ namespace KoboldUi.Element.View
         {
         }
 
-        public virtual IUiAction Open(in IUiActionsPool pool) => OnOpen(pool);
+        public virtual IUiAction Open(in IUiActionsPool pool)
+        {
+            return OnOpen(pool);
+        }
 
-        public virtual IUiAction ReturnFocus(in IUiActionsPool pool) => OnReturnFocus(pool);
+        public virtual IUiAction ReturnFocus(in IUiActionsPool pool)
+        {
+            return OnReturnFocus(pool);
+        }
 
-        public virtual IUiAction RemoveFocus(in IUiActionsPool pool) => OnRemoveFocus(pool);
+        public virtual IUiAction RemoveFocus(in IUiActionsPool pool)
+        {
+            return OnRemoveFocus(pool);
+        }
 
-        public virtual IUiAction Close(in IUiActionsPool pool) => OnClose(pool);
+        public virtual IUiAction Close(in IUiActionsPool pool)
+        {
+            return OnClose(pool);
+        }
 
         public abstract void CloseInstantly();
 

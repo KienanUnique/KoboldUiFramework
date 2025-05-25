@@ -1,6 +1,5 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
-using KoboldUi.Element.View;
 using UnityEngine;
 using Zenject;
 
@@ -13,14 +12,8 @@ namespace KoboldUi.Collections.Base
         [SerializeField] protected Transform collectionContainer;
 
         [Inject] protected IInstantiator Instantiator;
-        
-        public abstract int Count { get; }
 
-        protected virtual void OnCreated(TView view)
-        {
-            view.SetParent(collectionContainer);
-            view.Appear();
-        }
+        public abstract int Count { get; }
 
         public abstract void Clear();
 
@@ -29,6 +22,12 @@ namespace KoboldUi.Collections.Base
         IEnumerator IEnumerable.GetEnumerator()
         {
             return GetEnumerator();
+        }
+
+        protected virtual void OnCreated(TView view)
+        {
+            view.SetParent(collectionContainer);
+            view.Appear();
         }
     }
 }

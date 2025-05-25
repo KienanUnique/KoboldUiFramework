@@ -17,7 +17,7 @@ namespace KoboldUi.UiAction.Pool
         void GetAction(out OpenPreviousWindowAction action);
         void GetAction(out OpenWindowAction action, IWindow windowToOpen);
         void GetAction(out TryBackWindowAction action);
-        
+
         void ReturnAction(EmptyAction action);
         void ReturnAction(ParallelAction action);
         void ReturnAction(SimpleCallbackAction action);

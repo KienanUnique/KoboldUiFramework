@@ -6,7 +6,7 @@ namespace KoboldUi.Collections.Base
     {
         public abstract void Appear();
         public abstract void Disappear();
-        
+
         public void SetParent(Transform parent)
         {
             transform.SetParent(parent);

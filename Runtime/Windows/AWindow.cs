@@ -4,7 +4,6 @@ using KoboldUi.Element.Controller.Impl;
 using KoboldUi.Element.View;
 using KoboldUi.Element.View.Impl;
 using KoboldUi.UiAction;
-using KoboldUi.UiAction.Impl.Common;
 using KoboldUi.UiAction.Pool;
 using KoboldUi.Utils;
 using UnityEngine;
@@ -18,9 +17,15 @@ namespace KoboldUi.Windows
         [SerializeField] private List<AnimatedEmptyView> animatedEmptyViews;
 
         private readonly List<IUIController> _childControllers = new();
+        private CanvasGroup _canvasGroup;
 
         private DiContainer _container;
-        private CanvasGroup _canvasGroup;
+
+        private void Awake()
+        {
+            _canvasGroup = GetComponent<CanvasGroup>();
+            _canvasGroup.interactable = false;
+        }
 
         public sealed override void InstallBindings(DiContainer container)
         {
@@ -50,13 +55,14 @@ namespace KoboldUi.Windows
             var actions = new List<IUiAction>();
 
             if (!IsInitialized)
-                Debug.LogError($"[Kobold Ui {nameof(AWindow)}] | {gameObject.name} is not initialized. Change State logic is invalid!");
-            
-            foreach (var controller in _childControllers) 
+                Debug.LogError(
+                    $"[Kobold Ui {nameof(AWindow)}] | {gameObject.name} is not initialized. Change State logic is invalid!");
+
+            foreach (var controller in _childControllers)
                 actions.Add(controller.SetState(state, pool));
 
-            pool.GetAction(out ParallelAction parallelAction, actions);
-            
+            pool.GetAction(out var parallelAction, actions);
+
             return parallelAction;
         }
 
@@ -76,16 +82,10 @@ namespace KoboldUi.Windows
             _container.InjectGameObject(gameObject);
 
             _childControllers.Add(controller);
-            
+
             viewInstance.Initialize();
             controller.Initialize();
             controller.CloseInstantly();
-        }
-
-        private void Awake()
-        {
-            _canvasGroup = GetComponent<CanvasGroup>();
-            _canvasGroup.interactable = false;
         }
 
         private void AddEmptyElements()

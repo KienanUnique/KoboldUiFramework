@@ -9,11 +9,11 @@ namespace KoboldUi.UiAction.Impl.Service
     public class OpenPreviousWindowAction : AUiAction
     {
         private readonly IWindowsStackHolder _windowsStackHolder;
-        
+
         private IWindow _windowToOpen;
 
         public OpenPreviousWindowAction(
-            IUiActionsPool pool, 
+            IUiActionsPool pool,
             IWindowsStackHolder windowsStackHolder
         ) : base(pool)
         {
@@ -32,7 +32,8 @@ namespace KoboldUi.UiAction.Impl.Service
 
         protected override UniTask HandleStart()
         {
-            if (_windowToOpen == null || _windowsStackHolder.IsEmpty || _windowsStackHolder.CurrentWindow != _windowToOpen)
+            if (_windowToOpen == null || _windowsStackHolder.IsEmpty ||
+                _windowsStackHolder.CurrentWindow != _windowToOpen)
                 return UniTask.CompletedTask;
 
             var currentWindow = _windowsStackHolder.CurrentWindow;
@@ -40,6 +41,9 @@ namespace KoboldUi.UiAction.Impl.Service
             return action.Start();
         }
 
-        protected override void ReturnToPool() => Pool.ReturnAction(this);
+        protected override void ReturnToPool()
+        {
+            Pool.ReturnAction(this);
+        }
     }
 }

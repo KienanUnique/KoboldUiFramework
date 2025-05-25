@@ -2,7 +2,6 @@
 using DG.Tweening;
 using KoboldUi.Element.Animations.Parameters.Impl;
 using KoboldUi.UiAction;
-using KoboldUi.UiAction.Impl.Common;
 using KoboldUi.UiAction.Pool;
 using UnityEngine;
 
@@ -10,8 +9,8 @@ namespace KoboldUi.Element.Animations.Impl
 {
     public class ScaleAnimation : AUiAnimation<ScaleAnimationParameters>
     {
-        private readonly Vector3 _disappearScale = Vector3.zero;
         private readonly Vector3 _appearScale = Vector3.one;
+        private readonly Vector3 _disappearScale = Vector3.zero;
 
         private Tween _currentAnimation;
 
@@ -29,7 +28,7 @@ namespace KoboldUi.Element.Animations.Impl
                 .SetUpdate(true)
                 .SetLink(gameObject);
 
-            pool.GetAction(out TweenAction tweenAction, _currentAnimation);
+            pool.GetAction(out var tweenAction, _currentAnimation);
             return tweenAction;
         }
 
@@ -43,7 +42,7 @@ namespace KoboldUi.Element.Animations.Impl
                 .SetLink(gameObject)
                 .OnComplete(callback.Invoke);
 
-            pool.GetAction(out TweenAction tweenAction, _currentAnimation);
+            pool.GetAction(out var tweenAction, _currentAnimation);
             return tweenAction;
         }
     }

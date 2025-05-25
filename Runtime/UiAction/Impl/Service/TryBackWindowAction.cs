@@ -7,14 +7,14 @@ using KoboldUi.WindowsStack;
 
 namespace KoboldUi.UiAction.Impl.Service
 {
-    public class TryBackWindowAction: AUiAction
+    public class TryBackWindowAction : AUiAction
     {
         private readonly IWindowsStackHolder _windowsStackHolder;
-        
+
         private IWindow _windowToClose;
 
         public TryBackWindowAction(
-            IUiActionsPool pool, 
+            IUiActionsPool pool,
             IWindowsStackHolder windowsStackHolder
         ) : base(pool)
         {
@@ -33,7 +33,8 @@ namespace KoboldUi.UiAction.Impl.Service
 
         protected override UniTask HandleStart()
         {
-            if (_windowToClose == null || _windowsStackHolder.IsEmpty || _windowsStackHolder.CurrentWindow != _windowToClose)
+            if (_windowToClose == null || _windowsStackHolder.IsEmpty ||
+                _windowsStackHolder.CurrentWindow != _windowToClose)
                 return UniTask.CompletedTask;
 
             var currentWindow = _windowsStackHolder.CurrentWindow;
@@ -44,8 +45,11 @@ namespace KoboldUi.UiAction.Impl.Service
 
             return BackWindow(_windowsStackHolder.Pop());
         }
-        
-        protected override void ReturnToPool() => Pool.ReturnAction(this);
+
+        protected override void ReturnToPool()
+        {
+            Pool.ReturnAction(this);
+        }
 
         private async UniTask BackWindow(IWindow currentWindow)
         {

@@ -13,35 +13,58 @@ namespace KoboldUi.UiAction.Pool.Impl
     public class UiActionsPool : IUiActionsPool, IDisposable, IInitializable
     {
         private const int DEFAULT_POOL_SIZE = 2;
-        
+
         private readonly IWindowsStackHolder _windowsStackHolder;
-        
-        private ObjectPool<EmptyAction> _emptyActionPool; 
-        private ObjectPool<ParallelAction> _parallelActionPool; 
-        private ObjectPool<SimpleCallbackAction> _simpleCallbackActionPool; 
-        private ObjectPool<TweenAction> _tweenActionPool; 
-        private ObjectPool<WaitInitializationAction> _waitInitializationActionPool; 
-        private ObjectPool<OpenPreviousWindowAction> _openPreviousWindowActionPool; 
-        private ObjectPool<OpenWindowAction> _openWindowActionPool; 
+
+        private ObjectPool<EmptyAction> _emptyActionPool;
+        private ObjectPool<OpenPreviousWindowAction> _openPreviousWindowActionPool;
+        private ObjectPool<OpenWindowAction> _openWindowActionPool;
+        private ObjectPool<ParallelAction> _parallelActionPool;
+        private ObjectPool<SimpleCallbackAction> _simpleCallbackActionPool;
         private ObjectPool<TryBackWindowAction> _tryBackWindowActionPool;
+        private ObjectPool<TweenAction> _tweenActionPool;
+        private ObjectPool<WaitInitializationAction> _waitInitializationActionPool;
 
         public UiActionsPool(IWindowsStackHolder windowsStackHolder)
         {
             _windowsStackHolder = windowsStackHolder;
         }
 
+
+        public void Dispose()
+        {
+            _emptyActionPool?.Dispose();
+            _parallelActionPool?.Dispose();
+            _simpleCallbackActionPool?.Dispose();
+            _tweenActionPool?.Dispose();
+            _waitInitializationActionPool?.Dispose();
+            _openPreviousWindowActionPool?.Dispose();
+            _openWindowActionPool?.Dispose();
+            _tryBackWindowActionPool?.Dispose();
+        }
+
         public void Initialize()
         {
-            _emptyActionPool = new ObjectPool<EmptyAction>(() => new EmptyAction(this),  defaultCapacity: DEFAULT_POOL_SIZE);
-            _parallelActionPool = new ObjectPool<ParallelAction>(() => new ParallelAction(this),  defaultCapacity: DEFAULT_POOL_SIZE);
-            _simpleCallbackActionPool = new ObjectPool<SimpleCallbackAction>(() => new SimpleCallbackAction(this),  defaultCapacity: DEFAULT_POOL_SIZE);
-            _tweenActionPool = new ObjectPool<TweenAction>(() => new TweenAction(this),  defaultCapacity: DEFAULT_POOL_SIZE);
-            _waitInitializationActionPool = new ObjectPool<WaitInitializationAction>(() => new WaitInitializationAction(this),  defaultCapacity: DEFAULT_POOL_SIZE);
-            _openPreviousWindowActionPool = new ObjectPool<OpenPreviousWindowAction>(() => new OpenPreviousWindowAction(this, _windowsStackHolder),  defaultCapacity: DEFAULT_POOL_SIZE);
-            _openWindowActionPool = new ObjectPool<OpenWindowAction>(() => new OpenWindowAction(this, _windowsStackHolder),  defaultCapacity: DEFAULT_POOL_SIZE);
-            _tryBackWindowActionPool = new ObjectPool<TryBackWindowAction>(() => new TryBackWindowAction(this, _windowsStackHolder),  defaultCapacity: DEFAULT_POOL_SIZE);
+            _emptyActionPool =
+                new ObjectPool<EmptyAction>(() => new EmptyAction(this), defaultCapacity: DEFAULT_POOL_SIZE);
+            _parallelActionPool =
+                new ObjectPool<ParallelAction>(() => new ParallelAction(this), defaultCapacity: DEFAULT_POOL_SIZE);
+            _simpleCallbackActionPool = new ObjectPool<SimpleCallbackAction>(() => new SimpleCallbackAction(this),
+                defaultCapacity: DEFAULT_POOL_SIZE);
+            _tweenActionPool =
+                new ObjectPool<TweenAction>(() => new TweenAction(this), defaultCapacity: DEFAULT_POOL_SIZE);
+            _waitInitializationActionPool =
+                new ObjectPool<WaitInitializationAction>(() => new WaitInitializationAction(this),
+                    defaultCapacity: DEFAULT_POOL_SIZE);
+            _openPreviousWindowActionPool = new ObjectPool<OpenPreviousWindowAction>(
+                () => new OpenPreviousWindowAction(this, _windowsStackHolder), defaultCapacity: DEFAULT_POOL_SIZE);
+            _openWindowActionPool =
+                new ObjectPool<OpenWindowAction>(() => new OpenWindowAction(this, _windowsStackHolder),
+                    defaultCapacity: DEFAULT_POOL_SIZE);
+            _tryBackWindowActionPool = new ObjectPool<TryBackWindowAction>(
+                () => new TryBackWindowAction(this, _windowsStackHolder), defaultCapacity: DEFAULT_POOL_SIZE);
         }
-        
+
         #region GetActions
 
         public void GetAction(out EmptyAction action)
@@ -136,18 +159,5 @@ namespace KoboldUi.UiAction.Pool.Impl
         }
 
         #endregion
-
-
-        public void Dispose()
-        {
-            _emptyActionPool?.Dispose();
-            _parallelActionPool?.Dispose();
-            _simpleCallbackActionPool?.Dispose();
-            _tweenActionPool?.Dispose();
-            _waitInitializationActionPool?.Dispose();
-            _openPreviousWindowActionPool?.Dispose();
-            _openWindowActionPool?.Dispose();
-            _tryBackWindowActionPool?.Dispose();
-        }
     }
 }

@@ -16,7 +16,7 @@ namespace KoboldUi.UiAction.Impl.Common
         {
             _actions = actions;
         }
-        
+
         protected override void ReturnToPool()
         {
             _actions = null;
@@ -27,19 +27,19 @@ namespace KoboldUi.UiAction.Impl.Common
         {
             if (_actions.Count == 0)
                 return UniTask.CompletedTask;
-            
+
             var tasks = new List<UniTask>();
-            foreach (var uiAction in _actions) 
+            foreach (var uiAction in _actions)
                 tasks.Add(uiAction.Start());
-            
+
             return UniTask.WhenAll(tasks);
         }
 
         public override void Dispose()
         {
-            foreach (var uiAction in _actions) 
+            foreach (var uiAction in _actions)
                 uiAction.Dispose();
-            
+
             _actions = null;
         }
     }

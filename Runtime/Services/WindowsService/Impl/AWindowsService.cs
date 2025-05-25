@@ -1,15 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using Cysharp.Threading.Tasks;
-using KoboldUi.Interfaces;
 using KoboldUi.TasksRunner;
 using KoboldUi.TasksRunner.Impl;
-using KoboldUi.UiAction;
-using KoboldUi.UiAction.Impl.Common;
 using KoboldUi.UiAction.Impl.Service;
 using KoboldUi.UiAction.Pool;
 using KoboldUi.UiAction.Pool.Impl;
-using KoboldUi.Utils;
 using KoboldUi.Windows;
 using KoboldUi.WindowsStack;
 using KoboldUi.WindowsStack.Impl;
@@ -19,13 +13,10 @@ namespace KoboldUi.Services.WindowsService.Impl
 {
     public abstract class AWindowsService : IWindowsService, IDisposable
     {
-        private readonly ITasksRunner _tasksRunner = new TaskRunner();
-        private readonly IWindowsStackHolder _windowsStackHolder = new WindowsStackHolder();
-        private readonly IUiActionsPool _uiActionsPool;
-
         private readonly DiContainer _diContainer;
-
-        public IWindow CurrentWindow => _windowsStackHolder.CurrentWindow;
+        private readonly ITasksRunner _tasksRunner = new TaskRunner();
+        private readonly IUiActionsPool _uiActionsPool;
+        private readonly IWindowsStackHolder _windowsStackHolder = new WindowsStackHolder();
 
         protected AWindowsService(DiContainer diContainer)
         {
@@ -33,34 +24,6 @@ namespace KoboldUi.Services.WindowsService.Impl
             var uiActionsPool = new UiActionsPool(_windowsStackHolder);
             uiActionsPool.Initialize();
             _uiActionsPool = uiActionsPool;
-        }
-
-        public bool IsOpened<TWindow>() where TWindow : IWindow => _windowsStackHolder.IsOpened<TWindow>();
-
-        public void OpenWindow<TWindow>(Action onComplete) where TWindow : IWindow
-        {
-            var nextWindow = _diContainer.Resolve(typeof(TWindow)) as IWindow;
-            _uiActionsPool.GetAction(out OpenWindowAction openAction, nextWindow);
-            _tasksRunner.AddToQueue(openAction);
-
-            if (onComplete == null)
-                return;
-            
-            _uiActionsPool.GetAction(out SimpleCallbackAction callbackAction, onComplete);
-            _tasksRunner.AddToQueue(callbackAction);
-        }
-
-        public void BackWindow(Action onComplete)
-        {
-            _uiActionsPool.GetAction(out TryBackWindowAction tryBackWindowAction);
-            _tasksRunner.AddToQueue(tryBackWindowAction);
-
-            if (onComplete == null) 
-                return;
-            
-            _uiActionsPool.GetAction(out SimpleCallbackAction callbackAction, onComplete);
-            callbackAction.Setup(onComplete);
-            _tasksRunner.AddToQueue(callbackAction);
         }
 
         // public void TryBackToWindow<TWindow>(Action<bool> onComplete, EAnimationPolitic previousWindowsPolitic)
@@ -183,6 +146,39 @@ namespace KoboldUi.Services.WindowsService.Impl
         public void Dispose()
         {
             _tasksRunner?.Dispose();
+        }
+
+        public IWindow CurrentWindow => _windowsStackHolder.CurrentWindow;
+
+        public bool IsOpened<TWindow>() where TWindow : IWindow
+        {
+            return _windowsStackHolder.IsOpened<TWindow>();
+        }
+
+        public void OpenWindow<TWindow>(Action onComplete) where TWindow : IWindow
+        {
+            var nextWindow = _diContainer.Resolve(typeof(TWindow)) as IWindow;
+            _uiActionsPool.GetAction(out var openAction, nextWindow);
+            _tasksRunner.AddToQueue(openAction);
+
+            if (onComplete == null)
+                return;
+
+            _uiActionsPool.GetAction(out var callbackAction, onComplete);
+            _tasksRunner.AddToQueue(callbackAction);
+        }
+
+        public void BackWindow(Action onComplete)
+        {
+            _uiActionsPool.GetAction(out TryBackWindowAction tryBackWindowAction);
+            _tasksRunner.AddToQueue(tryBackWindowAction);
+
+            if (onComplete == null)
+                return;
+
+            _uiActionsPool.GetAction(out var callbackAction, onComplete);
+            callbackAction.Setup(onComplete);
+            _tasksRunner.AddToQueue(callbackAction);
         }
     }
 }

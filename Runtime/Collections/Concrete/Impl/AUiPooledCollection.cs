@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using KoboldUi.Collections.Base;
-using KoboldUi.Element.View;
 using UnityEngine;
 
 namespace KoboldUi.Collections.Concrete.Impl
@@ -39,7 +38,10 @@ namespace KoboldUi.Collections.Concrete.Impl
             _pool.Add(view);
         }
 
-        public override IEnumerator<TView> GetEnumerator() => _views.GetEnumerator();
+        public override IEnumerator<TView> GetEnumerator()
+        {
+            return _views.GetEnumerator();
+        }
 
         public override void Clear()
         {

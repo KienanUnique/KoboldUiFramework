@@ -10,11 +10,11 @@ namespace KoboldUi.UiAction.Impl.Service
     public class OpenWindowAction : AUiAction
     {
         private readonly IWindowsStackHolder _windowsStackHolder;
-        
+
         private IWindow _windowToOpen;
 
         public OpenWindowAction(
-            IUiActionsPool pool, 
+            IUiActionsPool pool,
             IWindowsStackHolder windowsStackHolder
         ) : base(pool)
         {
@@ -35,8 +35,11 @@ namespace KoboldUi.UiAction.Impl.Service
         {
             return _windowsStackHolder.IsOpened(_windowToOpen) ? UniTask.CompletedTask : OpenWindow();
         }
-        
-        protected override void ReturnToPool() => Pool.ReturnAction(this);
+
+        protected override void ReturnToPool()
+        {
+            Pool.ReturnAction(this);
+        }
 
         private async UniTask OpenWindow()
         {

@@ -3,7 +3,7 @@ using KoboldUi.UiAction.Pool;
 
 namespace KoboldUi.UiAction.Impl
 {
-    public abstract class AUiAction : IUiAction 
+    public abstract class AUiAction : IUiAction
     {
         protected readonly IUiActionsPool Pool;
 
@@ -11,8 +11,6 @@ namespace KoboldUi.UiAction.Impl
         {
             Pool = pool;
         }
-
-        protected abstract UniTask HandleStart();
 
         public async UniTask Start()
         {
@@ -23,6 +21,8 @@ namespace KoboldUi.UiAction.Impl
         public virtual void Dispose()
         {
         }
+
+        protected abstract UniTask HandleStart();
 
         protected abstract void ReturnToPool();
     }

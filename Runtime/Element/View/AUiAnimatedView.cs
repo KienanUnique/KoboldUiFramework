@@ -10,19 +10,29 @@ namespace KoboldUi.Element.View
         [SerializeField] private AUiAnimationBase openAnimation;
         [SerializeField] private AUiAnimationBase closeAnimation;
 
-        public sealed override IUiAction Open(in IUiActionsPool pool) 
-            => openAnimation == null ? base.Open(pool) : openAnimation.Appear(pool);
+        public sealed override IUiAction Open(in IUiActionsPool pool)
+        {
+            return openAnimation == null ? base.Open(pool) : openAnimation.Appear(pool);
+        }
 
-        public sealed override IUiAction ReturnFocus(in IUiActionsPool pool) 
-            => base.ReturnFocus(pool);
-        
-        public sealed override IUiAction RemoveFocus(in IUiActionsPool pool) 
-            => base.RemoveFocus(pool);
+        public sealed override IUiAction ReturnFocus(in IUiActionsPool pool)
+        {
+            return base.ReturnFocus(pool);
+        }
 
-        public sealed override IUiAction Close(in IUiActionsPool pool) 
-            => closeAnimation == null ? base.Close(pool) : closeAnimation.Disappear(pool);
-        
+        public sealed override IUiAction RemoveFocus(in IUiActionsPool pool)
+        {
+            return base.RemoveFocus(pool);
+        }
+
+        public sealed override IUiAction Close(in IUiActionsPool pool)
+        {
+            return closeAnimation == null ? base.Close(pool) : closeAnimation.Disappear(pool);
+        }
+
         public sealed override void CloseInstantly()
-            => closeAnimation.DisappearInstantly();
+        {
+            closeAnimation.DisappearInstantly();
+        }
     }
 }

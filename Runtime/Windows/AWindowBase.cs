@@ -1,5 +1,4 @@
 ﻿using KoboldUi.UiAction;
-using KoboldUi.UiAction.Impl.Common;
 using KoboldUi.UiAction.Pool;
 using KoboldUi.Utils;
 using UnityEngine;
@@ -19,12 +18,13 @@ namespace KoboldUi.Windows
 
         public IUiAction WaitInitialization(in IUiActionsPool pool)
         {
-            pool.GetAction(out WaitInitializationAction action, this);
+            pool.GetAction(out var action, this);
             return action;
         }
 
-        public abstract void InstallBindings(DiContainer container);
         public abstract IUiAction SetState(EWindowState state, in IUiActionsPool pool);
         public abstract void ApplyOrder(int order);
+
+        public abstract void InstallBindings(DiContainer container);
     }
 }

@@ -2,7 +2,6 @@
 using DG.Tweening;
 using KoboldUi.Element.Animations.Parameters.Impl;
 using KoboldUi.UiAction;
-using KoboldUi.UiAction.Impl.Common;
 using KoboldUi.UiAction.Pool;
 using UnityEngine;
 
@@ -13,11 +12,16 @@ namespace KoboldUi.Element.Animations.Impl
     {
         private const float FADE_DISAPPEAR_VALUE = 0f;
         private const float FADE_APPEAR_VALUE = 1f;
-        
-        private Tween _currentAnimation;
-        
+
         private CanvasGroup _canvasGroup;
-        
+
+        private Tween _currentAnimation;
+
+        private void Awake()
+        {
+            _canvasGroup = GetComponent<CanvasGroup>();
+        }
+
         protected override void PrepareToAppear()
         {
             _canvasGroup.alpha = FADE_DISAPPEAR_VALUE;
@@ -32,7 +36,7 @@ namespace KoboldUi.Element.Animations.Impl
                 .SetUpdate(true)
                 .SetLink(_canvasGroup.gameObject);
 
-            pool.GetAction(out TweenAction tweenAction, _currentAnimation);
+            pool.GetAction(out var tweenAction, _currentAnimation);
             return tweenAction;
         }
 
@@ -45,14 +49,9 @@ namespace KoboldUi.Element.Animations.Impl
                 .SetUpdate(true)
                 .SetLink(_canvasGroup.gameObject)
                 .OnComplete(callback.Invoke);
-            
-            pool.GetAction(out TweenAction tweenAction, _currentAnimation);
-            return tweenAction;
-        }
 
-        private void Awake()
-        {
-            _canvasGroup = GetComponent<CanvasGroup>();
+            pool.GetAction(out var tweenAction, _currentAnimation);
+            return tweenAction;
         }
     }
 }

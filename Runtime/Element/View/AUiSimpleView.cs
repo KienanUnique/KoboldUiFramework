@@ -10,7 +10,7 @@ namespace KoboldUi.Element.View
             gameObject.SetActive(true);
             return base.Open(pool);
         }
-        
+
         public sealed override IUiAction ReturnFocus(in IUiActionsPool pool)
         {
             return base.ReturnFocus(pool);

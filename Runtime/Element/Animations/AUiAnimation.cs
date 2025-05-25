@@ -18,7 +18,8 @@ namespace KoboldUi.Element.Animations
 #if KOBOLD_ALCHEMY_SUPPORT
         [ShowIf(nameof(NeedUseCustomParameters))]
 #endif
-        [SerializeField] private TParams animationParameters;
+        [SerializeField]
+        private TParams animationParameters;
 
         [InjectOptional] private TParams _defaultAnimationParameters;
 
@@ -28,17 +29,20 @@ namespace KoboldUi.Element.Animations
         {
             get
             {
-                if (!useDefaultParameters) 
+                if (!useDefaultParameters)
                     return animationParameters;
-                
+
                 if (_defaultAnimationParameters == null)
                     throw new Exception($"Default animation parameters {typeof(TParams)} wasn't found");
-                
+
                 return _defaultAnimationParameters;
             }
         }
-        
-        public bool NeedUseCustomParameters() => !useDefaultParameters;
+
+        public bool NeedUseCustomParameters()
+        {
+            return !useDefaultParameters;
+        }
 
         public override IUiAction Appear(in IUiActionsPool pool)
         {
@@ -51,7 +55,7 @@ namespace KoboldUi.Element.Animations
         {
             return AnimateDisappear(pool, DisappearInstantly);
         }
-        
+
         public override IUiAction AnimateFocusReturn(in IUiActionsPool pool)
         {
             pool.GetAction(out EmptyAction emptyAction);
@@ -66,11 +70,10 @@ namespace KoboldUi.Element.Animations
 
         public override void DisappearInstantly()
         {
-            Debug.Log($"@@@@ DisappearInstantly ");
             gameObject.SetActive(false);
         }
-        
-        
+
+
         protected abstract void PrepareToAppear();
         protected abstract IUiAction AnimateAppear(in IUiActionsPool pool);
         protected abstract IUiAction AnimateDisappear(in IUiActionsPool pool, Action callback);
