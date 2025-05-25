@@ -50,8 +50,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5121bfee1f34c424a9bf258e4edd0cd1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  openAnimation: {fileID: 3661712388218347465}
-  closeAnimation: {fileID: 3661712388218347465}
+  _openAnimation:
+    <Animation>k__BackingField: {fileID: 3661712388218347465}
+    <NeedWaitAnimation>k__BackingField: 0
+  _closeAnimation:
+    <Animation>k__BackingField: {fileID: 3661712388218347465}
+    <NeedWaitAnimation>k__BackingField: 0
   scalePunch: {x: -0.05, y: -0.05, z: 0}
   duration: 0.5
   vibrato: 1
@@ -72,9 +76,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   useDefaultParameters: 1
   animationParameters: {fileID: 11400000, guid: 4436d7a0447b2f24e9dc1be9995b29d8, type: 2}
-  fromAppearAnchoredPosition: {x: 0, y: 200}
-  disappearToTheSamePlace: 1
-  toDisappearAnchoredPosition: {x: 0, y: 0}
+  _fromAppearAnchoredPosition: {x: 0, y: 681.25}
+  _disappearToTheSamePlace: 1
+  _toDisappearAnchoredPosition: {x: 0, y: 0}
 --- !u!1 &1956988710411454622
 GameObject:
   m_ObjectHideFlags: 0
@@ -140,7 +144,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ecebfabe1a202f640a85e7bfd6ae661b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  animatedEmptyViews:
+  _isPopup: 0
+  _isBackLogicIgnorable: 1
+  _animatedEmptyViews:
   - {fileID: 5074751541203249482}
   - {fileID: 5939649158753852168}
   mainMenuView: {fileID: 5050570326788778261}
@@ -196,8 +202,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8c4dd4464ed132a46805b764d5e4d455, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  openAnimation: {fileID: 2083093326087318669}
-  closeAnimation: {fileID: 2083093326087318669}
+  _openAnimation:
+    <Animation>k__BackingField: {fileID: 2083093326087318669}
+    <NeedWaitAnimation>k__BackingField: 0
+  _closeAnimation:
+    <Animation>k__BackingField: {fileID: 2083093326087318669}
+    <NeedWaitAnimation>k__BackingField: 0
 --- !u!114 &2083093326087318669
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -556,8 +566,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8c4dd4464ed132a46805b764d5e4d455, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  openAnimation: {fileID: 7006752782174124200}
-  closeAnimation: {fileID: 7006752782174124200}
+  _openAnimation:
+    <Animation>k__BackingField: {fileID: 7006752782174124200}
+    <NeedWaitAnimation>k__BackingField: 0
+  _closeAnimation:
+    <Animation>k__BackingField: {fileID: 7006752782174124200}
+    <NeedWaitAnimation>k__BackingField: 0
 --- !u!114 &7006752782174124200
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -634,8 +648,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a2e549ec016451f45be49b4b67a18f98, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  openAnimation: {fileID: 476195465622963497}
-  closeAnimation: {fileID: 476195465622963497}
+  _openAnimation:
+    <Animation>k__BackingField: {fileID: 476195465622963497}
+    <NeedWaitAnimation>k__BackingField: 0
+  _closeAnimation:
+    <Animation>k__BackingField: {fileID: 476195465622963497}
+    <NeedWaitAnimation>k__BackingField: 0
   startButton: {fileID: 5304563305940860601}
   settingsButton: {fileID: 9204125530863379639}
   exitButton: {fileID: 2288434543400132290}
@@ -653,9 +671,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   useDefaultParameters: 1
   animationParameters: {fileID: 11400000, guid: 4436d7a0447b2f24e9dc1be9995b29d8, type: 2}
-  fromAppearAnchoredPosition: {x: -500, y: 30}
-  disappearToTheSamePlace: 1
-  toDisappearAnchoredPosition: {x: 0, y: 0}
+  _fromAppearAnchoredPosition: {x: -886, y: 30}
+  _disappearToTheSamePlace: 1
+  _toDisappearAnchoredPosition: {x: 0, y: 0}
 --- !u!1 &6958439458489925681
 GameObject:
   m_ObjectHideFlags: 0

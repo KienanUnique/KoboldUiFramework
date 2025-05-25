@@ -63,7 +63,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 56ea319d2f33e244c9ef9c616efe90b2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  animatedEmptyViews:
+  _isPopup: 1
+  _isBackLogicIgnorable: 0
+  _animatedEmptyViews:
   - {fileID: 509397222215103790}
   settingsChangeConfirmationView: {fileID: 4147522764708400453}
 --- !u!1 &3282606044350136008
@@ -424,8 +426,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f84fc19831fa5534fa891928b0f56a84, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  openAnimation: {fileID: 505646295644537623}
-  closeAnimation: {fileID: 505646295644537623}
+  _openAnimation:
+    <Animation>k__BackingField: {fileID: 505646295644537623}
+    <NeedWaitAnimation>k__BackingField: 0
+  _closeAnimation:
+    <Animation>k__BackingField: {fileID: 505646295644537623}
+    <NeedWaitAnimation>k__BackingField: 0
   yesButton: {fileID: 2288434543400132290}
   noButton: {fileID: 9204125530863379639}
 --- !u!1 &6958439458489925681
@@ -593,8 +599,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8c4dd4464ed132a46805b764d5e4d455, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  openAnimation: {fileID: 6588308314054368007}
-  closeAnimation: {fileID: 6588308314054368007}
+  _openAnimation:
+    <Animation>k__BackingField: {fileID: 6588308314054368007}
+    <NeedWaitAnimation>k__BackingField: 0
+  _closeAnimation:
+    <Animation>k__BackingField: {fileID: 6588308314054368007}
+    <NeedWaitAnimation>k__BackingField: 0
 --- !u!225 &2322729930783556228
 CanvasGroup:
   m_ObjectHideFlags: 0

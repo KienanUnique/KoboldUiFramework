@@ -153,7 +153,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9325465e5cef4d37afaf66e3899e0d44, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  animatedEmptyViews:
+  _isPopup: 1
+  _isBackLogicIgnorable: 0
+  _animatedEmptyViews:
   - {fileID: 1443296625380073115}
   levelSelectorView: {fileID: 5102460853720135402}
 --- !u!1 &2268667111002458488
@@ -277,7 +279,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 5723533360671805437}
   m_Direction: 2
   m_Value: 0
-  m_Size: 1
+  m_Size: 0.99823886
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -763,8 +765,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bb56b0ba94664febbbbddd77a34cf760, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  openAnimation: {fileID: 505646295644537623}
-  closeAnimation: {fileID: 505646295644537623}
+  _openAnimation:
+    <Animation>k__BackingField: {fileID: 505646295644537623}
+    <NeedWaitAnimation>k__BackingField: 0
+  _closeAnimation:
+    <Animation>k__BackingField: {fileID: 505646295644537623}
+    <NeedWaitAnimation>k__BackingField: 0
   cancelButtons:
   - {fileID: 5304563305940860601}
   - {fileID: 9204125530863379639}
@@ -817,7 +823,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.000107612934}
+  m_AnchoredPosition: {x: 0, y: 0.0000032577143}
   m_SizeDelta: {x: 0, y: 300}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &5298334968162385957
@@ -1009,8 +1015,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8c4dd4464ed132a46805b764d5e4d455, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  openAnimation: {fileID: 8767934107846186101}
-  closeAnimation: {fileID: 8767934107846186101}
+  _openAnimation:
+    <Animation>k__BackingField: {fileID: 8767934107846186101}
+    <NeedWaitAnimation>k__BackingField: 0
+  _closeAnimation:
+    <Animation>k__BackingField: {fileID: 8767934107846186101}
+    <NeedWaitAnimation>k__BackingField: 0
 --- !u!225 &7862880983320069007
 CanvasGroup:
   m_ObjectHideFlags: 0

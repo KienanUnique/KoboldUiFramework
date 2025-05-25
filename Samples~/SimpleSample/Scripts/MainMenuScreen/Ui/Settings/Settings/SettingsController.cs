@@ -64,7 +64,7 @@ namespace Samples.Simple_Sample.Scripts.MainMenuScreen.Ui.Settings.Settings
             }
             else
             {
-                _localWindowsService.TryBackWindow();
+                _localWindowsService.CloseWindow();
             }
         }
 
@@ -73,7 +73,7 @@ namespace Samples.Simple_Sample.Scripts.MainMenuScreen.Ui.Settings.Settings
             _settingsStorageService.ForgetUnsavedSettings();
             ResetSettings();
             
-            _localWindowsService.TryBackWindow();
+            _localWindowsService.CloseWindow();
         }
 
         private void OnApplyButtonClick()
