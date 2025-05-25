@@ -20,7 +20,7 @@ namespace KoboldUi.Windows
         
         [Space]
         [Header("Views")]
-        [SerializeField] private List<AnimatedEmptyView> animatedEmptyViews;
+        [SerializeField] private List<AnimatedEmptyView> _animatedEmptyViews;
 
         private readonly List<IUIController> _childControllers = new();
         private CanvasGroup _canvasGroup;
@@ -99,7 +99,7 @@ namespace KoboldUi.Windows
 
         private void AddEmptyElements()
         {
-            foreach (var animatedEmptyView in animatedEmptyViews)
+            foreach (var animatedEmptyView in _animatedEmptyViews)
                 AddController<AnimatedEmptyController, AnimatedEmptyView>(animatedEmptyView);
         }
     }
