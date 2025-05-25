@@ -1,4 +1,7 @@
-﻿# Services
+﻿# WARNING
+This documentation version is outdated!
+
+# Services
 
 The project provides two services for working with windows: `ILocalWindowsService` and `IProjectWindowsService`.
 

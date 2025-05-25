@@ -1,11 +1,10 @@
-﻿using KoboldUi.Interfaces;
-using KoboldUi.Windows;
+﻿using KoboldUi.Windows;
 using Samples.Simple_Sample.Scripts.MainMenuScreen.Ui.SettingsChangeConfirmation.SettingsChangeConfirmation;
 using UnityEngine;
 
 namespace Samples.Simple_Sample.Scripts.MainMenuScreen.Ui.SettingsChangeConfirmation
 {
-    public class SettingsChangeConfirmationWindow : AWindow, IPopUp
+    public class SettingsChangeConfirmationWindow : AWindow
     {
         [SerializeField] private SettingsChangeConfirmationView settingsChangeConfirmationView;
         

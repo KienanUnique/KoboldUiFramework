@@ -1,4 +1,7 @@
-﻿# Services
+﻿# WARNING
+This documentation version is outdated!
+
+# Services
 
 В проекте предусмотрены два сервиса для работы с окнами: `ILocalWindowsService` и `IProjectWindowsService`
 

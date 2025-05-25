@@ -1,11 +1,10 @@
-﻿using KoboldUi.Interfaces;
-using KoboldUi.Windows;
+﻿using KoboldUi.Windows;
 using Samples.Simple_Sample.Scripts.MainMenuScreen.Ui.Settings.Settings;
 using UnityEngine;
 
 namespace Samples.Simple_Sample.Scripts.MainMenuScreen.Ui.Settings
 {
-    public class SettingsWindow : AWindow, IPopUp
+    public class SettingsWindow : AWindow
     {
         [SerializeField] private SettingsView settingsView;
 

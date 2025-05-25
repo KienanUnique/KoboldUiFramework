@@ -79,7 +79,7 @@ namespace Samples.Simple_Sample.Scripts.MainMenuScreen.Ui.LevelSelector.Selector
 
         private void OnCancelButtonPressed()
         {
-            _localWindowsService.TryBackWindow();
+            _localWindowsService.CloseWindow();
         }
     }
 }
