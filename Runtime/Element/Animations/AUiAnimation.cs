@@ -23,8 +23,6 @@ namespace KoboldUi.Element.Animations
 
         [InjectOptional] private TParams _defaultAnimationParameters;
 
-        private Sequence _sequence;
-
         protected TParams AnimationParameters
         {
             get
@@ -44,16 +42,21 @@ namespace KoboldUi.Element.Animations
             return !useDefaultParameters;
         }
 
-        public override IUiAction Appear(in IUiActionsPool pool)
+        public override IUiAction Appear(in IUiActionsPool pool, bool needWaitAnimation)
         {
             PrepareToAppear();
             gameObject.SetActive(true);
-            return AnimateAppear(pool);
+
+            var tween = AnimateAppear();
+            return SelectCorrectUiAction(pool, tween, needWaitAnimation);
         }
 
-        public override IUiAction Disappear(in IUiActionsPool pool)
+        public override IUiAction Disappear(in IUiActionsPool pool, bool needWaitAnimation)
         {
-            return AnimateDisappear(pool, DisappearInstantly);
+            var tween = AnimateDisappear();
+            tween.OnComplete(DisappearInstantly);
+            
+            return SelectCorrectUiAction(pool, tween, needWaitAnimation);
         }
 
         public override IUiAction AnimateFocusReturn(in IUiActionsPool pool)
@@ -75,7 +78,19 @@ namespace KoboldUi.Element.Animations
 
 
         protected abstract void PrepareToAppear();
-        protected abstract IUiAction AnimateAppear(in IUiActionsPool pool);
-        protected abstract IUiAction AnimateDisappear(in IUiActionsPool pool, Action callback);
+        protected abstract Tween AnimateAppear();
+        protected abstract Tween AnimateDisappear();
+        
+        private static IUiAction SelectCorrectUiAction(in IUiActionsPool pool, Tween tween, bool needWaitAnimation)
+        {
+            if (needWaitAnimation)
+            {
+                pool.GetAction(out TweenAction tweenAction, tween);
+                return tweenAction;
+            }
+
+            pool.GetAction(out EmptyAction emptyAction);
+            return emptyAction;
+        }
     }
 }

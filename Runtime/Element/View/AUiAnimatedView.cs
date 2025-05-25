@@ -1,18 +1,28 @@
-﻿using KoboldUi.Element.Animations;
-using KoboldUi.UiAction;
+﻿using KoboldUi.UiAction;
 using KoboldUi.UiAction.Pool;
+using KoboldUi.Utils;
 using UnityEngine;
+
+#if KOBOLD_ALCHEMY_SUPPORT
+using Alchemy.Inspector;
+#endif
 
 namespace KoboldUi.Element.View
 {
+#if KOBOLD_ALCHEMY_SUPPORT
+    [DisableAlchemyEditor]
+#endif
     public class AUiAnimatedView : AUiView
     {
-        [SerializeField] private AUiAnimationBase openAnimation;
-        [SerializeField] private AUiAnimationBase closeAnimation;
+        [SerializeField] private AnimationData _openAnimation;
+        [SerializeField] private AnimationData _closeAnimation;
 
         public sealed override IUiAction Open(in IUiActionsPool pool)
         {
-            return openAnimation == null ? base.Open(pool) : openAnimation.Appear(pool);
+            if (_openAnimation.Animation == null)
+                return base.Open(pool);
+            
+            return _openAnimation.Animation.Appear(pool, _openAnimation.NeedWaitAnimation);
         }
 
         public sealed override IUiAction ReturnFocus(in IUiActionsPool pool)
@@ -27,12 +37,18 @@ namespace KoboldUi.Element.View
 
         public sealed override IUiAction Close(in IUiActionsPool pool)
         {
-            return closeAnimation == null ? base.Close(pool) : closeAnimation.Disappear(pool);
+            if (_closeAnimation.Animation == null)
+                return base.Close(pool);
+            
+            return _closeAnimation.Animation.Disappear(pool, _closeAnimation.NeedWaitAnimation);
         }
 
         public sealed override void CloseInstantly()
         {
-            closeAnimation.DisappearInstantly();
+            if (_closeAnimation.Animation != null)
+                _closeAnimation.Animation.DisappearInstantly();
+            else
+                gameObject.SetActive(false);
         }
     }
 }

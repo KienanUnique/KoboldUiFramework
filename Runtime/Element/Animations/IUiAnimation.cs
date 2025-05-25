@@ -5,9 +5,9 @@ namespace KoboldUi.Element.Animations
 {
     public interface IUiAnimation
     {
-        IUiAction Appear(in IUiActionsPool pool);
+        IUiAction Appear(in IUiActionsPool pool, bool needWaitAnimation);
         IUiAction AnimateFocusReturn(in IUiActionsPool pool);
         IUiAction AnimateFocusRemoved(in IUiActionsPool pool);
-        IUiAction Disappear(in IUiActionsPool pool);
+        IUiAction Disappear(in IUiActionsPool pool, bool needWaitAnimation);
     }
 }

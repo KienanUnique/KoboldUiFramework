@@ -1,8 +1,5 @@
-﻿using System;
-using DG.Tweening;
+﻿using DG.Tweening;
 using KoboldUi.Element.Animations.Parameters.Impl;
-using KoboldUi.UiAction;
-using KoboldUi.UiAction.Pool;
 using UnityEngine;
 
 namespace KoboldUi.Element.Animations.Impl
@@ -27,7 +24,7 @@ namespace KoboldUi.Element.Animations.Impl
             _canvasGroup.alpha = FADE_DISAPPEAR_VALUE;
         }
 
-        protected override IUiAction AnimateAppear(in IUiActionsPool pool)
+        protected override Tween AnimateAppear()
         {
             _currentAnimation?.Kill();
 
@@ -35,23 +32,20 @@ namespace KoboldUi.Element.Animations.Impl
                 .SetEase(AnimationParameters.Ease)
                 .SetUpdate(true)
                 .SetLink(_canvasGroup.gameObject);
-
-            pool.GetAction(out var tweenAction, _currentAnimation);
-            return tweenAction;
+            
+            return _currentAnimation;
         }
 
-        protected override IUiAction AnimateDisappear(in IUiActionsPool pool, Action callback)
+        protected override Tween AnimateDisappear()
         {
             _currentAnimation?.Kill();
 
             _currentAnimation = _canvasGroup.DOFade(FADE_DISAPPEAR_VALUE, AnimationParameters.DisappearDuration)
                 .SetEase(AnimationParameters.Ease)
                 .SetUpdate(true)
-                .SetLink(_canvasGroup.gameObject)
-                .OnComplete(callback.Invoke);
-
-            pool.GetAction(out var tweenAction, _currentAnimation);
-            return tweenAction;
+                .SetLink(_canvasGroup.gameObject);
+                
+            return _currentAnimation;
         }
     }
 }

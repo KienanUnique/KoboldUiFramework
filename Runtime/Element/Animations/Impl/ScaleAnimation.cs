@@ -1,8 +1,5 @@
-﻿using System;
-using DG.Tweening;
+﻿using DG.Tweening;
 using KoboldUi.Element.Animations.Parameters.Impl;
-using KoboldUi.UiAction;
-using KoboldUi.UiAction.Pool;
 using UnityEngine;
 
 namespace KoboldUi.Element.Animations.Impl
@@ -19,7 +16,7 @@ namespace KoboldUi.Element.Animations.Impl
             transform.localScale = _disappearScale;
         }
 
-        protected override IUiAction AnimateAppear(in IUiActionsPool pool)
+        protected override Tween AnimateAppear()
         {
             _currentAnimation?.Kill();
 
@@ -28,22 +25,19 @@ namespace KoboldUi.Element.Animations.Impl
                 .SetUpdate(true)
                 .SetLink(gameObject);
 
-            pool.GetAction(out var tweenAction, _currentAnimation);
-            return tweenAction;
+            return _currentAnimation;
         }
 
-        protected override IUiAction AnimateDisappear(in IUiActionsPool pool, Action callback)
+        protected override Tween AnimateDisappear()
         {
             _currentAnimation?.Kill();
 
             _currentAnimation = transform.DOScale(_disappearScale, AnimationParameters.Duration)
                 .SetEase(AnimationParameters.DisappearEase)
                 .SetUpdate(true)
-                .SetLink(gameObject)
-                .OnComplete(callback.Invoke);
+                .SetLink(gameObject);
 
-            pool.GetAction(out var tweenAction, _currentAnimation);
-            return tweenAction;
+            return _currentAnimation;
         }
     }
 }

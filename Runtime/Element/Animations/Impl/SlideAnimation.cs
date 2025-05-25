@@ -1,8 +1,5 @@
-﻿using System;
-using DG.Tweening;
+﻿using DG.Tweening;
 using KoboldUi.Element.Animations.Parameters.Impl;
-using KoboldUi.UiAction;
-using KoboldUi.UiAction.Pool;
 using UnityEngine;
 #if KOBOLD_ALCHEMY_SUPPORT
 using Alchemy.Inspector;
@@ -13,14 +10,14 @@ namespace KoboldUi.Element.Animations.Impl
     [RequireComponent(typeof(RectTransform))]
     public class SlideAnimation : AUiAnimation<SlideAnimationParameters>
     {
-        [SerializeField] private Vector2 fromAppearAnchoredPosition;
-        [SerializeField] private bool disappearToTheSamePlace = true;
+        [SerializeField] private Vector2 _fromAppearAnchoredPosition;
+        [SerializeField] private bool _disappearToTheSamePlace = true;
 
 #if KOBOLD_ALCHEMY_SUPPORT
         [HideIf(nameof(DisappearToTheSamePlace))]
 #endif
         [SerializeField]
-        private Vector2 toDisappearAnchoredPosition;
+        private Vector2 _toDisappearAnchoredPosition;
 
         private Tween _currentAnimation;
         private Vector2 _originalAnchoredPosition;
@@ -35,16 +32,16 @@ namespace KoboldUi.Element.Animations.Impl
 #if KOBOLD_ALCHEMY_SUPPORT
         public bool DisappearToTheSamePlace()
         {
-            return disappearToTheSamePlace;
+            return _disappearToTheSamePlace;
         }
 #endif
 
         protected override void PrepareToAppear()
         {
-            _rectTransform.anchoredPosition = fromAppearAnchoredPosition;
+            _rectTransform.anchoredPosition = _fromAppearAnchoredPosition;
         }
 
-        protected override IUiAction AnimateAppear(in IUiActionsPool pool)
+        protected override Tween AnimateAppear()
         {
             _currentAnimation?.Kill();
 
@@ -54,26 +51,23 @@ namespace KoboldUi.Element.Animations.Impl
                 .SetEase(AnimationParameters.AppearEase)
                 .SetLink(gameObject);
 
-            pool.GetAction(out var tweenAction, _currentAnimation);
-            return tweenAction;
+            return _currentAnimation;
         }
 
-        protected override IUiAction AnimateDisappear(in IUiActionsPool pool, Action callback)
+        protected override Tween AnimateDisappear()
         {
             _currentAnimation?.Kill();
 
             var disappearTargetPosition =
-                disappearToTheSamePlace ? fromAppearAnchoredPosition : toDisappearAnchoredPosition;
+                _disappearToTheSamePlace ? _fromAppearAnchoredPosition : _toDisappearAnchoredPosition;
 
             _currentAnimation = _rectTransform
                 .DOAnchorPos(disappearTargetPosition, AnimationParameters.DisappearDuration)
                 .SetEase(AnimationParameters.DisappearEase)
                 .SetUpdate(true)
-                .SetLink(gameObject)
-                .OnComplete(callback.Invoke);
+                .SetLink(gameObject);
 
-            pool.GetAction(out var tweenAction, _currentAnimation);
-            return tweenAction;
+            return _currentAnimation;
         }
     }
 }
