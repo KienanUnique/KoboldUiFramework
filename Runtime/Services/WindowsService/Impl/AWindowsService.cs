@@ -25,44 +25,7 @@ namespace KoboldUi.Services.WindowsService.Impl
             uiActionsPool.Initialize();
             _uiActionsPool = uiActionsPool;
         }
-
-        // public void TryBackToWindow<TWindow>(Action<bool> onComplete, EAnimationPolitic previousWindowsPolitic)
-        // {
-        //     TryBackToWindowImpl().Forget();
-        //     return;
-        //
-        //     async UniTaskVoid TryBackToWindowImpl()
-        //     {
-        //         var needWindow = _diContainer.Resolve(typeof(TWindow)) as IWindow;
-        //         if (needWindow == null)
-        //             throw new Exception($"Window {typeof(TWindow).Name} was not found");
-        //
-        //         if (!_windowsStack.Contains(needWindow))
-        //             throw new Exception(
-        //                 $"Window {typeof(TWindow).Name} was not found in stack. It means that window wasn't previously opened");
-        //
-        //         while (CurrentWindow != needWindow)
-        //         {
-        //             var currentWindow = _windowsStack.Peek();
-        //
-        //             var windowIgnoreBackSignal = currentWindow is IBackLogicIgnorable;
-        //             if (windowIgnoreBackSignal)
-        //             {
-        //                 onComplete?.Invoke(false);
-        //                 return;
-        //             }
-        //
-        //             _windowsStack.Pop();
-        //             await ChangeWindowState(currentWindow, EWindowState.Closed, previousWindowsPolitic);
-        //         }
-        //
-        //         WindowsOrdersManager.UpdateWindowsLayers(_windowsStack);
-        //         await OpenPreviousWindow();
-        //
-        //         onComplete?.Invoke(true);
-        //     }
-        // }
-        //
+        
         // public void CloseWindow(Action onComplete, EAnimationPolitic previousWindowPolitic)
         // {
         //     if (_windowsStack.Count == 0)
@@ -117,32 +80,6 @@ namespace KoboldUi.Services.WindowsService.Impl
         //     }
         // }
 
-        // private async UniTask OpenPreviousWindow()
-        // {
-        //     if (_windowsStack.Count == 0)
-        //         return;
-        //
-        //     var currentWindow = _windowsStack.Peek();
-        //     await currentWindow.SetState(EWindowState.Active);
-        // }
-        //
-        // private static async UniTask ChangeWindowState(IWindow window, EWindowState state)
-        // {
-        //     var changeStateTask = window.SetState(state);
-        //
-        //     switch (animationPolitic)
-        //     {
-        //         case EAnimationPolitic.Wait:
-        //             await changeStateTask;
-        //             break;
-        //         case EAnimationPolitic.DoNotWait:
-        //             changeStateTask.Forget();
-        //             break;
-        //         default:
-        //             throw new ArgumentOutOfRangeException(nameof(animationPolitic), animationPolitic, null);
-        //     }
-        // }
-
         public void Dispose()
         {
             _tasksRunner?.Dispose();
@@ -158,7 +95,7 @@ namespace KoboldUi.Services.WindowsService.Impl
         public void OpenWindow<TWindow>(Action onComplete) where TWindow : IWindow
         {
             var nextWindow = _diContainer.Resolve(typeof(TWindow)) as IWindow;
-            _uiActionsPool.GetAction(out var openAction, nextWindow);
+            _uiActionsPool.GetAction(out OpenWindowAction openAction, nextWindow);
             _tasksRunner.AddToQueue(openAction);
 
             if (onComplete == null)
@@ -170,8 +107,23 @@ namespace KoboldUi.Services.WindowsService.Impl
 
         public void BackWindow(Action onComplete)
         {
-            _uiActionsPool.GetAction(out TryBackWindowAction tryBackWindowAction);
+            _uiActionsPool.GetAction(out BackWindowAction tryBackWindowAction);
             _tasksRunner.AddToQueue(tryBackWindowAction);
+
+            if (onComplete == null)
+                return;
+
+            _uiActionsPool.GetAction(out var callbackAction, onComplete);
+            callbackAction.Setup(onComplete);
+            _tasksRunner.AddToQueue(callbackAction);
+        }
+
+        public void BackToWindow<TWindow>(Action onComplete = null)
+        {
+            var targetWindow = _diContainer.Resolve(typeof(TWindow)) as IWindow;
+            _uiActionsPool.GetAction(out BackToWindowAction backToWindowAction, targetWindow);
+            
+            _tasksRunner.AddToQueue(backToWindowAction);
 
             if (onComplete == null)
                 return;

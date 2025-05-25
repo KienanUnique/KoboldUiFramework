@@ -37,6 +37,7 @@ namespace KoboldUi.UiAction.Impl.Service
 
         protected override void ReturnToPool()
         {
+            _windowToOpen = null;
             Pool.ReturnAction(this);
         }
 

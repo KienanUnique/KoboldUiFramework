@@ -13,5 +13,6 @@ namespace KoboldUi.WindowsStack
         bool IsOpened(IWindow window);
         void Push(IWindow window);
         IWindow Pop();
+        bool Contains(IWindow windowToClose);
     }
 }

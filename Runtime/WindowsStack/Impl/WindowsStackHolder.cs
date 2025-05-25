@@ -30,5 +30,10 @@ namespace KoboldUi.WindowsStack.Impl
         {
             return _windowsStack.Pop();
         }
+
+        public bool Contains(IWindow windowToClose)
+        {
+            return _windowsStack.Contains(windowToClose);
+        }
     }
 }

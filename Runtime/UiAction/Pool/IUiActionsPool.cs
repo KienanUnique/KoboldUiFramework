@@ -16,7 +16,8 @@ namespace KoboldUi.UiAction.Pool
         void GetAction(out WaitInitializationAction action, AWindowBase window);
         void GetAction(out OpenPreviousWindowAction action);
         void GetAction(out OpenWindowAction action, IWindow windowToOpen);
-        void GetAction(out TryBackWindowAction action);
+        void GetAction(out BackWindowAction action);
+        void GetAction(out BackToWindowAction action, IWindow targetWindow);
 
         void ReturnAction(EmptyAction action);
         void ReturnAction(ParallelAction action);
@@ -25,6 +26,7 @@ namespace KoboldUi.UiAction.Pool
         void ReturnAction(WaitInitializationAction action);
         void ReturnAction(OpenPreviousWindowAction action);
         void ReturnAction(OpenWindowAction action);
-        void ReturnAction(TryBackWindowAction action);
+        void ReturnAction(BackWindowAction action);
+        void ReturnAction(BackToWindowAction action);
     }
 }

@@ -6,13 +6,13 @@ using KoboldUi.WindowsStack;
 
 namespace KoboldUi.UiAction.Impl.Service
 {
-    public class TryBackWindowAction : AUiAction
+    public class BackWindowAction : AUiAction
     {
         private readonly IWindowsStackHolder _windowsStackHolder;
 
         private IWindow _windowToClose;
 
-        public TryBackWindowAction(
+        public BackWindowAction(
             IUiActionsPool pool,
             IWindowsStackHolder windowsStackHolder
         ) : base(pool)
@@ -47,6 +47,7 @@ namespace KoboldUi.UiAction.Impl.Service
 
         protected override void ReturnToPool()
         {
+            _windowToClose = null;
             Pool.ReturnAction(this);
         }
 
