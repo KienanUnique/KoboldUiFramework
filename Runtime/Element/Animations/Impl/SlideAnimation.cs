@@ -3,6 +3,7 @@ using KoboldUi.Element.Animations.Parameters.Impl;
 using DG.Tweening;
 using KoboldUi.UiAction;
 using KoboldUi.UiAction.Impl.Common;
+using KoboldUi.UiAction.Pool;
 #if KOBOLD_ALCHEMY_SUPPORT
 using Alchemy.Inspector;
 #endif
@@ -34,7 +35,7 @@ namespace KoboldUi.Element.Animations.Impl
             _rectTransform.anchoredPosition = fromAppearAnchoredPosition;
         }
 
-        protected override IUiAction AnimateAppear()
+        protected override IUiAction AnimateAppear(in IUiActionsPool pool)
         {
             _currentAnimation?.Kill();
 
@@ -44,12 +45,11 @@ namespace KoboldUi.Element.Animations.Impl
                 .SetEase(AnimationParameters.AppearEase)
                 .SetLink(gameObject);
 
-            var tweenAction = new TweenAction();
-            tweenAction.Setup(_currentAnimation);
+            pool.GetAction(out TweenAction tweenAction, _currentAnimation);
             return tweenAction;
         }
 
-        protected override IUiAction AnimateDisappear(Action callback)
+        protected override IUiAction AnimateDisappear(in IUiActionsPool pool, Action callback)
         {
             _currentAnimation?.Kill();
 
@@ -59,10 +59,9 @@ namespace KoboldUi.Element.Animations.Impl
                 .SetEase(AnimationParameters.DisappearEase)
                 .SetUpdate(true)
                 .SetLink(gameObject)
-                .OnComplete(base.DisappearInstantly);
+                .OnComplete(callback.Invoke);
 
-            var tweenAction = new TweenAction();
-            tweenAction.Setup(_currentAnimation);
+            pool.GetAction(out TweenAction tweenAction, _currentAnimation);
             return tweenAction;
         }
 

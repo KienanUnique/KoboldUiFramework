@@ -1,9 +1,8 @@
 ﻿using KoboldUi.Collections.Base;
-using KoboldUi.Element.View;
 
 namespace KoboldUi.Collections.Concrete
 {
-    public interface IUiPooledCollection<TView> : IUiFactory<TView>, IUiCollection<TView> where TView : IUiView
+    public interface IUiPooledCollection<TView> : IUiFactory<TView>, IUiCollection<TView> where TView : IUiCollectionView
     {
         void ReturnToPool(TView view);
     }

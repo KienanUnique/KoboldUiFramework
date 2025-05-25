@@ -49,7 +49,7 @@ namespace KoboldUi.UiAction.Impl.Service
 
         private async UniTask BackWindow(IWindow currentWindow)
         {
-            await currentWindow.SetState(EWindowState.Closed).Start();
+            await currentWindow.SetState(EWindowState.Closed, Pool).Start();
 
             WindowsOrdersManager.HandleWindowDisappear(_windowsStackHolder.Stack, currentWindow);
             Pool.GetAction(out OpenPreviousWindowAction openPreviousWindow);

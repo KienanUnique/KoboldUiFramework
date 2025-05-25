@@ -6,7 +6,7 @@ using UnityEngine;
 namespace KoboldUi.Collections.Concrete.Impl
 {
     public abstract class AUiPooledCollection<TView> : AUiCollection<TView>, IUiPooledCollection<TView>
-        where TView : MonoBehaviour, IUiView
+        where TView : MonoBehaviour, IUiCollectionView
     {
         private readonly List<TView> _pool = new();
         private readonly List<TView> _views = new();
@@ -33,7 +33,7 @@ namespace KoboldUi.Collections.Concrete.Impl
         public void ReturnToPool(TView view)
         {
             _views.Remove(view);
-            view.Close();
+            view.Disappear();
 
             OnReturnToPool(view);
             _pool.Add(view);

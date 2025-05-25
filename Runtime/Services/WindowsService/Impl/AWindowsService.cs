@@ -30,7 +30,9 @@ namespace KoboldUi.Services.WindowsService.Impl
         protected AWindowsService(DiContainer diContainer)
         {
             _diContainer = diContainer;
-            _uiActionsPool = new UiActionsPool(_windowsStackHolder);
+            var uiActionsPool = new UiActionsPool(_windowsStackHolder);
+            uiActionsPool.Initialize();
+            _uiActionsPool = uiActionsPool;
         }
 
         public bool IsOpened<TWindow>() where TWindow : IWindow => _windowsStackHolder.IsOpened<TWindow>();

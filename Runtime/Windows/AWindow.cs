@@ -5,6 +5,7 @@ using KoboldUi.Element.View;
 using KoboldUi.Element.View.Impl;
 using KoboldUi.UiAction;
 using KoboldUi.UiAction.Impl.Common;
+using KoboldUi.UiAction.Pool;
 using KoboldUi.Utils;
 using UnityEngine;
 using Zenject;
@@ -33,7 +34,7 @@ namespace KoboldUi.Windows
             base.Initialize();
         }
 
-        public override IUiAction SetState(EWindowState state)
+        public override IUiAction SetState(EWindowState state, in IUiActionsPool pool)
         {
             switch (state)
             {
@@ -52,10 +53,9 @@ namespace KoboldUi.Windows
                 Debug.LogError($"[Kobold Ui {nameof(AWindow)}] | {gameObject.name} is not initialized. Change State logic is invalid!");
             
             foreach (var controller in _childControllers) 
-                actions.Add(controller.SetState(state));
+                actions.Add(controller.SetState(state, pool));
 
-            var parallelAction = new ParallelAction();
-            parallelAction.Setup(actions);
+            pool.GetAction(out ParallelAction parallelAction, actions);
             
             return parallelAction;
         }
@@ -76,6 +76,8 @@ namespace KoboldUi.Windows
             _container.InjectGameObject(gameObject);
 
             _childControllers.Add(controller);
+            
+            viewInstance.Initialize();
             controller.Initialize();
             controller.CloseInstantly();
         }

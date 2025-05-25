@@ -1,12 +1,13 @@
 ﻿using KoboldUi.UiAction;
+using KoboldUi.UiAction.Pool;
 
 namespace KoboldUi.Element.Animations
 {
     public interface IUiAnimation
     {
-        IUiAction Appear();
-        IUiAction AnimateFocusReturn();
-        IUiAction AnimateFocusRemoved();
-        IUiAction Disappear();
+        IUiAction Appear(in IUiActionsPool pool);
+        IUiAction AnimateFocusReturn(in IUiActionsPool pool);
+        IUiAction AnimateFocusRemoved(in IUiActionsPool pool);
+        IUiAction Disappear(in IUiActionsPool pool);
     }
 }

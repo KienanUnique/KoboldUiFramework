@@ -2,6 +2,7 @@
 using DG.Tweening;
 using KoboldUi.UiAction;
 using KoboldUi.UiAction.Impl.Common;
+using KoboldUi.UiAction.Pool;
 using UnityEngine;
 using Zenject;
 #if KOBOLD_ALCHEMY_SUPPORT
@@ -39,30 +40,39 @@ namespace KoboldUi.Element.Animations
         
         public bool NeedUseCustomParameters() => !useDefaultParameters;
 
-        public override IUiAction Appear()
+        public override IUiAction Appear(in IUiActionsPool pool)
         {
             PrepareToAppear();
             gameObject.SetActive(true);
-            return AnimateAppear();
+            return AnimateAppear(pool);
         }
 
-        public override IUiAction Disappear()
+        public override IUiAction Disappear(in IUiActionsPool pool)
         {
-            return AnimateDisappear(DisappearInstantly);
+            return AnimateDisappear(pool, DisappearInstantly);
         }
         
-        public override IUiAction AnimateFocusReturn() => new EmptyAction();
+        public override IUiAction AnimateFocusReturn(in IUiActionsPool pool)
+        {
+            pool.GetAction(out EmptyAction emptyAction);
+            return emptyAction;
+        }
 
-        public override IUiAction AnimateFocusRemoved() => new EmptyAction();
-        
+        public override IUiAction AnimateFocusRemoved(in IUiActionsPool pool)
+        {
+            pool.GetAction(out EmptyAction emptyAction);
+            return emptyAction;
+        }
+
         public override void DisappearInstantly()
         {
+            Debug.Log($"@@@@ DisappearInstantly ");
             gameObject.SetActive(false);
         }
         
         
         protected abstract void PrepareToAppear();
-        protected abstract IUiAction AnimateAppear();
-        protected abstract IUiAction AnimateDisappear(Action callback);
+        protected abstract IUiAction AnimateAppear(in IUiActionsPool pool);
+        protected abstract IUiAction AnimateDisappear(in IUiActionsPool pool, Action callback);
     }
 }

@@ -36,7 +36,7 @@ namespace KoboldUi.UiAction.Impl.Service
                 return UniTask.CompletedTask;
 
             var currentWindow = _windowsStackHolder.CurrentWindow;
-            var action = currentWindow.SetState(EWindowState.Active);
+            var action = currentWindow.SetState(EWindowState.Active, Pool);
             return action.Start();
         }
 

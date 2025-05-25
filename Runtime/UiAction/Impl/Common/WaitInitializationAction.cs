@@ -41,6 +41,15 @@ namespace KoboldUi.UiAction.Impl.Common
                 cancellationToken: _linkedTokenSource.Token);
         }
 
-        protected override void ReturnToPool() => Pool.ReturnAction(this);
+        protected override void ReturnToPool()
+        {
+            _linkedTokenSource?.Cancel();
+            _linkedTokenSource?.Dispose();
+            _linkedTokenSource = null;
+        
+            _window = null;
+            
+            Pool.ReturnAction(this);
+        }
     }
 }

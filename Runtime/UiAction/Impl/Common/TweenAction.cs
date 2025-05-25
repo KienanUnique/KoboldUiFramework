@@ -1,9 +1,11 @@
 using Cysharp.Threading.Tasks;
 using DG.Tweening;
 using KoboldUi.UiAction.Pool;
+using UnityEngine;
 
 namespace KoboldUi.UiAction.Impl.Common
 {
+    // TODO: make this Sequence action. Because unitask override oncomplete callback
     public class TweenAction : AUiAction
     {
         private Tween _tween;
@@ -20,11 +22,18 @@ namespace KoboldUi.UiAction.Impl.Common
 
         protected override UniTask HandleStart()
         {
+            Debug.Log($"@@@@ Tween: HandleStart");
             _tween.Play();
             return _tween.ToUniTask();
         }
         
-        protected override void ReturnToPool() => Pool.ReturnAction(this);
+        protected override void ReturnToPool()
+        {
+            Debug.Log($"@@@@ Tween: ReturnToPool");
+            _tween?.Kill();
+            _tween = null;
+            Pool.ReturnAction(this);
+        }
 
         public override void Dispose()
         {

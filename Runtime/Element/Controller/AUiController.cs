@@ -1,6 +1,7 @@
 ﻿using System;
 using KoboldUi.Element.View;
 using KoboldUi.UiAction;
+using KoboldUi.UiAction.Pool;
 using KoboldUi.Utils;
 using Zenject;
 
@@ -17,25 +18,25 @@ namespace KoboldUi.Element.Controller
         {
         }
 
-        public IUiAction SetState(EWindowState state)
+        public IUiAction SetState(EWindowState state, in IUiActionsPool pool)
         {
             IUiAction uiAction;
             switch (state)
             {
                 case EWindowState.Active:
-                    uiAction = IsOpened ? View.ReturnFocus() : View.Open();
+                    uiAction = IsOpened ? View.ReturnFocus(pool) : View.Open(pool);
                     IsOpened = true;
                     IsInFocus = true;
                     OnOpen();
                     break;
                 case EWindowState.NonFocused:
-                    uiAction = View.RemoveFocus();
+                    uiAction = View.RemoveFocus(pool);
                     IsOpened = true;
                     IsInFocus = false;
                     OnFocusRemove();
                     break;
                 case EWindowState.Closed:
-                    uiAction = View.Close();
+                    uiAction = View.Close(pool);
                     IsOpened = false;
                     IsInFocus = false;
                     OnClose();

@@ -17,8 +17,12 @@ namespace KoboldUi.UiAction.Impl.Common
             _actions = actions;
         }
         
-        protected override void ReturnToPool() => Pool.ReturnAction(this);
-        
+        protected override void ReturnToPool()
+        {
+            _actions = null;
+            Pool.ReturnAction(this);
+        }
+
         protected override UniTask HandleStart()
         {
             if (_actions.Count == 0)

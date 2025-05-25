@@ -1,14 +1,15 @@
 ﻿using KoboldUi.UiAction;
+using KoboldUi.UiAction.Pool;
 using UnityEngine;
 
 namespace KoboldUi.Element.Animations
 {
-    public abstract class AUiAnimationBase : MonoBehaviour, IUiAnimation 
+    public abstract class AUiAnimationBase : MonoBehaviour, IUiAnimation
     {
-        public abstract IUiAction Appear();
-        public abstract IUiAction AnimateFocusReturn();
-        public abstract IUiAction AnimateFocusRemoved();
-        public abstract IUiAction Disappear();
+        public abstract IUiAction Appear(in IUiActionsPool pool);
+        public abstract IUiAction AnimateFocusReturn(in IUiActionsPool pool);
+        public abstract IUiAction AnimateFocusRemoved(in IUiActionsPool pool);
+        public abstract IUiAction Disappear(in IUiActionsPool pool);
         public abstract void DisappearInstantly();
-}
+    }
 }

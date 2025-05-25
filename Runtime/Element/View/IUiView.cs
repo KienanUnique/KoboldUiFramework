@@ -1,16 +1,16 @@
 ﻿using KoboldUi.UiAction;
-using UnityEngine;
+using KoboldUi.UiAction.Pool;
 
 namespace KoboldUi.Element.View
 {
     public interface IUiView
     {
-        IUiAction Open();
-        IUiAction ReturnFocus();
-        IUiAction RemoveFocus();
-        IUiAction Close();
+        void Initialize();
+        
+        IUiAction Open(in IUiActionsPool pool);
+        IUiAction ReturnFocus(in IUiActionsPool pool);
+        IUiAction RemoveFocus(in IUiActionsPool pool);
+        IUiAction Close(in IUiActionsPool pool);
         void CloseInstantly();
-        void SetParent(Transform parent);
-        void Destroy();
     }
 }

@@ -7,7 +7,7 @@ using Zenject;
 namespace KoboldUi.Collections.Base
 {
     public abstract class AUiCollection<TView> : MonoBehaviour, IUiCollection<TView>
-        where TView : MonoBehaviour, IUiView
+        where TView : MonoBehaviour, IUiCollectionView
     {
         [SerializeField] protected TView prefab;
         [SerializeField] protected Transform collectionContainer;
@@ -19,7 +19,7 @@ namespace KoboldUi.Collections.Base
         protected virtual void OnCreated(TView view)
         {
             view.SetParent(collectionContainer);
-            view.Open();
+            view.Appear();
         }
 
         public abstract void Clear();

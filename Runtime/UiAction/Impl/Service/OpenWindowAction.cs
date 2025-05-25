@@ -45,16 +45,16 @@ namespace KoboldUi.UiAction.Impl.Service
             {
                 var currentWindow = _windowsStackHolder.CurrentWindow;
                 var newState = isNextWindowPopUp ? EWindowState.NonFocused : EWindowState.Closed;
-                await currentWindow.SetState(newState).Start();
+                await currentWindow.SetState(newState, Pool).Start();
             }
 
             if (!_windowToOpen.IsInitialized)
-                await _windowToOpen.WaitInitialization().Start();
+                await _windowToOpen.WaitInitialization(Pool).Start();
 
             WindowsOrdersManager.HandleWindowAppear(_windowsStackHolder.Stack, _windowToOpen);
             _windowsStackHolder.Push(_windowToOpen);
 
-            await _windowToOpen.SetState(EWindowState.Active).Start();
+            await _windowToOpen.SetState(EWindowState.Active, Pool).Start();
         }
     }
 }
