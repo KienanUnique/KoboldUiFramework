@@ -6,13 +6,14 @@ using KoboldUi.WindowsStack;
 
 namespace KoboldUi.UiAction.Impl.Service
 {
-    public class BackToWindowAction : AUiAction
+    public class CloseToWindowAction : AUiAction
     {
         private readonly IWindowsStackHolder _windowsStackHolder;
 
         private IWindow _targetWindow;
+        private bool _useBackLogicIgnorableChecks;
 
-        public BackToWindowAction(
+        public CloseToWindowAction(
             IUiActionsPool pool,
             IWindowsStackHolder windowsStackHolder
         ) : base(pool)
@@ -20,9 +21,10 @@ namespace KoboldUi.UiAction.Impl.Service
             _windowsStackHolder = windowsStackHolder;
         }
 
-        public void Setup(IWindow targetWindow)
+        public void Setup(IWindow targetWindow, bool useBackLogicIgnorableChecks)
         {
             _targetWindow = targetWindow;
+            _useBackLogicIgnorableChecks = useBackLogicIgnorableChecks;
         }
 
         public override void Dispose()
@@ -37,9 +39,8 @@ namespace KoboldUi.UiAction.Impl.Service
                 return UniTask.CompletedTask;
 
             var currentWindow = _windowsStackHolder.CurrentWindow;
-
-            var isWindowIgnoreBackSignal = currentWindow.IsBackLogicIgnorable;
-            if (isWindowIgnoreBackSignal)
+            
+            if (_useBackLogicIgnorableChecks && currentWindow.IsBackLogicIgnorable)
                 return UniTask.CompletedTask;
 
             return BackToWindow(_targetWindow);
@@ -48,6 +49,7 @@ namespace KoboldUi.UiAction.Impl.Service
         protected override void ReturnToPool()
         {
             _targetWindow = null;
+            _useBackLogicIgnorableChecks = false;
             Pool.ReturnAction(this);
         }
 
@@ -56,7 +58,7 @@ namespace KoboldUi.UiAction.Impl.Service
             var currentWindow = _windowsStackHolder.CurrentWindow;
             while (currentWindow != targetWindow)
             {
-                if (currentWindow.IsBackLogicIgnorable)
+                if (_useBackLogicIgnorableChecks && currentWindow.IsBackLogicIgnorable)
                     return;
 
                 _windowsStackHolder.Pop();

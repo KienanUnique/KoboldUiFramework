@@ -21,10 +21,10 @@ namespace KoboldUi.UiAction.Pool.Impl
         private ObjectPool<OpenWindowAction> _openWindowActionPool;
         private ObjectPool<ParallelAction> _parallelActionPool;
         private ObjectPool<SimpleCallbackAction> _simpleCallbackActionPool;
-        private ObjectPool<BackWindowAction> _tryBackWindowActionPool;
+        private ObjectPool<CloseWindowAction> _tryBackWindowActionPool;
         private ObjectPool<TweenAction> _tweenActionPool;
         private ObjectPool<WaitInitializationAction> _waitInitializationActionPool;
-        private ObjectPool<BackToWindowAction> _backToWindowActionPool;
+        private ObjectPool<CloseToWindowAction> _backToWindowActionPool;
 
         public UiActionsPool(IWindowsStackHolder windowsStackHolder)
         {
@@ -62,11 +62,11 @@ namespace KoboldUi.UiAction.Pool.Impl
             _openWindowActionPool =
                 new ObjectPool<OpenWindowAction>(() => new OpenWindowAction(this, _windowsStackHolder),
                     defaultCapacity: DEFAULT_POOL_SIZE);
-            _tryBackWindowActionPool = new ObjectPool<BackWindowAction>(
-                () => new BackWindowAction(this, _windowsStackHolder), defaultCapacity: DEFAULT_POOL_SIZE);
+            _tryBackWindowActionPool = new ObjectPool<CloseWindowAction>(
+                () => new CloseWindowAction(this, _windowsStackHolder), defaultCapacity: DEFAULT_POOL_SIZE);
             
-            _backToWindowActionPool = new ObjectPool<BackToWindowAction>(
-                () => new BackToWindowAction(this, _windowsStackHolder), defaultCapacity: DEFAULT_POOL_SIZE);
+            _backToWindowActionPool = new ObjectPool<CloseToWindowAction>(
+                () => new CloseToWindowAction(this, _windowsStackHolder), defaultCapacity: DEFAULT_POOL_SIZE);
         }
 
         #region GetActions
@@ -112,16 +112,16 @@ namespace KoboldUi.UiAction.Pool.Impl
             action.Setup(windowToOpen);
         }
 
-        public void GetAction(out BackWindowAction action)
+        public void GetAction(out CloseWindowAction action, bool useBackLogicIgnorableChecks)
         {
             action = _tryBackWindowActionPool.Get();
-            action.Setup();
+            action.Setup(useBackLogicIgnorableChecks);
         }
 
-        public void GetAction(out BackToWindowAction action, IWindow targetWindow)
+        public void GetAction(out CloseToWindowAction action, IWindow targetWindow, bool useBackLogicIgnorableChecks)
         {
             action = _backToWindowActionPool.Get();
-            action.Setup(targetWindow);
+            action.Setup(targetWindow, useBackLogicIgnorableChecks);
         }
 
         #endregion
@@ -163,12 +163,12 @@ namespace KoboldUi.UiAction.Pool.Impl
             _openWindowActionPool.Release(action);
         }
 
-        public void ReturnAction(BackWindowAction action)
+        public void ReturnAction(CloseWindowAction action)
         {
             _tryBackWindowActionPool.Release(action);
         }
 
-        public void ReturnAction(BackToWindowAction action)
+        public void ReturnAction(CloseToWindowAction action)
         {
             _backToWindowActionPool.Release(action);
         }

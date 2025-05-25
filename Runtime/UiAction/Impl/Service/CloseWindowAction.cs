@@ -6,13 +6,14 @@ using KoboldUi.WindowsStack;
 
 namespace KoboldUi.UiAction.Impl.Service
 {
-    public class BackWindowAction : AUiAction
+    public class CloseWindowAction : AUiAction
     {
         private readonly IWindowsStackHolder _windowsStackHolder;
 
         private IWindow _windowToClose;
+        private bool _useBackLogicIgnorableChecks;
 
-        public BackWindowAction(
+        public CloseWindowAction(
             IUiActionsPool pool,
             IWindowsStackHolder windowsStackHolder
         ) : base(pool)
@@ -20,9 +21,10 @@ namespace KoboldUi.UiAction.Impl.Service
             _windowsStackHolder = windowsStackHolder;
         }
 
-        public void Setup()
+        public void Setup(bool useBackLogicIgnorableChecks)
         {
             _windowToClose = _windowsStackHolder.CurrentWindow;
+            _useBackLogicIgnorableChecks = useBackLogicIgnorableChecks;
         }
 
         public override void Dispose()
@@ -37,9 +39,8 @@ namespace KoboldUi.UiAction.Impl.Service
                 return UniTask.CompletedTask;
 
             var currentWindow = _windowsStackHolder.CurrentWindow;
-
-            var isWindowIgnoreBackSignal = currentWindow.IsBackLogicIgnorable;
-            if (isWindowIgnoreBackSignal)
+            
+            if (_useBackLogicIgnorableChecks && currentWindow.IsBackLogicIgnorable)
                 return UniTask.CompletedTask;
 
             return BackWindow(_windowsStackHolder.Pop());
