@@ -1,20 +1,13 @@
 ﻿using System.Collections.Generic;
 using KoboldUi.Collections.Base;
-using KoboldUi.Element.View;
 using UnityEngine;
 
 namespace KoboldUi.Collections.Concrete.Impl
 {
     public abstract class AUiListCollection<TView> : AUiCollection<TView>, IUiListCollection<TView>
-        where TView : MonoBehaviour, IUiView
+        where TView : MonoBehaviour, IUiCollectionView
     {
         private readonly List<TView> _views = new();
-
-        protected override void OnCreated(TView view)
-        {
-            base.OnCreated(view);
-            _views.Add(view);
-        }
 
         public override void Clear()
         {
@@ -40,13 +33,22 @@ namespace KoboldUi.Collections.Concrete.Impl
             _views.RemoveAt(index);
         }
 
-        public override IEnumerator<TView> GetEnumerator() => _views.GetEnumerator();
+        public override IEnumerator<TView> GetEnumerator()
+        {
+            return _views.GetEnumerator();
+        }
 
         public TView Create()
         {
             var view = Instantiator.InstantiatePrefabForComponent<TView>(prefab);
             OnCreated(view);
             return view;
+        }
+
+        protected override void OnCreated(TView view)
+        {
+            base.OnCreated(view);
+            _views.Add(view);
         }
     }
 }

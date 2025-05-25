@@ -1,6 +1,4 @@
-﻿using System;
-using Cysharp.Threading.Tasks;
-using DG.Tweening;
+﻿using DG.Tweening;
 using KoboldUi.Element.Animations.Parameters.Impl;
 using UnityEngine;
 
@@ -8,8 +6,8 @@ namespace KoboldUi.Element.Animations.Impl
 {
     public class ScaleAnimation : AUiAnimation<ScaleAnimationParameters>
     {
-        private readonly Vector3 _disappearScale = Vector3.zero;
         private readonly Vector3 _appearScale = Vector3.one;
+        private readonly Vector3 _disappearScale = Vector3.zero;
 
         private Tween _currentAnimation;
 
@@ -18,7 +16,7 @@ namespace KoboldUi.Element.Animations.Impl
             transform.localScale = _disappearScale;
         }
 
-        protected override UniTask AnimateAppear()
+        protected override Tween AnimateAppear()
         {
             _currentAnimation?.Kill();
 
@@ -27,21 +25,19 @@ namespace KoboldUi.Element.Animations.Impl
                 .SetUpdate(true)
                 .SetLink(gameObject);
 
-            return _currentAnimation.ToUniTask();
+            return _currentAnimation;
         }
 
-        protected override UniTask AnimateDisappear(Action callback)
+        protected override Tween AnimateDisappear()
         {
             _currentAnimation?.Kill();
 
             _currentAnimation = transform.DOScale(_disappearScale, AnimationParameters.Duration)
                 .SetEase(AnimationParameters.DisappearEase)
                 .SetUpdate(true)
-                .SetLink(gameObject)
-                .OnComplete(callback.Invoke);
-            ;
+                .SetLink(gameObject);
 
-            return _currentAnimation.ToUniTask();
+            return _currentAnimation;
         }
     }
 }

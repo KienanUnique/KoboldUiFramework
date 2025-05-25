@@ -1,6 +1,8 @@
 ﻿using System;
-using Cysharp.Threading.Tasks;
 using DG.Tweening;
+using KoboldUi.UiAction;
+using KoboldUi.UiAction.Impl.Common;
+using KoboldUi.UiAction.Pool;
 using UnityEngine;
 using Zenject;
 #if KOBOLD_ALCHEMY_SUPPORT
@@ -16,58 +18,79 @@ namespace KoboldUi.Element.Animations
 #if KOBOLD_ALCHEMY_SUPPORT
         [ShowIf(nameof(NeedUseCustomParameters))]
 #endif
-        [SerializeField] private TParams animationParameters;
+        [SerializeField]
+        private TParams animationParameters;
 
         [InjectOptional] private TParams _defaultAnimationParameters;
-
-        private Sequence _sequence;
 
         protected TParams AnimationParameters
         {
             get
             {
-                if (!useDefaultParameters) 
+                if (!useDefaultParameters)
                     return animationParameters;
-                
+
                 if (_defaultAnimationParameters == null)
                     throw new Exception($"Default animation parameters {typeof(TParams)} wasn't found");
-                
+
                 return _defaultAnimationParameters;
             }
         }
-        
-        public bool NeedUseCustomParameters() => !useDefaultParameters;
 
-        public override UniTask Appear()
+        public bool NeedUseCustomParameters()
+        {
+            return !useDefaultParameters;
+        }
+
+        public override IUiAction Appear(in IUiActionsPool pool, bool needWaitAnimation)
         {
             PrepareToAppear();
             gameObject.SetActive(true);
-            return AnimateAppear();
+
+            var tween = AnimateAppear();
+            return SelectCorrectUiAction(pool, tween, needWaitAnimation);
         }
 
-        public override UniTask Disappear()
+        public override IUiAction Disappear(in IUiActionsPool pool, bool needWaitAnimation)
         {
-            return AnimateDisappear(DisappearInstantly);
-        }
-        
-        public override UniTask AnimateFocusReturn()
-        {
-            return UniTask.NextFrame();
+            var tween = AnimateDisappear();
+            tween.OnComplete(DisappearInstantly);
+            
+            return SelectCorrectUiAction(pool, tween, needWaitAnimation);
         }
 
-        public override UniTask AnimateFocusRemoved()
+        public override IUiAction AnimateFocusReturn(in IUiActionsPool pool)
         {
-            return UniTask.NextFrame();
+            pool.GetAction(out EmptyAction emptyAction);
+            return emptyAction;
         }
-        
+
+        public override IUiAction AnimateFocusRemoved(in IUiActionsPool pool)
+        {
+            pool.GetAction(out EmptyAction emptyAction);
+            return emptyAction;
+        }
+
         public override void DisappearInstantly()
         {
             gameObject.SetActive(false);
         }
-        
-        
+
+
         protected abstract void PrepareToAppear();
-        protected abstract UniTask AnimateAppear();
-        protected abstract UniTask AnimateDisappear(Action callback);
+        protected abstract Tween AnimateAppear();
+        protected abstract Tween AnimateDisappear();
+        
+        private static IUiAction SelectCorrectUiAction(in IUiActionsPool pool, Tween tween, bool needWaitAnimation)
+        {
+            if (needWaitAnimation)
+            {
+                pool.GetAction(out TweenAction tweenAction, tween);
+                return tweenAction;
+            }
+
+            pool.GetAction(out EmptyAction emptyAction);
+            return emptyAction;
+        }
     }
 }

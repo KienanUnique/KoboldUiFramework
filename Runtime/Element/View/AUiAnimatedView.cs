@@ -1,37 +1,54 @@
-﻿using Cysharp.Threading.Tasks;
-using KoboldUi.Element.Animations;
+﻿using KoboldUi.UiAction;
+using KoboldUi.UiAction.Pool;
+using KoboldUi.Utils;
 using UnityEngine;
+
+#if KOBOLD_ALCHEMY_SUPPORT
+using Alchemy.Inspector;
+#endif
 
 namespace KoboldUi.Element.View
 {
+#if KOBOLD_ALCHEMY_SUPPORT
+    [DisableAlchemyEditor]
+#endif
     public class AUiAnimatedView : AUiView
     {
-        [SerializeField] private AUiAnimationBase openAnimation;
-        [SerializeField] private AUiAnimationBase closeAnimation;
+        [SerializeField] private AnimationData _openAnimation;
+        [SerializeField] private AnimationData _closeAnimation;
 
-        public sealed override UniTask Open()
+        public sealed override IUiAction Open(in IUiActionsPool pool)
         {
-            return UniTask.WhenAll(openAnimation.Appear(), base.Open());
-        }
-        
-        public sealed override UniTask ReturnFocus()
-        {
-            return base.ReturnFocus();
+            if (_openAnimation.Animation == null)
+                return base.Open(pool);
+            
+            return _openAnimation.Animation.Appear(pool, _openAnimation.NeedWaitAnimation);
         }
 
-        public sealed override UniTask RemoveFocus()
+        public sealed override IUiAction ReturnFocus(in IUiActionsPool pool)
         {
-            return base.RemoveFocus();
+            return base.ReturnFocus(pool);
         }
 
-        public sealed override UniTask Close()
+        public sealed override IUiAction RemoveFocus(in IUiActionsPool pool)
         {
-            return UniTask.WhenAll(closeAnimation.Disappear(), base.Close());
+            return base.RemoveFocus(pool);
         }
-        
+
+        public sealed override IUiAction Close(in IUiActionsPool pool)
+        {
+            if (_closeAnimation.Animation == null)
+                return base.Close(pool);
+            
+            return _closeAnimation.Animation.Disappear(pool, _closeAnimation.NeedWaitAnimation);
+        }
+
         public sealed override void CloseInstantly()
         {
-            closeAnimation.DisappearInstantly();
+            if (_closeAnimation.Animation != null)
+                _closeAnimation.Animation.DisappearInstantly();
+            else
+                gameObject.SetActive(false);
         }
     }
 }

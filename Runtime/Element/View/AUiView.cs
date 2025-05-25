@@ -1,48 +1,60 @@
-﻿using Cysharp.Threading.Tasks;
+﻿using KoboldUi.UiAction;
+using KoboldUi.UiAction.Impl.Common;
+using KoboldUi.UiAction.Pool;
 using UnityEngine;
 
 namespace KoboldUi.Element.View
 {
     public abstract class AUiView : MonoBehaviour, IUiView
     {
-        public virtual UniTask Open() => OnOpen();
+        public virtual void Initialize()
+        {
+        }
 
-        public virtual UniTask ReturnFocus() => OnReturnFocus();
+        public virtual IUiAction Open(in IUiActionsPool pool)
+        {
+            return OnOpen(pool);
+        }
 
-        public virtual UniTask RemoveFocus() => OnRemoveFocus();
+        public virtual IUiAction ReturnFocus(in IUiActionsPool pool)
+        {
+            return OnReturnFocus(pool);
+        }
 
-        public virtual UniTask Close() => OnClose();
+        public virtual IUiAction RemoveFocus(in IUiActionsPool pool)
+        {
+            return OnRemoveFocus(pool);
+        }
+
+        public virtual IUiAction Close(in IUiActionsPool pool)
+        {
+            return OnClose(pool);
+        }
 
         public abstract void CloseInstantly();
 
-        public void SetParent(Transform parent)
+        protected virtual IUiAction OnOpen(in IUiActionsPool pool)
         {
-            transform.SetParent(parent);
+            pool.GetAction(out EmptyAction emptyAction);
+            return emptyAction;
         }
 
-        public void Destroy()
+        protected virtual IUiAction OnReturnFocus(in IUiActionsPool pool)
         {
-            Destroy(gameObject);
+            pool.GetAction(out EmptyAction emptyAction);
+            return emptyAction;
         }
 
-        protected virtual UniTask OnOpen()
+        protected virtual IUiAction OnRemoveFocus(in IUiActionsPool pool)
         {
-            return UniTask.NextFrame();
+            pool.GetAction(out EmptyAction emptyAction);
+            return emptyAction;
         }
 
-        protected virtual UniTask OnReturnFocus()
+        protected virtual IUiAction OnClose(in IUiActionsPool pool)
         {
-            return UniTask.NextFrame();
-        }
-
-        protected virtual UniTask OnRemoveFocus()
-        {
-            return UniTask.NextFrame();
-        }
-
-        protected virtual UniTask OnClose()
-        {
-            return UniTask.NextFrame();
+            pool.GetAction(out EmptyAction emptyAction);
+            return emptyAction;
         }
     }
 }

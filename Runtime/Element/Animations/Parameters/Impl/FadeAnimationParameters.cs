@@ -11,7 +11,7 @@ namespace KoboldUi.Element.Animations.Parameters.Impl
         [SerializeField] private float appearDuration = 0.5f;
         [SerializeField] private float disappearDuration = 0.5f;
         [SerializeField] private Ease ease = Ease.Linear;
-        
+
         public Ease Ease => ease;
         public float AppearDuration => appearDuration;
         public float DisappearDuration => disappearDuration;

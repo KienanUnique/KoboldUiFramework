@@ -1,9 +1,10 @@
 ﻿using System.Collections.Generic;
-using Cysharp.Threading.Tasks;
 using KoboldUi.Element.Controller;
 using KoboldUi.Element.Controller.Impl;
 using KoboldUi.Element.View;
 using KoboldUi.Element.View.Impl;
+using KoboldUi.UiAction;
+using KoboldUi.UiAction.Pool;
 using KoboldUi.Utils;
 using UnityEngine;
 using Zenject;
@@ -13,12 +14,27 @@ namespace KoboldUi.Windows
     [RequireComponent(typeof(CanvasGroup))]
     public abstract class AWindow : AWindowBase
     {
-        [SerializeField] private List<AnimatedEmptyView> animatedEmptyViews;
+        [Header("Behaviour")]
+        [SerializeField] public bool _isPopup;
+        [SerializeField] public bool _isBackLogicIgnorable;
+        
+        [Space]
+        [Header("Views")]
+        [SerializeField] private List<AnimatedEmptyView> _animatedEmptyViews;
 
         private readonly List<IUIController> _childControllers = new();
+        private CanvasGroup _canvasGroup;
 
         private DiContainer _container;
-        private CanvasGroup _canvasGroup;
+        
+        public override bool IsPopup => _isPopup;
+        public override bool IsBackLogicIgnorable => _isBackLogicIgnorable;
+
+        private void Awake()
+        {
+            _canvasGroup = GetComponent<CanvasGroup>();
+            _canvasGroup.interactable = false;
+        }
 
         public sealed override void InstallBindings(DiContainer container)
         {
@@ -32,7 +48,7 @@ namespace KoboldUi.Windows
             base.Initialize();
         }
 
-        public override UniTask SetState(EWindowState state)
+        public override IUiAction SetState(EWindowState state, in IUiActionsPool pool)
         {
             switch (state)
             {
@@ -45,12 +61,18 @@ namespace KoboldUi.Windows
                     break;
             }
 
-            var tasks = new List<UniTask>();
-            
-            foreach (var controller in _childControllers) 
-                tasks.Add(controller.SetState(state));
+            var actions = new List<IUiAction>();
 
-            return UniTask.WhenAll(tasks);
+            if (!IsInitialized)
+                Debug.LogError(
+                    $"[Kobold Ui {nameof(AWindow)}] | {gameObject.name} is not initialized. Change State logic is invalid!");
+
+            foreach (var controller in _childControllers)
+                actions.Add(controller.SetState(state, pool));
+
+            pool.GetAction(out var parallelAction, actions);
+
+            return parallelAction;
         }
 
         public sealed override void ApplyOrder(int order)
@@ -69,19 +91,15 @@ namespace KoboldUi.Windows
             _container.InjectGameObject(gameObject);
 
             _childControllers.Add(controller);
+
+            viewInstance.Initialize();
             controller.Initialize();
             controller.CloseInstantly();
         }
 
-        private void Awake()
-        {
-            _canvasGroup = GetComponent<CanvasGroup>();
-            _canvasGroup.interactable = false;
-        }
-
         private void AddEmptyElements()
         {
-            foreach (var animatedEmptyView in animatedEmptyViews)
+            foreach (var animatedEmptyView in _animatedEmptyViews)
                 AddController<AnimatedEmptyController, AnimatedEmptyView>(animatedEmptyView);
         }
     }
