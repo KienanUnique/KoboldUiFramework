@@ -1,5 +1,4 @@
 ﻿using Cysharp.Threading.Tasks;
-using KoboldUi.Interfaces;
 using KoboldUi.UiAction.Pool;
 using KoboldUi.Utils;
 using KoboldUi.Windows;
@@ -39,7 +38,7 @@ namespace KoboldUi.UiAction.Impl.Service
 
             var currentWindow = _windowsStackHolder.CurrentWindow;
 
-            var isWindowIgnoreBackSignal = currentWindow is IBackLogicIgnorable;
+            var isWindowIgnoreBackSignal = currentWindow.IsBackLogicIgnorable;
             if (isWindowIgnoreBackSignal)
                 return UniTask.CompletedTask;
 

@@ -1,5 +1,4 @@
 ﻿using Cysharp.Threading.Tasks;
-using KoboldUi.Interfaces;
 using KoboldUi.UiAction.Pool;
 using KoboldUi.Utils;
 using KoboldUi.Windows;
@@ -43,7 +42,7 @@ namespace KoboldUi.UiAction.Impl.Service
 
         private async UniTask OpenWindow()
         {
-            var isNextWindowPopUp = _windowToOpen is IPopUp;
+            var isNextWindowPopUp = _windowToOpen.IsPopup;
             if (!_windowsStackHolder.IsEmpty)
             {
                 var currentWindow = _windowsStackHolder.CurrentWindow;

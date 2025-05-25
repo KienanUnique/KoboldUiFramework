@@ -15,6 +15,9 @@ namespace KoboldUi.Windows
 
         public bool IsInitialized { get; private set; }
         public virtual string Name => gameObject.name;
+        
+        public abstract bool IsPopup { get; }
+        public abstract bool IsBackLogicIgnorable { get; }
 
         public IUiAction WaitInitialization(in IUiActionsPool pool)
         {

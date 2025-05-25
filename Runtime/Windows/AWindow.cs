@@ -14,12 +14,21 @@ namespace KoboldUi.Windows
     [RequireComponent(typeof(CanvasGroup))]
     public abstract class AWindow : AWindowBase
     {
+        [Header("Behaviour")]
+        [SerializeField] public bool _isPopup;
+        [SerializeField] public bool _isBackLogicIgnorable;
+        
+        [Space]
+        [Header("Views")]
         [SerializeField] private List<AnimatedEmptyView> animatedEmptyViews;
 
         private readonly List<IUIController> _childControllers = new();
         private CanvasGroup _canvasGroup;
 
         private DiContainer _container;
+        
+        public override bool IsPopup => _isPopup;
+        public override bool IsBackLogicIgnorable => _isBackLogicIgnorable;
 
         private void Awake()
         {
