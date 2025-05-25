@@ -1,4 +1,5 @@
 ﻿using System;
+using KoboldUi.Collections.Concrete.Impl;
 using KoboldUi.Element.View;
 using Samples.Simple_Sample.Scripts.Utils;
 using TMPro;
@@ -8,7 +9,7 @@ using UnityEngine.UI;
 
 namespace Samples.Simple_Sample.Scripts.MainMenuScreen.Ui.LevelSelector.Selector
 {
-    public class LevelItemView : AUiSimpleView
+    public class LevelItemView : AUiSimpleCollectionView
     {
         [SerializeField] private TextMeshProUGUI nameText;
         [SerializeField] private GameObject lockedContainer;

@@ -1,4 +1,5 @@
-﻿using Cysharp.Threading.Tasks;
+﻿using KoboldUi.UiAction;
+using KoboldUi.UiAction.Pool;
 using KoboldUi.Utils;
 
 namespace KoboldUi.Windows
@@ -7,9 +8,11 @@ namespace KoboldUi.Windows
     {
         bool IsInitialized { get; }
         string Name { get; }
+        bool IsPopup { get; }
+        bool IsBackLogicIgnorable { get; }
 
-        UniTask WaitInitialization();
-        UniTask SetState(EWindowState state);
+        IUiAction WaitInitialization(in IUiActionsPool pool);
+        IUiAction SetState(EWindowState state, in IUiActionsPool pool);
         void ApplyOrder(int order);
     }
 }

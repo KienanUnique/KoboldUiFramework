@@ -1,11 +1,10 @@
-﻿using KoboldUi.Interfaces;
-using KoboldUi.Windows;
+﻿using KoboldUi.Windows;
 using Samples.Simple_Sample.Scripts.MainMenuScreen.Ui.LevelSelector.Selector;
 using UnityEngine;
 
 namespace Samples.Simple_Sample.Scripts.MainMenuScreen.Ui.LevelSelector
 {
-    public class LevelSelectorWindow : AWindow, IPopUp
+    public class LevelSelectorWindow : AWindow
     {
         [SerializeField] private LevelSelectorView levelSelectorView;
         
