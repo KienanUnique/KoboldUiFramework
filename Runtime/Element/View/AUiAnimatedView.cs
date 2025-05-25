@@ -20,7 +20,7 @@ namespace KoboldUi.Element.View
             => base.RemoveFocus(pool);
 
         public sealed override IUiAction Close(in IUiActionsPool pool) 
-            => closeAnimation == null ? base.Open(pool) : closeAnimation.Appear(pool);
+            => closeAnimation == null ? base.Close(pool) : closeAnimation.Disappear(pool);
         
         public sealed override void CloseInstantly()
             => closeAnimation.DisappearInstantly();
