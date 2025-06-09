@@ -412,8 +412,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 20957ee893fd5094bb194e9f872b29af, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  useDefaultParameters: 1
-  animationParameters: {fileID: 0}
+  _needWaitAnimation: 0
+  _useDefaultParameters: 1
+  _animationParameters: {fileID: 0}
 --- !u!114 &4147522764708400453
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -426,12 +427,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f84fc19831fa5534fa891928b0f56a84, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _openAnimation:
-    <Animation>k__BackingField: {fileID: 505646295644537623}
-    <NeedWaitAnimation>k__BackingField: 0
-  _closeAnimation:
-    <Animation>k__BackingField: {fileID: 505646295644537623}
-    <NeedWaitAnimation>k__BackingField: 0
+  _openAnimation: {fileID: 505646295644537623}
+  _closeAnimation: {fileID: 505646295644537623}
   yesButton: {fileID: 2288434543400132290}
   noButton: {fileID: 9204125530863379639}
 --- !u!1 &6958439458489925681
@@ -599,12 +596,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8c4dd4464ed132a46805b764d5e4d455, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _openAnimation:
-    <Animation>k__BackingField: {fileID: 6588308314054368007}
-    <NeedWaitAnimation>k__BackingField: 0
-  _closeAnimation:
-    <Animation>k__BackingField: {fileID: 6588308314054368007}
-    <NeedWaitAnimation>k__BackingField: 0
+  _openAnimation: {fileID: 6588308314054368007}
+  _closeAnimation: {fileID: 6588308314054368007}
 --- !u!225 &2322729930783556228
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -629,8 +622,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ef78c9a177e395d4e80b339c1559889e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  useDefaultParameters: 1
-  animationParameters: {fileID: 0}
+  _needWaitAnimation: 0
+  _useDefaultParameters: 1
+  _animationParameters: {fileID: 0}
 --- !u!1001 &2873410004797292136
 PrefabInstance:
   m_ObjectHideFlags: 0

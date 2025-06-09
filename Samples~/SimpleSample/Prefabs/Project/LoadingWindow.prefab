@@ -118,12 +118,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d09913d688ea53f40975e49e5986dfcb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _openAnimation:
-    <Animation>k__BackingField: {fileID: 7324026869873695270}
-    <NeedWaitAnimation>k__BackingField: 0
-  _closeAnimation:
-    <Animation>k__BackingField: {fileID: 7324026869873695270}
-    <NeedWaitAnimation>k__BackingField: 0
+  _openAnimation: {fileID: 7324026869873695270}
+  _closeAnimation: {fileID: 7324026869873695270}
   loadingProgressText: {fileID: 2725276017126628095}
 --- !u!114 &7324026869873695270
 MonoBehaviour:
@@ -137,8 +133,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 85535bd58ab1f264ca3bca0573cd91b4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  useDefaultParameters: 1
-  animationParameters: {fileID: 0}
+  _needWaitAnimation: 0
+  _useDefaultParameters: 1
+  _animationParameters: {fileID: 0}
   _fromAppearAnchoredPosition: {x: 335.5, y: 0}
   _disappearToTheSamePlace: 1
   _toDisappearAnchoredPosition: {x: 0, y: 0}
@@ -366,12 +363,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8c4dd4464ed132a46805b764d5e4d455, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _openAnimation:
-    <Animation>k__BackingField: {fileID: 1982323840881030418}
-    <NeedWaitAnimation>k__BackingField: 0
-  _closeAnimation:
-    <Animation>k__BackingField: {fileID: 1982323840881030418}
-    <NeedWaitAnimation>k__BackingField: 0
+  _openAnimation: {fileID: 1982323840881030418}
+  _closeAnimation: {fileID: 1982323840881030418}
 --- !u!225 &1567188029634792760
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -396,5 +389,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ef78c9a177e395d4e80b339c1559889e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  useDefaultParameters: 1
-  animationParameters: {fileID: 0}
+  _needWaitAnimation: 0
+  _useDefaultParameters: 1
+  _animationParameters: {fileID: 0}
