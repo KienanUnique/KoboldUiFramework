@@ -1,28 +1,23 @@
 ﻿using KoboldUi.UiAction;
 using KoboldUi.UiAction.Pool;
-using KoboldUi.Utils;
 using UnityEngine;
+using KoboldUi.Element.Animations;
 
 #if KOBOLD_ALCHEMY_SUPPORT
 using Alchemy.Inspector;
+using UnityEditor;
 #endif
 
 namespace KoboldUi.Element.View
 {
-#if KOBOLD_ALCHEMY_SUPPORT
-    [DisableAlchemyEditor]
-#endif
     public class AUiAnimatedView : AUiView
     {
-        [SerializeField] private AnimationData _openAnimation;
-        [SerializeField] private AnimationData _closeAnimation;
+        [SerializeField] private AUiAnimationBase _openAnimation;
+        [SerializeField] private AUiAnimationBase _closeAnimation;
 
         public sealed override IUiAction Open(in IUiActionsPool pool)
         {
-            if (_openAnimation.Animation == null)
-                return base.Open(pool);
-            
-            return _openAnimation.Animation.Appear(pool, _openAnimation.NeedWaitAnimation);
+            return _openAnimation ? _openAnimation.Appear(pool) : base.Open(pool);
         }
 
         public sealed override IUiAction ReturnFocus(in IUiActionsPool pool)
@@ -37,18 +32,33 @@ namespace KoboldUi.Element.View
 
         public sealed override IUiAction Close(in IUiActionsPool pool)
         {
-            if (_closeAnimation.Animation == null)
-                return base.Close(pool);
-            
-            return _closeAnimation.Animation.Disappear(pool, _closeAnimation.NeedWaitAnimation);
+            return _closeAnimation ? _closeAnimation.Disappear(pool) : base.Close(pool);
         }
 
         public sealed override void CloseInstantly()
         {
-            if (_closeAnimation.Animation != null)
-                _closeAnimation.Animation.DisappearInstantly();
+            if (_closeAnimation != null)
+                _closeAnimation.DisappearInstantly();
             else
                 gameObject.SetActive(false);
         }
+        
+#if KOBOLD_ALCHEMY_SUPPORT && UNITY_EDITOR
+        [Button]
+        public void AutoFill()
+        {
+            if(!TryGetComponent<AUiAnimationBase>(out var uiAnimation))
+                return;
+
+            if (!_openAnimation)
+                _openAnimation = uiAnimation;
+
+            if (!_closeAnimation)
+                _closeAnimation = uiAnimation;
+            
+            EditorUtility.SetDirty(this);
+            AssetDatabase.SaveAssetIfDirty(this);
+        }
+#endif
     }
 }
