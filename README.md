@@ -20,11 +20,19 @@
 # Installation
 1. Install all dependencies.
 2. Generate the `.asmdef` for **Dotween**:
-   1. Tools -> Demigiant -> DOTween Utility Panel -> Create .asmdef
-3. Add the `UNITASK_DOTWEEN_SUPPORT` define:
-   1. Edit -> Project Settings -> Player -> Scripting Define Symbols
-4. If you installed **Alchemy**, also add the `KOBOLD_ALCHEMY_SUPPORT` define.
-5. Install the plugin via Git: [https://github.com/KienanUnique/KoboldUiFramework.git](https://github.com/KienanUnique/KoboldUiFramework.git)
+`Tools -> Demigiant -> DOTween Utility Panel -> Create .asmdef`
+3. Add the define to:`Edit -> Project Settings -> Player -> Scripting Define Symbols`
+```
+UNITASK_DOTWEEN_SUPPORT
+```
+4. If you installed **Alchemy**, also add the define:
+```
+KOBOLD_ALCHEMY_SUPPORT
+```
+5. Install the plugin via Git: 
+```
+https://github.com/KienanUnique/KoboldUiFramework.git
+```
 
 
 # Useful Links
