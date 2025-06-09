@@ -4,6 +4,7 @@ using KoboldUi.UiAction;
 using KoboldUi.UiAction.Impl.Common;
 using KoboldUi.UiAction.Pool;
 using UnityEngine;
+using UnityEngine.Serialization;
 using Zenject;
 #if KOBOLD_ALCHEMY_SUPPORT
 using Alchemy.Inspector;
@@ -13,13 +14,18 @@ namespace KoboldUi.Element.Animations
 {
     public abstract class AUiAnimation<TParams> : AUiAnimationBase where TParams : IUiAnimationParameters
     {
-        [SerializeField] private bool useDefaultParameters = true;
+        [SerializeField] public bool _needWaitAnimation;
+
+        [FormerlySerializedAs("useDefaultParameters")]
+        [SerializeField]
+        private bool _useDefaultParameters = true;
 
 #if KOBOLD_ALCHEMY_SUPPORT
         [ShowIf(nameof(NeedUseCustomParameters))]
 #endif
+        [FormerlySerializedAs("animationParameters")]
         [SerializeField]
-        private TParams animationParameters;
+        private TParams _animationParameters;
 
         [InjectOptional] private TParams _defaultAnimationParameters;
 
@@ -27,8 +33,8 @@ namespace KoboldUi.Element.Animations
         {
             get
             {
-                if (!useDefaultParameters)
-                    return animationParameters;
+                if (!_useDefaultParameters)
+                    return _animationParameters;
 
                 if (_defaultAnimationParameters == null)
                     throw new Exception($"Default animation parameters {typeof(TParams)} wasn't found");
@@ -39,24 +45,24 @@ namespace KoboldUi.Element.Animations
 
         public bool NeedUseCustomParameters()
         {
-            return !useDefaultParameters;
+            return !_useDefaultParameters;
         }
 
-        public override IUiAction Appear(in IUiActionsPool pool, bool needWaitAnimation)
+        public override IUiAction Appear(in IUiActionsPool pool)
         {
             PrepareToAppear();
             gameObject.SetActive(true);
 
             var tween = AnimateAppear();
-            return SelectCorrectUiAction(pool, tween, needWaitAnimation);
+            return SelectCorrectUiAction(pool, tween, _needWaitAnimation);
         }
 
-        public override IUiAction Disappear(in IUiActionsPool pool, bool needWaitAnimation)
+        public override IUiAction Disappear(in IUiActionsPool pool)
         {
             var tween = AnimateDisappear();
             tween.OnComplete(DisappearInstantly);
             
-            return SelectCorrectUiAction(pool, tween, needWaitAnimation);
+            return SelectCorrectUiAction(pool, tween, _needWaitAnimation);
         }
 
         public override IUiAction AnimateFocusReturn(in IUiActionsPool pool)

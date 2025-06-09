@@ -1543,8 +1543,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 20957ee893fd5094bb194e9f872b29af, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  useDefaultParameters: 1
-  animationParameters: {fileID: 0}
+  _needWaitAnimation: 0
+  _useDefaultParameters: 1
+  _animationParameters: {fileID: 0}
 --- !u!114 &1050919525886959326
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1557,12 +1558,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 86a290da39013ac4e870fb32097105f4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _openAnimation:
-    <Animation>k__BackingField: {fileID: 505646295644537623}
-    <NeedWaitAnimation>k__BackingField: 0
-  _closeAnimation:
-    <Animation>k__BackingField: {fileID: 505646295644537623}
-    <NeedWaitAnimation>k__BackingField: 0
+  _openAnimation: {fileID: 505646295644537623}
+  _closeAnimation: {fileID: 505646295644537623}
   soundVolume: {fileID: 184357169035135248}
   musicVolume: {fileID: 2977216787504721627}
   easyModeToggle: {fileID: 9007655248513298178}
@@ -1994,12 +1991,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8c4dd4464ed132a46805b764d5e4d455, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _openAnimation:
-    <Animation>k__BackingField: {fileID: 0}
-    <NeedWaitAnimation>k__BackingField: 0
-  _closeAnimation:
-    <Animation>k__BackingField: {fileID: 0}
-    <NeedWaitAnimation>k__BackingField: 0
+  _openAnimation: {fileID: 8767934107846186101}
+  _closeAnimation: {fileID: 8767934107846186101}
 --- !u!225 &7862880983320069007
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -2024,8 +2017,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ef78c9a177e395d4e80b339c1559889e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  useDefaultParameters: 1
-  animationParameters: {fileID: 0}
+  _needWaitAnimation: 0
+  _useDefaultParameters: 1
+  _animationParameters: {fileID: 0}
 --- !u!1 &9179356502162431454
 GameObject:
   m_ObjectHideFlags: 0

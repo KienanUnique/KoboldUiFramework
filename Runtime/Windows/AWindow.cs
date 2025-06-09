@@ -9,10 +9,15 @@ using KoboldUi.Utils;
 using UnityEngine;
 using Zenject;
 
+#if KOBOLD_ALCHEMY_SUPPORT
+using Alchemy.Inspector;
+using UnityEditor;
+#endif
+
 namespace KoboldUi.Windows
 {
     [RequireComponent(typeof(CanvasGroup))]
-    public abstract class AWindow : AWindowBase
+    public abstract class AWindow : AWindowBase, IAutoFillable
     {
         [Header("Behaviour")]
         [SerializeField] public bool _isPopup;
@@ -102,5 +107,18 @@ namespace KoboldUi.Windows
             foreach (var animatedEmptyView in _animatedEmptyViews)
                 AddController<AnimatedEmptyController, AnimatedEmptyView>(animatedEmptyView);
         }
+        
+#if KOBOLD_ALCHEMY_SUPPORT && UNITY_EDITOR
+        [Button]
+        public void AutoFill()
+        {
+            _animatedEmptyViews = new List<AnimatedEmptyView>();
+            var animatedEmptyViews = GetComponentsInChildren<AnimatedEmptyView>();
+            _animatedEmptyViews.AddRange(animatedEmptyViews);
+            
+            EditorUtility.SetDirty(this);
+            AssetDatabase.SaveAssetIfDirty(this);
+        }
+#endif
     }
 }
