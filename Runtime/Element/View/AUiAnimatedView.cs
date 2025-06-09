@@ -10,7 +10,7 @@ using UnityEditor;
 
 namespace KoboldUi.Element.View
 {
-    public class AUiAnimatedView : AUiView
+    public class AUiAnimatedView : AUiView, IAutoFillable
     {
         [SerializeField] private AUiAnimationBase _openAnimation;
         [SerializeField] private AUiAnimationBase _closeAnimation;

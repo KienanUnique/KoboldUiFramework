@@ -17,7 +17,7 @@ using UnityEditor;
 namespace KoboldUi.Windows
 {
     [RequireComponent(typeof(CanvasGroup))]
-    public abstract class AWindow : AWindowBase
+    public abstract class AWindow : AWindowBase, IAutoFillable
     {
         [Header("Behaviour")]
         [SerializeField] public bool _isPopup;
