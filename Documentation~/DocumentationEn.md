@@ -1,317 +1,66 @@
-﻿# WARNING
-This documentation version is outdated!
+# Kobold UI Plugin Documentation
 
-# Services
+## Window services
 
-The project provides two services for working with windows: `ILocalWindowsService` and `IProjectWindowsService`.
+### Interfaces
+- `IWindowsService.CurrentWindow` exposes the window at the top of the stack or `null` when the stack is empty.
+- `IWindowsService.IsOpened<TWindow>()` returns `true` if the current window is of the requested type.
+- `IWindowsService.OpenWindow<TWindow>(Action onComplete = null)` resolves the window from the `DiContainer`, pushes it to the stack and opens it. The previous window becomes `NonFocused` when the next window is a popup and `Closed` otherwise. The optional callback is executed after every queued UI action finishes.
+- `IWindowsService.CloseWindow(Action onComplete = null, bool useBackLogicIgnorableChecks = true)` closes the current window and returns to the previous one when the stack contains more than one window. When `useBackLogicIgnorableChecks` is `true`, windows with `IsBackLogicIgnorable` enabled block the close request.
+- `IWindowsService.CloseToWindow<TWindow>(Action onComplete = null, bool useBackLogicIgnorableChecks = true)` closes windows until the requested instance reaches the top of the stack. The call stops early if the target is not present in the stack or if a back-logic-ignorable window is encountered while the flag is enabled.
 
-### OpenWindow
-```c#
-OpenWindow<TWindow>(Action onComplete = default, EAnimationPolitic previousWindowPolitic = EAnimationPolitic.Wait)
-```
-- Opens a window of the specified type.
+### Execution pipeline
+- `AWindowsService` owns the `WindowsStackHolder`, the `UiActionsPool`, and the `TaskRunner` that sequentially executes queued `IUiAction` instances with UniTask.
+- Every service call creates one or more pooled actions (open/close/animation callbacks). Actions return themselves to the pool after completion; disposing a service disposes every pending action.
+- `OpenWindowAction` waits for window initialisation (`WaitInitializationAction`) before showing the window and sets the sibling order through `WindowsOrdersManager`.
+- `CloseWindowAction` and `CloseToWindowAction` close windows, update stack order and optionally reopen the previous window through `OpenPreviousWindowAction`.
 
-Example:
-```c#
-_localWindowsService.OpenWindow<SettingsChangeConfirmationWindow>();
-```
+### Implementations
+- `LocalWindowsService` and `ProjectWindowsService` extend `AWindowsService`. They differ only by the context in which they are installed.
 
-### TryBackWindow
-```c#
-TryBackWindow(Action<bool> onComplete = default, EAnimationPolitic previousWindowPolitic = EAnimationPolitic.Wait)
-```
-- Closes the current window and opens the previous one.
-- If the window implements the `IBackLogicIgnorable` interface, closing will not occur.
-- The `onComplete` callback receives a result: `false` if it was not possible to close the current window, or `true` if it was successful.
+## Windows
 
-Example:
-```c#
-_localWindowsService.TryBackWindow();
-```
+### Contract
+- `IWindow` exposes the lifecycle surface: `IsInitialized`, `Name`, `IsPopup`, `IsBackLogicIgnorable`, `WaitInitialization`, `SetState`, and `ApplyOrder`.
+- `EWindowState` defines three legal states: `Active`, `NonFocused`, and `Closed`.
 
-### TryBackToWindow
-```c#
-TryBackToWindow<TWindow>(Action<bool> onComplete = default, EAnimationPolitic previousWindowsPolitic = EAnimationPolitic.Wait) 
-```
-- Closes windows until the specified window is opened.
-- If the specified window was never opened previously, an error will be thrown!
+### Base classes
+- `AWindowBase` is the common base for all windows. It implements `IInitializable`, waits for initialisation via a pooled action, and exposes `InstallBindings(DiContainer)` so the installer can bind a prefab instance.
+- `AWindow` derives from `AWindowBase`. It requires a `CanvasGroup`, disables interaction while hidden or unfocused, and coordinates child controllers.
+  - Override `AddControllers()` and call `AddController<TController, TView>(viewInstance)` for each `View` on the prefab. The method creates the controller through the injected `DiContainer`, injects the GameObject, initialises both the view and the controller, and forces the controller to close immediately so the window starts in the `Closed` state.
+  - The serialized list of `AnimatedEmptyView` objects is processed during initialisation to register empty child elements automatically.
+  - `ApplyOrder` assigns the transform sibling index that is calculated by `WindowsOrdersManager`.
 
-Example:
-```c#
-_localWindowsService.TryBackToWindow<MainMenuWindow>();
-```
+## Controllers
+- Controllers must inherit from `AUiController<TView>`. The controller tracks `IsOpened` and `IsInFocus`, exposes `SetState(EWindowState, IUiActionsPool)`, and provides the overridable hooks `OnOpen`, `OnClose`, and `OnFocusRemove`.
+- `CloseInstantly()` is available for instant teardown during initialisation or prefab setup.
 
-### CloseWindow
-```c#
-CloseWindow(Action onComplete = default, EAnimationPolitic previousWindowPolitic = EAnimationPolitic.Wait)
-```
-- Closes the current window and opens the previous one.
-- Does not depend on inheritance from `IBackLogicIgnorable`.
+## Views
+- `IUiView` defines `Initialize`, `Open`, `ReturnFocus`, `RemoveFocus`, `Close`, and `CloseInstantly` that all return pooled actions.
+- `AUiView` implements the interface with empty animations (`EmptyAction`). Override the protected `On*` methods to plug custom behaviour.
+- `AUiSimpleView` toggles the `GameObject` on open/close and delegates animation to the base implementation.
+- `AUiAnimatedView` works with `AUiAnimationBase` references for open/close transitions. When no animation is assigned, it falls back to the base behaviour. `CloseInstantly` either runs the animation’s instant branch or disables the object. Auto-fill helpers are compiled only when `KOBOLD_ALCHEMY_SUPPORT` is defined.
+- `AnimatedEmptyView` is a concrete animated view that can be used for placeholder elements.
 
-Example:
-```c#
-_projectWindowsService.CloseWindow();
-```
-
-### CloseToWindow
-```c#
-CloseToWindow<TWindow>(Action onComplete = default, EAnimationPolitic previousWindowsPolitic = EAnimationPolitic.Wait)
-```
-- Closes windows until the specified one is opened (similar to `TryBackToWindow`).
-- Does not depend on inheritance from `IBackLogicIgnorable`.
-
-
-## Animation Politic
-You can also pass the `EAnimationPolitic` parameter to the window service methods.  
-This parameter determines how the animation of the previous window is handled and has only two values:
-
-* `Wait` – the animation for opening the new window will start **only after** the animation for closing or switching focus from the previous window finishes.
-* `DoNotWait` – the animation for opening the new window will start **in parallel** with the animation for closing or switching focus from the previous window.
-
-
-# Window
-* A window class should inherit from `AWindow`.
-* A window is a `MonoBehaviour` attached to a prefab. To add a UI element consisting of a Controller and View, override the `AddControllers` method and call the following method:
-```c# 
-    AddController<TController, TView>(viewObject)
-```
----
-* Windows can implement the following flag interfaces to change their behavior:
-  * `IPopUp`: for **popup** windows. When opened, the previous window remains visible and just loses focus.
-  * `IBackLogicIgnorable`: for windows that should **ignore** the `BackWindow` method.
-
-Examples of window implementations:
-```c#
-    public class GameplayWindow : AWindow
-    {
-        [SerializeField] private ScoreCounterView scoreCounterView;
-        [SerializeField] private HealthView healthView;
-        [SerializeField] private TimerView timerView;
-
-        protected override void AddControllers()
-        {
-            AddController<ScoreCounterController, ScoreCounterView>(scoreCounterView);
-            AddController<HealthController, HealthView>(healthView);
-            AddController<TimerController, TimerView>(timerView);
-        }
-    }
-```
-
-```c#
-    public class SettingsWindow : AWindow, IPopUp
-    {
-        [SerializeField] private SettingsView settingsView;
-
-        protected override void AddControllers()
-        {
-            AddController<SettingsController, SettingsView>(settingsView);
-        }
-    }
-```
-
-
-
-## States
-
-A window can be in one of the following three states:
-
-### Active
-- The state when a window is open.
-- Only the currently open window has this state.
-- The controller's `OnOpen` method is called.
-
-### NonFocused
-- The state when a window is sent to the background due to the opening of an `IPopup` window.
-- The controller's `OnFocusRemove` method is called.
-
-### Closed
-- The initial state of the window or the state after opening another regular window (not an `IPopup`!).
-- The controller's `OnClose` method is called.
-
-# View
-
-Each `View` class must be a `MonoBehaviour` attached to the corresponding prefab.
-
-A `View` class can inherit from one of the following base classes:
-
-### AUiView:
-- The base class with empty methods for tracking state.
-- Use this when custom `View` logic is needed.
-
-### AUiSimpleView:
-- Inherits from `AUiView`.
-- Implements simple enabling/disabling of the object when opening/closing.
-- Suitable for rapid prototyping.
-
-### AUiAnimatedView:
-- Also inherits from `AUiView`.
-- Uses animations when changing states.
-- Recommended for most cases.
-
----
-Example:
-```c#
-    public class ScoreCounterView : AUiAnimatedView
-    {
-        public TMP_Text score;
-    }
-```
-
-
-
-# Animations
-
-Animations are used to visually display changes in the `View` state.
-
-Here are the main points to consider:
-- Animations are implemented as `MonoBehaviour`.
-- They are used only in `View` classes inherited from `AUiAnimatedView`.
-- Each animation type has its own **unique** settings.
-- To create a custom animation type, inherit from `AUiAnimation<TParams>`, where `TParams` must implement the `IUiAnimationParameters` interface and be **serializable**.
-
-
-## Animation Parameters
-- Animations can use both custom and default parameters.
-- An animation parameter class is a **serializable** class inherited from `AUiAnimationParameters`, which stores all the necessary settings. `AUiAnimationParameters` in turn inherits from `ScriptableObject`.
-- Default parameters are parameters set in one of the **contexts**.
-- Setting default parameters is mandatory only if they are to be used (i.e., when the `UseDefaultParameters` boolean is set to `true`).
-- If each animation uses its own parameters, setting default parameters **is not required**. There will be no errors since default parameters are injected with the `InjectOptional` attribute.
-
-
-## Built-in Animations
-- The plugin already provides three built-in animations: **Fade**, **Scale**, and **Slide**.
-- These animations have an **installer**. However, when adding a new animation type, it is recommended to create your own custom installer for standard animations, using the built-in installer code as a reference.
-
-
-# Controller
-- All controllers must inherit from `AUiController<TView>`, where `TView` is a view inherited from `IUIView`.
-- The controller has virtual methods `OnOpen`, `OnClose`, `OnFocusRemove`, which can be overridden as needed.
-- It is recommended to perform initial controller setup in the `Initialize` method override.
-
-Example of a controller:
-```c#
-    public class ScoreCounterController : AUiController<ScoreCounterView>
-    {
-        private readonly IScoreService _scoreService;
-
-        public ScoreCounterController(IScoreService scoreService)
-        {
-            _scoreService = scoreService;
-        }
-
-        public override void Initialize()
-        {
-            _scoreService.CurrentScore.Subscribe(ShowScore).AddTo(View);
-            ShowScore(_scoreService.CurrentScore.Value);
-        }
-
-        private void ShowScore(int newScore)
-        {
-            View.score.text = $"{newScore} / {_scoreService.NeedScore}";
-        }
-    }
-```
-
-
-
-### Important! Only windows are bound!
-### Controllers and Views are not bound, only dependencies are injected into them!
-
-
-# Installers
-The following contexts should have the corresponding dependencies installed:
-- **Project context:**
-  - Default animation settings. If there are no custom animations, use `DefaultAnimationsInstaller*`.
-  - `ProjectWindowsServiceInstaller`.
-  - Project layer windows.
-- **Scene context:**
-  - `LocalWindowsServiceInstaller`.
-  - Local layer windows.
-
-`DefaultAnimationsInstaller` is the installer for the built-in animations. If you have added your own animations, create your own installer and bind your animations there:
-```c#
-  Container.BindInstance(myAnimationParameters).AsSingle();
-```
-
-
-* To install a window, do the following:
-```c#
-  Container.BindWindowFromPrefab(canvasInstance, windowPrefab);
-```
-Where:
-- `canvasInstance` is the canvas created in the scene, where the window should be placed.
-- `windowPrefab` is the prefab of the window to be spawned and bound.
----
-
-Example of a Local windows installer:
-
-```c#
-[CreateAssetMenu(menuName = "Installers/GameUiInstaller", fileName = "GameUiInstaller")]
-public class GameUiInstaller : ScriptableObjectInstaller<GameUiInstaller>
-{
-    [SerializeField] private Canvas canvas;
-    [SerializeField] private GameplayWindow gameplayWindow;
-    [SerializeField] private LoseWindow loseWindow;
-    
-    public override void InstallBindings()
-    {
-        var canvasInstance = Instantiate(canvas);
-        Container.BindWindowFromPrefab(canvasInstance, gameplayWindow);
-        Container.BindWindowFromPrefab(canvasInstance, loseWindow);
-    }
-}
-```
+## Animations
+- `AUiAnimationBase` describes the five animation hooks: `Appear`, `AnimateFocusReturn`, `AnimateFocusRemoved`, `Disappear`, and `DisappearInstantly`.
+- `AUiAnimation<TParams>` provides DOTween-based `Appear` and `Disappear` implementations, optional waiting (`_needWaitAnimation`), access to default parameters injected into the component, and abstract methods `PrepareToAppear`, `AnimateAppear`, and `AnimateDisappear`.
+- `IUiAnimationParameters` marks parameter assets. `AUiAnimationParameters` is a `ScriptableObject` base for parameter storage. Built-in implementations live under `Element/Animations/Parameters/Impl`.
+- Default parameters can be registered through `DefaultAnimationsInstaller`, which binds fade, scale, and slide parameter instances as singletons.
 
 ## Collections
+- `AUiCollection<TView>` manages instantiation through `IInstantiator`, stores a prefab and target container, and provides a protected `OnCreated` hook that sets the parent and plays the appear animation.
+- `AUiListCollection<TView>` keeps a list of created views, exposes an indexer, and destroys items on removal.
+- `AUiPooledCollection<TView>` keeps a pool of detached views. `ReturnToPool` hides and stores the view for later reuse. `Clear` returns every active view to the pool.
+- `AUiCollectionView` defines `Appear`, `Disappear`, `SetParent`, and `Destroy`. `AUiSimpleCollectionView` only toggles the object on appear/disappear.
+- Interfaces `IUiCollection<TView>`, `IUiListCollection<TView>`, `IUiPooledCollection<TView>`, and `IUiFactory<TView>` describe the available operations for iteration, pooling, and creation.
 
-<img src="Images/ui_collection.jpeg"/>
+## Installers and binding
+- Use `DiContainerExtensions.BindWindowFromPrefab(canvasInstance, windowPrefab)` to instantiate a window prefab under a `Canvas`, queue it for injection, and bind it as a singleton service.
+- Project-level installers should bind shared resources (default animation parameters and `ProjectWindowsServiceInstaller`). Scene-level installers typically bind `LocalWindowsServiceInstaller` and local windows.
+- `LocalWindowsServiceInstaller` and `ProjectWindowsServiceInstaller` bind their corresponding services as eager singletons.
 
-To display multiple identical UI elements, you can use collections:
-
-### Collection example:
-
-```c#
-public class LevelItemsCollection : AUiListCollection<LevelItemView>
-{
-}
-```
-
-### Collection item example:
-
-```c#
-public class LevelItemView : A
-
-UiSimpleView
-{
-    [SerializeField] private TextMeshProUGUI nameText;
-    [SerializeField] private GameObject lockedContainer;
-    [SerializeField] private Button button;
-
-    public IObservable<Unit> OnClick => button.OnClickAsObservable();
-    public LevelData Data { get; private set; }
-
-    public void SetLevelData(LevelData levelData)
-    {
-        Data = levelData;
-        nameText.text = levelData.Name;
-        lockedContainer.SetActive(!levelData.IsUnlocked);
-    }
-}
-```
-
-### Filling the collection example:
-
-```c#
-var collection = View.levelItemsCollection;
-collection.Clear();
-var progression = _levelProgressionService.Progression;
-
-foreach (var levelData in progression)
-{
-    var item = collection.Create();
-    item.SetLevelData(levelData);
-    item.OnClick.Subscribe(_ => OnItemClicked(item)).AddTo(View);
-}
-```
-
----
+## Utilities and helpers
+- `WindowsOrdersManager` updates sibling indices when windows appear or disappear. Override `ApplyOrder` in custom windows if the default transform ordering is not sufficient.
+- `IAutoFillable` is an optional marker compiled with `KOBOLD_ALCHEMY_SUPPORT` to expose editor-only `AutoFill` buttons.
+- `AssetMenuPath` centralises `CreateAssetMenu` prefixes for installers and animation parameters.
