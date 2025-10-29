@@ -1,263 +1,319 @@
 # Документация плагина Kobold UI
 
-## Службы окон
+## Сервис окон
 
-### Интерфейсы
-- `IWindowsService.CurrentWindow` возвращает верхнее окно стека или `null`, если стек пуст.
-- `IWindowsService.IsOpened<TWindow>()` возвращает `true`, если текущим окном является экземпляр указанного типа.
-- `IWindowsService.OpenWindow<TWindow>(Action onComplete = null)` запрашивает окно из `DiContainer`, помещает его в стек и открывает. Предыдущее окно получает состояние `NonFocused`, если новое окно является попапом, и `Closed` в противном случае. Необязательный колбэк выполняется после завершения всех поставленных в очередь UI-действий.
-- `IWindowsService.CloseWindow(Action onComplete = null, bool useBackLogicIgnorableChecks = true)` закрывает текущее окно и возвращает предыдущее, если стек содержит больше одного окна. При `useBackLogicIgnorableChecks = true` окна с включённым `IsBackLogicIgnorable` блокируют закрытие.
-- `IWindowsService.CloseToWindow<TWindow>(Action onComplete = null, bool useBackLogicIgnorableChecks = true)` закрывает окна до тех пор, пока целевое не окажется на вершине стека. Выполнение прерывается, если окно отсутствует в стеке или встречено окно, игнорирующее логику возврата при включённой проверке.
+Плагин управляет окнами через `IWindowsService`, `ILocalWindowsService` и `IProjectWindowsService`. Сервис хранит стек реализаций
+`IWindow`, последовательно выполняет поставленные UI-действия и переключает состояние окна между `Active`, `NonFocused` и `Closed`.
 
-### Конвейер выполнения
-- `AWindowsService` владеет `WindowsStackHolder`, `UiActionsPool` и `TaskRunner`, который последовательно выполняет поставленные `IUiAction` через UniTask.
-- Каждый вызов службы формирует один или несколько действий из пула (открытие/закрытие/колбэки анимаций). После завершения действия возвращаются в пул; освобождение службы завершает все ожидающие действия.
-- `OpenWindowAction` ждёт инициализации окна (`WaitInitializationAction`) перед показом и задаёт порядок отображения через `WindowsOrdersManager`.
-- `CloseWindowAction` и `CloseToWindowAction` закрывают окна, обновляют порядок в стеке и при необходимости повторно открывают предыдущее окно через `OpenPreviousWindowAction`.
+В Simple Sample показано, как сервисы разрешаются из Zenject и как каждое обращение ставит действие в очередь:
 
-### Реализации
-- `LocalWindowsService` и `ProjectWindowsService` наследуют `AWindowsService` и отличаются только контекстом установки.
-
-#### Пример
+#### Пример: запуск локального стека окон
 ```csharp
-public sealed class InventoryButton : MonoBehaviour
+public class Bootstrap : IInitializable, IDisposable
 {
-    [Inject] private IWindowsService _windowsService;
+    private readonly CompositeDisposable _compositeDisposable = new();
+    private readonly ILocalWindowsService _localWindowsService;
+    private readonly IScenesService _scenesService;
 
-    // Вызывается кнопкой интерфейса для открытия окна инвентаря
-    public void OnClick()
+    public void Initialize()
     {
-        _windowsService.OpenWindow<InventoryWindow>(() =>
+        if (_scenesService.IsLoadingCompleted.Value)
+            OpenMainMenu();
+        else
+            _scenesService.IsLoadingCompleted.Subscribe(OnLoadingComplete).AddTo(_compositeDisposable);
+    }
+
+    private void OpenMainMenu()
+    {
+        _localWindowsService.OpenWindow<MainMenuWindow>(); // Открываем главное меню в локальном стеке окон
+        _compositeDisposable.Dispose(); // Освобождаем подписки после появления первого окна
+    }
+}
+```
+
+#### Пример: открытие, закрытие и возврат к окну
+```csharp
+public class SettingsController : AUiController<SettingsView>
+{
+    private readonly ISettingsStorageService _settingsStorageService;
+    private readonly ILocalWindowsService _localWindowsService;
+    private readonly ReactiveProperty<bool> _wasSomethingChanged = new();
+
+    private void OnCloseButtonClick()
+    {
+        if (_wasSomethingChanged.Value)
         {
-            // Выполняется после завершения очереди действий и анимаций
-            Debug.Log("Окно инвентаря готово к работе");
-        });
+            var currentSettings = CreateSettingsData();
+            _settingsStorageService.RememberUnsavedSettings(currentSettings);
+
+            _localWindowsService.OpenWindow<SettingsChangeConfirmationWindow>(); // Показываем окно подтверждения
+        }
+        else
+        {
+            _localWindowsService.CloseWindow(); // Закрываем настройки и возвращаем предыдущее окно
+        }
     }
 
-    // Закрывает активное окно, игнорируя защиту обратной логики
-    public void ForceClose()
+    private void OnCancelButtonClick()
     {
-        _windowsService.CloseWindow(useBackLogicIgnorableChecks: false);
-    }
+        _settingsStorageService.ForgetUnsavedSettings();
+        ResetSettings();
 
-    // Возвращает стек к первому найденному окну главного меню
-    public void BackToMainMenu()
+        _localWindowsService.CloseWindow(); // Возвращаемся назад без сохранения
+    }
+}
+
+public class SettingsChangeConfirmationController : AUiController<SettingsChangeConfirmationView>
+{
+    private void OnYesButtonClicked()
     {
-        _windowsService.CloseToWindow<MainMenuWindow>();
+        _settingsStorageService.ApplyUnsavedSettings();
+        _localWindowsService.CloseToWindow<MainMenuWindow>(); // Закрываем цепочку окон до главного меню
     }
 }
 ```
 
 ## Окна
 
-### Контракт
-- `IWindow` предоставляет свойства `IsInitialized`, `Name`, `IsPopup`, `IsBackLogicIgnorable`, методы `WaitInitialization`, `SetState` и `ApplyOrder`.
-- `EWindowState` задаёт три допустимых состояния: `Active`, `NonFocused`, `Closed`.
+Окна реализуют `IWindow` и наследуются от `AWindow`. Базовый класс получает `CanvasGroup`, управляет дочерними контроллерами и
+отслеживает жизненный цикл. Переопределите `AddControllers()`, чтобы зарегистрировать контроллеры для отдельных участков окна.
 
-### Базовые классы
-- `AWindowBase` — общий базовый класс для окон. Реализует `IInitializable`, позволяет ждать инициализацию через пула действий и предоставляет `InstallBindings(DiContainer)` для привязки экземпляра префаба.
-- `AWindow` наследует `AWindowBase`, требует наличия `CanvasGroup`, отключает взаимодействие в скрытом и нефокусном состоянии и управляет дочерними контроллерами.
-  - Переопределите `AddControllers()` и вызовите `AddController<TController, TView>(viewInstance)` для каждого `View` на префабе. Метод создаёт контроллер через внедрённый `DiContainer`, выполняет инъекцию зависимостей, инициализирует представление и контроллер и сразу закрывает контроллер, чтобы окно стартовало в состоянии `Closed`.
-  - Сериализованный список `AnimatedEmptyView` обрабатывается при инициализации и добавляет пустые элементы автоматически.
-  - `ApplyOrder` назначает индекс порядка среди дочерних трансформов по расчётам `WindowsOrdersManager`.
-
-#### Пример
+#### Пример: окно из нескольких представлений
 ```csharp
-public sealed class InventoryWindow : AWindow
+public class MainMenuWindow : AWindow
 {
-    [SerializeField] private InventoryView _inventoryView;
-    [SerializeField] private CanvasGroup _canvasGroup;
+    [SerializeField] private MainMenuView mainMenuView;
+    [SerializeField] private TitleView titleView;
 
-    // Регистрируем контроллер при привязке префаба
     protected override void AddControllers()
     {
-        AddController<InventoryController, InventoryView>(_inventoryView);
-    }
-
-    // При необходимости корректируем порядок в иерархии
-    public override void ApplyOrder(int order)
-    {
-        base.ApplyOrder(order);
-        // Держим окно инвентаря выше HUD
-        transform.SetSiblingIndex(order + 1);
+        AddController<MainMenuController, MainMenuView>(mainMenuView); // Контроллер кнопок главного меню
+        AddController<TitleController, TitleView>(titleView); // Контроллер анимированного заголовка
     }
 }
 ```
 
 ## Контроллеры
-- Контроллеры должны наследовать `AUiController<TView>`. Класс отслеживает `IsOpened` и `IsInFocus`, предоставляет `SetState(EWindowState, IUiActionsPool)` и виртуальные методы `OnOpen`, `OnClose`, `OnFocusRemove`.
-- Метод `CloseInstantly()` доступен для мгновенного закрытия во время инициализации или подготовки префаба.
 
-#### Пример
+Контроллеры наследуются от `AUiController<TView>` и получают зависимости через конструктор. Метод `Initialize()` вызывается после
+инъекции представления и позволяет подписаться на события UI. Переопределяйте `OnOpen`, `OnClose` или `OnFocusRemove`, чтобы
+реагировать на смену состояния.
+
+#### Пример: навигация по кнопкам
 ```csharp
-public sealed class InventoryController : AUiController<InventoryView>
+public class MainMenuController : AUiController<MainMenuView>
 {
-    [Inject] private IPlayerInventory _inventory;
+    private readonly ILocalWindowsService _localWindowsService;
 
-    // Обновляем данные представления при открытии окна
-    protected override UniTask OnOpen()
+    public override void Initialize()
     {
-        View.RenderItems(_inventory.Items); // Отрисовываем текущие предметы
-        return UniTask.CompletedTask;
+        View.startButton.OnClickAsObservable().Subscribe(_ => OnStartButtonClick()).AddTo(View);
+        View.settingsButton.OnClickAsObservable().Subscribe(_ => OnSettingsButtonClick()).AddTo(View);
+        View.exitButton.OnClickAsObservable().Subscribe(_ => OnExitButtonClick()).AddTo(View);
     }
 
-    // Сохраняем состояние перед закрытием окна
-    protected override UniTask OnClose()
+    private void OnStartButtonClick() => _localWindowsService.OpenWindow<LevelSelectorWindow>(); // Переход к выбору уровня
+    private void OnSettingsButtonClick() => _localWindowsService.OpenWindow<SettingsWindow>(); // Открываем настройки
+    private void OnExitButtonClick() => Application.Quit(); // Завершаем приложение в билде
+}
+```
+
+#### Пример: реакция на данные сервиса
+```csharp
+public class LoadingIndicatorController : AUiController<LoadingIndicatorView>
+{
+    private readonly IScenesService _levelsService;
+
+    public override void Initialize()
     {
-        _inventory.RememberSelection(View.SelectedItemId);
-        return UniTask.CompletedTask;
+        _levelsService.LoadingProgress.Subscribe(OnLoadingProgress).AddTo(View); // Обновляем прогресс при каждом кадре
     }
 
-    // При потере фокуса ослабляем визуальные эффекты, окно остаётся открытым
-    protected override UniTask OnFocusRemove()
+    private void OnLoadingProgress(float progress)
     {
-        View.ToggleDimOverlay(true);
-        return UniTask.CompletedTask;
+        var progressPercentage = (int) (progress * 100f);
+        progressPercentage = Mathf.Clamp(progressPercentage, 0, 100);
+
+        View.loadingProgressText.text = $"{progressPercentage}%"; // Отображаем процент загрузки
     }
 }
 ```
 
 ## Представления
-- `IUiView` определяет `Initialize`, `Open`, `ReturnFocus`, `RemoveFocus`, `Close` и `CloseInstantly`, каждый метод возвращает действие из пула.
-- `AUiView` реализует интерфейс с пустыми анимациями (`EmptyAction`). Переопределяйте защищённые методы `On*` для дополнительной логики.
-- `AUiSimpleView` включает объект при открытии и выключает при закрытии, остальные действия делегирует базовому классу.
-- `AUiAnimatedView` использует ссылки на `AUiAnimationBase` для анимации открытия и закрытия. При отсутствии анимации применяется поведение базового класса. `CloseInstantly` либо вызывает мгновенное исчезновение анимации, либо отключает объект. Автозаполнение доступно только при определённом `KOBOLD_ALCHEMY_SUPPORT`.
-- `AnimatedEmptyView` — готовое анимированное представление-заглушка.
 
-#### Пример
+Представления наследуются от производных `AUiView`. `AUiAnimatedView` оставляет объект активным на время анимаций появления/скрытия,
+`AUiSimpleView` просто включает или выключает GameObject, а элементы коллекций наследуются от `AUiSimpleCollectionView`.
+
+#### Пример: анимируемое представление с ссылками на UI
 ```csharp
-public sealed class InventoryView : AUiAnimatedView
+public class SettingsView : AUiAnimatedView
 {
-    [SerializeField] private ItemSlotWidget _slotPrefab;
-    [SerializeField] private Transform _itemsParent;
+    [Header("Sounds")]
+    public Slider soundVolume;
+    public Slider musicVolume;
 
-    // Готовим визуальное состояние перед анимацией появления
-    protected override void OnBeforeAppear()
-    {
-        gameObject.SetActive(true); // Включаем корневой объект
-    }
+    [Header("Difficulty")]
+    public Toggle easyModeToggle;
 
-    // Реагируем на возврат фокуса, чтобы подсветить выбор
-    protected override void OnReturnFocus()
-    {
-        HighlightSelection();
-    }
+    [Header("Buttons")]
+    public Button applyButton;
+    public Button cancelButton;
+    public Button closeButton;
+}
+```
 
-    public void RenderItems(IReadOnlyList<ItemData> items)
-    {
-        // Создаём слоты через пул коллекции (см. раздел про коллекции)
-    }
+#### Пример: элемент коллекции уровней
+```csharp
+public class LevelItemView : AUiSimpleCollectionView
+{
+    [SerializeField] private TextMeshProUGUI nameText;
+    [SerializeField] private GameObject lockedContainer;
+    [SerializeField] private GameObject unlockedContainer;
+    [SerializeField] private GameObject selectedBackground;
+    [SerializeField] private GameObject unselectedBackground;
+    [SerializeField] private StarGroup[] stars;
+    [SerializeField] private Button button;
 
-    public void ToggleDimOverlay(bool enabled)
+    public IObservable<Unit> OnClick => button.OnClickAsObservable(); // Событие выбора элемента
+    public LevelData Data { get; private set; }
+
+    public void SetLevelData(LevelData levelData)
     {
-        // Включаем затемнение, когда окно теряет фокус
+        Data = levelData;
+
+        nameText.text = levelData.Name; // Обновляем подпись
+
+        lockedContainer.SetActive(!levelData.IsUnlocked);
+        unlockedContainer.SetActive(levelData.IsUnlocked);
+
+        for (var i = 0; i < stars.Length; i++)
+        {
+            var isAchieved = i < levelData.StarsCount;
+            stars[i].SetState(isAchieved); // Включаем иконки звёзд в зависимости от прогресса
+        }
     }
 }
 ```
 
 ## Анимации
-- `AUiAnimationBase` описывает пять точек расширения: `Appear`, `AnimateFocusReturn`, `AnimateFocusRemoved`, `Disappear`, `DisappearInstantly`.
-- `AUiAnimation<TParams>` реализует `Appear` и `Disappear` на основе DOTween, поддерживает ожидание завершения (`_needWaitAnimation`), использует внедряемые параметры по умолчанию и требует реализации `PrepareToAppear`, `AnimateAppear`, `AnimateDisappear`.
-- `IUiAnimationParameters` помечает классы параметров. `AUiAnimationParameters` — базовый `ScriptableObject` для хранения настроек. Готовые параметры находятся в `Element/Animations/Parameters/Impl`.
-- Параметры по умолчанию регистрируются через `DefaultAnimationsInstaller`, который биндиет экземпляры fade, scale и slide как синглтоны.
 
-#### Пример
+Компоненты анимаций наследуются от `AUiAnimationBase` или `AUiAnimation<TParams>`. В Simple Sample заголовок главного меню анимируется
+через DOTween: контроллер запускает tween в `OnOpen` и останавливает его в `OnClose`.
+
+#### Пример: циклическая анимация заголовка
 ```csharp
-[CreateAssetMenu(menuName = AssetMenuPath.Animations + nameof(InventoryOpenAnimation))]
-public sealed class InventoryOpenAnimation : AUiAnimation<InventoryAnimationParams>
+public class TitleController : AUiController<TitleView>
 {
-    // Настраиваем стартовое состояние перед запуском анимации
-    protected override void PrepareToAppear(InventoryAnimationParams parameters)
+    private Tween _animationTween;
+
+    protected override void OnOpen()
     {
-        transform.localScale = Vector3.zero; // Начинаем со свернутого состояния
+        _animationTween?.Kill();
+
+        _animationTween = View.container.DOPunchScale(View.scalePunch, View.duration, View.vibrato, View.elasticity)
+            .SetEase(View.ease)
+            .SetLoops(-1, LoopType.Restart)
+            .SetLink(View.gameObject); // Привязываем tween к объекту, чтобы он удалился вместе с ним
     }
 
-    protected override UniTask AnimateAppear(InventoryAnimationParams parameters)
+    protected override void OnClose()
     {
-        // Запускаем DOTween и ждём завершения
-        return transform.DOScale(Vector3.one, parameters.Duration).ToUniTask();
+        _animationTween?.Kill(); // Останавливаем анимацию при закрытии окна
     }
-
-    protected override UniTask AnimateDisappear(InventoryAnimationParams parameters)
-    {
-        // Сжимаем окно, ожидание контролируется полем needWaitAnimation
-        return transform.DOScale(Vector3.zero, parameters.Duration).ToUniTask();
-    }
-}
-
-[Serializable]
-public sealed class InventoryAnimationParams : AUiAnimationParameters
-{
-    public float Duration = 0.2f; // Значение по умолчанию для твина
 }
 ```
 
 ## Коллекции
-- `AUiCollection<TView>` отвечает за создание элементов через `IInstantiator`, хранит префаб и контейнер и предоставляет защищённый `OnCreated`, устанавливающий родителя и вызывающий `Appear`.
-- `AUiListCollection<TView>` ведёт список созданных представлений, предоставляет индексатор и удаляет элементы с уничтожением объектов.
-- `AUiPooledCollection<TView>` хранит пул отсоединённых представлений. `ReturnToPool` скрывает элемент и возвращает его в пул, `Clear` возвращает все активные элементы.
-- `AUiCollectionView` определяет `Appear`, `Disappear`, `SetParent`, `Destroy`. `AUiSimpleCollectionView` только включает и выключает объект.
-- Интерфейсы `IUiCollection<TView>`, `IUiListCollection<TView>`, `IUiPooledCollection<TView>` и `IUiFactory<TView>` описывают операции по перебору, пулу и созданию.
 
-#### Пример
+Коллекции наследуются от реализаций `AUiCollection<TView>`. `AUiListCollection<TView>` хранит созданные элементы и удаляет их при
+вызове `Clear()`. Контроллеры проходят по данным, вызывают `Create()`, настраивают представление и подключают события.
+
+#### Пример: заполнение списка уровней
 ```csharp
-public sealed class InventorySlotsCollection : AUiPooledCollection<ItemSlotWidget>
+public class LevelSelectorController : AUiController<LevelSelectorView>
 {
-    [Inject] private IPlayerInventory _inventory;
+    private readonly ILevelProgressionService _levelProgressionService;
+    private LevelItemView _selectedItem;
 
-    // Вызывается при создании нового элемента из пула
-    protected override void OnCreated(ItemSlotWidget view)
+    public override void Initialize()
     {
-        base.OnCreated(view);
-        view.Initialize(OnSlotSelected); // Подписываем обработчик один раз
-    }
+        var collection = View.levelItemsCollection;
+        collection.Clear(); // Удаляем элементы, созданные ранее
 
-    public void Render(IReadOnlyList<ItemData> items)
-    {
-        Clear(); // Возвращаем предыдущие элементы в пул
-
-        for (var index = 0; index < items.Count; index++)
+        var progression = _levelProgressionService.Progression;
+        foreach (var levelData in progression)
         {
-            var slot = Get(); // Берём виджет из пула
-            slot.SetItem(items[index]);
-            slot.SetParent(Target); // Закрепляем под настроенным контейнером
+            var item = collection.Create(); // Создаём новое представление уровня
+            item.SetLevelData(levelData); // Передаём описание уровня
+            item.SetSelectionState(false);
+            item.OnClick.Subscribe(_ => OnItemClicked(item)).AddTo(View); // Подписываемся на выбор уровня
         }
     }
 
-    private void OnSlotSelected(ItemSlotWidget slot)
+    private void OnItemClicked(LevelItemView item)
     {
-        _inventory.Select(slot.ItemId); // Обновляем игровое состояние
+        if (!item.Data.IsUnlocked)
+            return; // Заблокированные уровни нельзя выбрать
+
+        if(_selectedItem != null)
+            _selectedItem.SetSelectionState(false);
+
+        item.SetSelectionState(true);
+        _selectedItem = item;
+
+        View.loadButton.interactable = true; // Включаем кнопку загрузки после выбора доступного уровня
     }
 }
 ```
 
-## Инсталлеры и привязка
-- Используйте `DiContainerExtensions.BindWindowFromPrefab(canvasInstance, windowPrefab)` для создания окна под `Canvas`, постановки его в очередь на инъекцию и привязки как синглтона.
-- В проектном контексте следует биндить общие ресурсы (параметры анимаций по умолчанию и `ProjectWindowsServiceInstaller`). В сценах обычно устанавливаются `LocalWindowsServiceInstaller` и локальные окна.
-- `LocalWindowsServiceInstaller` и `ProjectWindowsServiceInstaller` регистрируют свои службы как несущие синглтоны.
+## Инсталляторы и привязка
 
-#### Пример
+Метод `DiContainerExtensions.BindWindowFromPrefab` создаёт экземпляр префаба окна под указанным канвасом и привязывает его в контейнере.
+В примере проект делится на установщик глобальных окон и сценовый установщик локального UI.
+
+#### Пример: привязки на уровне сцены
 ```csharp
-public sealed class InventoryWindowsInstaller : MonoInstaller
+[CreateAssetMenu(fileName = nameof(MainMenuUiInstaller), menuName = "Simple Sample/" + nameof(MainMenuUiInstaller), order = 0)]
+public class MainMenuUiInstaller : ScriptableObjectInstaller
 {
-    [SerializeField] private Canvas _canvas;
-    [SerializeField] private InventoryWindow _inventoryWindowPrefab;
+    [SerializeField] private Canvas canvas;
+
+    [Header("Windows")]
+    [SerializeField] private MainMenuWindow mainMenuWindow;
+    [SerializeField] private SettingsWindow settingsWindow;
+    [SerializeField] private SettingsChangeConfirmationWindow settingsChangeConfirmationWindow;
+    [SerializeField] private LevelSelectorWindow levelSelectorWindow;
 
     public override void InstallBindings()
     {
-        // Подключаем сервис окон уровня проекта
-        Container.Install<ProjectWindowsServiceInstaller>();
+        var canvasInstance = Instantiate(canvas);
 
-        // Регистрируем параметры анимаций по умолчанию
-        Container.Install<DefaultAnimationsInstaller>();
+        Container.BindWindowFromPrefab(canvasInstance, mainMenuWindow); // Регистрируем главное меню
+        Container.BindWindowFromPrefab(canvasInstance, settingsWindow); // Регистрируем окно настроек
+        Container.BindWindowFromPrefab(canvasInstance, settingsChangeConfirmationWindow); // Регистрируем окно подтверждения
+        Container.BindWindowFromPrefab(canvasInstance, levelSelectorWindow); // Регистрируем окно выбора уровня
 
-        // Создаём и биндим окно инвентаря под указанный Canvas
-        Container.BindWindowFromPrefab(_canvas, _inventoryWindowPrefab);
+        Container.BindInterfacesTo<Bootstrap>().AsSingle().NonLazy(); // Немедленно запускаем загрузочный сервис
     }
 }
 ```
 
-## Утилиты и помощники
-- `WindowsOrdersManager` обновляет порядок следования окон при появлении и закрытии. При необходимости переопределяйте `ApplyOrder` для собственной логики сортировки.
-- `IAutoFillable` — необязательный маркер, доступный при `KOBOLD_ALCHEMY_SUPPORT`, добавляющий кнопки `AutoFill` в редакторе.
-- `AssetMenuPath` содержит префиксы `CreateAssetMenu` для инсталлеров и параметров анимаций.
+#### Пример: глобальные привязки проекта
+```csharp
+[CreateAssetMenu(fileName = nameof(ProjectUiInstaller), menuName = "Simple Sample/" + nameof(ProjectUiInstaller), order = 0)]
+public class ProjectUiInstaller : ScriptableObjectInstaller
+{
+    [SerializeField] private Canvas canvas;
+
+    [Header("Windows")]
+    [SerializeField] private LoadingWindow loadingWindow;
+
+    public override void InstallBindings()
+    {
+        var canvasInstance = Instantiate(canvas);
+        DontDestroyOnLoad(canvasInstance); // Канвас не уничтожается между сценами
+
+        Container.BindWindowFromPrefab(canvasInstance, loadingWindow); // Регистрируем глобальное окно загрузки
+    }
+}
+```

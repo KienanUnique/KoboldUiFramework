@@ -2,262 +2,320 @@
 
 ## Window services
 
-### Interfaces
-- `IWindowsService.CurrentWindow` exposes the window at the top of the stack or `null` when the stack is empty.
-- `IWindowsService.IsOpened<TWindow>()` returns `true` if the current window is of the requested type.
-- `IWindowsService.OpenWindow<TWindow>(Action onComplete = null)` resolves the window from the `DiContainer`, pushes it to the stack and opens it. The previous window becomes `NonFocused` when the next window is a popup and `Closed` otherwise. The optional callback is executed after every queued UI action finishes.
-- `IWindowsService.CloseWindow(Action onComplete = null, bool useBackLogicIgnorableChecks = true)` closes the current window and returns to the previous one when the stack contains more than one window. When `useBackLogicIgnorableChecks` is `true`, windows with `IsBackLogicIgnorable` enabled block the close request.
-- `IWindowsService.CloseToWindow<TWindow>(Action onComplete = null, bool useBackLogicIgnorableChecks = true)` closes windows until the requested instance reaches the top of the stack. The call stops early if the target is not present in the stack or if a back-logic-ignorable window is encountered while the flag is enabled.
+The plugin exposes window management through `IWindowsService`, `ILocalWindowsService`, and `IProjectWindowsService`. The service
+keeps a stack of `IWindow` instances, runs queued UI actions sequentially, and transitions the window state between `Active`,
+`NonFocused`, and `Closed`.
 
-### Execution pipeline
-- `AWindowsService` owns the `WindowsStackHolder`, the `UiActionsPool`, and the `TaskRunner` that sequentially executes queued `IUiAction` instances with UniTask.
-- Every service call creates one or more pooled actions (open/close/animation callbacks). Actions return themselves to the pool after completion; disposing a service disposes every pending action.
-- `OpenWindowAction` waits for window initialisation (`WaitInitializationAction`) before showing the window and sets the sibling order through `WindowsOrdersManager`.
-- `CloseWindowAction` and `CloseToWindowAction` close windows, update stack order and optionally reopen the previous window through `OpenPreviousWindowAction`.
+The Simple Sample demonstrates how services are resolved from Zenject and how each call schedules an action:
 
-### Implementations
-- `LocalWindowsService` and `ProjectWindowsService` extend `AWindowsService`. They differ only by the context in which they are installed.
-
-#### Example
+#### Example: bootstrapping the local window stack
 ```csharp
-public sealed class InventoryButton : MonoBehaviour
+public class Bootstrap : IInitializable, IDisposable
 {
-    [Inject] private IWindowsService _windowsService;
+    private readonly CompositeDisposable _compositeDisposable = new();
+    private readonly ILocalWindowsService _localWindowsService;
+    private readonly IScenesService _scenesService;
 
-    // Triggered by the UI button to open the inventory popup
-    public void OnClick()
+    public void Initialize()
     {
-        _windowsService.OpenWindow<InventoryWindow>(() =>
+        if (_scenesService.IsLoadingCompleted.Value)
+            OpenMainMenu();
+        else
+            _scenesService.IsLoadingCompleted.Subscribe(OnLoadingComplete).AddTo(_compositeDisposable);
+    }
+
+    private void OpenMainMenu()
+    {
+        _localWindowsService.OpenWindow<MainMenuWindow>(); // Pushes the main menu window to the local stack
+        _compositeDisposable.Dispose(); // Releases subscriptions once the first window is shown
+    }
+}
+```
+
+#### Example: combining open, close, and close-to calls
+```csharp
+public class SettingsController : AUiController<SettingsView>
+{
+    private readonly ISettingsStorageService _settingsStorageService;
+    private readonly ILocalWindowsService _localWindowsService;
+    private readonly ReactiveProperty<bool> _wasSomethingChanged = new();
+
+    private void OnCloseButtonClick()
+    {
+        if (_wasSomethingChanged.Value)
         {
-            // Executed after every queued action (including animations) finishes
-            Debug.Log("Inventory window ready for interaction");
-        });
+            var currentSettings = CreateSettingsData();
+            _settingsStorageService.RememberUnsavedSettings(currentSettings);
+
+            _localWindowsService.OpenWindow<SettingsChangeConfirmationWindow>(); // Opens a confirmation popup
+        }
+        else
+        {
+            _localWindowsService.CloseWindow(); // Pops the current settings window
+        }
     }
 
-    // Closes the active window while ignoring back-logic guards
-    public void ForceClose()
+    private void OnCancelButtonClick()
     {
-        _windowsService.CloseWindow(useBackLogicIgnorableChecks: false);
-    }
+        _settingsStorageService.ForgetUnsavedSettings();
+        ResetSettings();
 
-    // Returns to the first instance of the main menu if it exists in the stack
-    public void BackToMainMenu()
+        _localWindowsService.CloseWindow(); // Returns to the previous window without saving
+    }
+}
+
+public class SettingsChangeConfirmationController : AUiController<SettingsChangeConfirmationView>
+{
+    private void OnYesButtonClicked()
     {
-        _windowsService.CloseToWindow<MainMenuWindow>();
+        _settingsStorageService.ApplyUnsavedSettings();
+        _localWindowsService.CloseToWindow<MainMenuWindow>(); // Closes popups until the main menu is on top
     }
 }
 ```
 
 ## Windows
 
-### Contract
-- `IWindow` exposes the lifecycle surface: `IsInitialized`, `Name`, `IsPopup`, `IsBackLogicIgnorable`, `WaitInitialization`, `SetState`, and `ApplyOrder`.
-- `EWindowState` defines three legal states: `Active`, `NonFocused`, and `Closed`.
+Windows implement `IWindow` and derive from `AWindow`. The base class injects a `CanvasGroup`, coordinates child controllers, and
+tracks the window lifecycle. Override `AddControllers()` to register controllers that control individual view fragments.
 
-### Base classes
-- `AWindowBase` is the common base for all windows. It implements `IInitializable`, waits for initialisation via a pooled action, and exposes `InstallBindings(DiContainer)` so the installer can bind a prefab instance.
-- `AWindow` derives from `AWindowBase`. It requires a `CanvasGroup`, disables interaction while hidden or unfocused, and coordinates child controllers.
-  - Override `AddControllers()` and call `AddController<TController, TView>(viewInstance)` for each `View` on the prefab. The method creates the controller through the injected `DiContainer`, injects the GameObject, initialises both the view and the controller, and forces the controller to close immediately so the window starts in the `Closed` state.
-  - The serialized list of `AnimatedEmptyView` objects is processed during initialisation to register empty child elements automatically.
-  - `ApplyOrder` assigns the transform sibling index that is calculated by `WindowsOrdersManager`.
-
-#### Example
+#### Example: window composed from multiple views
 ```csharp
-public sealed class InventoryWindow : AWindow
+public class MainMenuWindow : AWindow
 {
-    [SerializeField] private InventoryView _inventoryView;
-    [SerializeField] private CanvasGroup _canvasGroup;
+    [SerializeField] private MainMenuView mainMenuView;
+    [SerializeField] private TitleView titleView;
 
-    // Called during prefab binding to register the main controller
     protected override void AddControllers()
     {
-        AddController<InventoryController, InventoryView>(_inventoryView);
-    }
-
-    // Custom sibling order can be applied when needed
-    public override void ApplyOrder(int order)
-    {
-        base.ApplyOrder(order);
-        // Keep the inventory window above HUD overlays
-        transform.SetSiblingIndex(order + 1);
+        AddController<MainMenuController, MainMenuView>(mainMenuView); // Registers the main menu buttons controller
+        AddController<TitleController, TitleView>(titleView); // Registers the animated title controller
     }
 }
 ```
 
 ## Controllers
-- Controllers must inherit from `AUiController<TView>`. The controller tracks `IsOpened` and `IsInFocus`, exposes `SetState(EWindowState, IUiActionsPool)`, and provides the overridable hooks `OnOpen`, `OnClose`, and `OnFocusRemove`.
-- `CloseInstantly()` is available for instant teardown during initialisation or prefab setup.
 
-#### Example
+Controllers inherit from `AUiController<TView>` and receive their dependencies through the constructor. `Initialize()` is called
+after the view is injected and lets controllers subscribe to UI events. Override `OnOpen`, `OnClose`, or `OnFocusRemove` to handle
+state transitions.
+
+#### Example: wiring buttons to window navigation
 ```csharp
-public sealed class InventoryController : AUiController<InventoryView>
+public class MainMenuController : AUiController<MainMenuView>
 {
-    [Inject] private IPlayerInventory _inventory;
+    private readonly ILocalWindowsService _localWindowsService;
 
-    // Populate the view whenever the window opens
-    protected override UniTask OnOpen()
+    public override void Initialize()
     {
-        View.RenderItems(_inventory.Items); // Render current items
-        return UniTask.CompletedTask;
+        View.startButton.OnClickAsObservable().Subscribe(_ => OnStartButtonClick()).AddTo(View);
+        View.settingsButton.OnClickAsObservable().Subscribe(_ => OnSettingsButtonClick()).AddTo(View);
+        View.exitButton.OnClickAsObservable().Subscribe(_ => OnExitButtonClick()).AddTo(View);
     }
 
-    // Save transient state before the window closes
-    protected override UniTask OnClose()
+    private void OnStartButtonClick() => _localWindowsService.OpenWindow<LevelSelectorWindow>(); // Shows the level selector
+    private void OnSettingsButtonClick() => _localWindowsService.OpenWindow<SettingsWindow>(); // Opens the settings window
+    private void OnExitButtonClick() => Application.Quit(); // Leaves the application in builds
+}
+```
+
+#### Example: reacting to service data
+```csharp
+public class LoadingIndicatorController : AUiController<LoadingIndicatorView>
+{
+    private readonly IScenesService _levelsService;
+
+    public override void Initialize()
     {
-        _inventory.RememberSelection(View.SelectedItemId);
-        return UniTask.CompletedTask;
+        _levelsService.LoadingProgress.Subscribe(OnLoadingProgress).AddTo(View); // Updates progress each frame
     }
 
-    // Dampen UI effects when focus is lost but window remains visible
-    protected override UniTask OnFocusRemove()
+    private void OnLoadingProgress(float progress)
     {
-        View.ToggleDimOverlay(true);
-        return UniTask.CompletedTask;
+        var progressPercentage = (int) (progress * 100f);
+        progressPercentage = Mathf.Clamp(progressPercentage, 0, 100);
+
+        View.loadingProgressText.text = $"{progressPercentage}%"; // Displays loading percentage
     }
 }
 ```
 
 ## Views
-- `IUiView` defines `Initialize`, `Open`, `ReturnFocus`, `RemoveFocus`, `Close`, and `CloseInstantly` that all return pooled actions.
-- `AUiView` implements the interface with empty animations (`EmptyAction`). Override the protected `On*` methods to plug custom behaviour.
-- `AUiSimpleView` toggles the `GameObject` on open/close and delegates animation to the base implementation.
-- `AUiAnimatedView` works with `AUiAnimationBase` references for open/close transitions. When no animation is assigned, it falls back to the base behaviour. `CloseInstantly` either runs the animation’s instant branch or disables the object. Auto-fill helpers are compiled only when `KOBOLD_ALCHEMY_SUPPORT` is defined.
-- `AnimatedEmptyView` is a concrete animated view that can be used for placeholder elements.
 
-#### Example
+Views derive from `AUiView` subclasses to control how the hierarchy reacts to lifecycle events. `AUiAnimatedView` keeps the GameObject
+enabled while playing appear/disappear animations, `AUiSimpleView` simply toggles the hierarchy, and collection views inherit from
+`AUiSimpleCollectionView`.
+
+#### Example: animated view exposing UI bindings
 ```csharp
-public sealed class InventoryView : AUiAnimatedView
+public class SettingsView : AUiAnimatedView
 {
-    [SerializeField] private ItemSlotWidget _slotPrefab;
-    [SerializeField] private Transform _itemsParent;
+    [Header("Sounds")]
+    public Slider soundVolume;
+    public Slider musicVolume;
 
-    // Prepare visual state before the appear animation runs
-    protected override void OnBeforeAppear()
-    {
-        gameObject.SetActive(true); // Ensure the root is visible
-    }
+    [Header("Difficulty")]
+    public Toggle easyModeToggle;
 
-    // Configure focus behaviour for child widgets
-    protected override void OnReturnFocus()
-    {
-        HighlightSelection();
-    }
+    [Header("Buttons")]
+    public Button applyButton;
+    public Button cancelButton;
+    public Button closeButton;
+}
+```
 
-    public void RenderItems(IReadOnlyList<ItemData> items)
-    {
-        // Instantiate slots using a pooled collection (see collections section)
-    }
+#### Example: collection item view
+```csharp
+public class LevelItemView : AUiSimpleCollectionView
+{
+    [SerializeField] private TextMeshProUGUI nameText;
+    [SerializeField] private GameObject lockedContainer;
+    [SerializeField] private GameObject unlockedContainer;
+    [SerializeField] private GameObject selectedBackground;
+    [SerializeField] private GameObject unselectedBackground;
+    [SerializeField] private StarGroup[] stars;
+    [SerializeField] private Button button;
 
-    public void ToggleDimOverlay(bool enabled)
+    public IObservable<Unit> OnClick => button.OnClickAsObservable(); // Emits when the user selects the item
+    public LevelData Data { get; private set; }
+
+    public void SetLevelData(LevelData levelData)
     {
-        // Enable a dim overlay when the window loses focus
+        Data = levelData;
+
+        nameText.text = levelData.Name; // Updates the text label
+
+        lockedContainer.SetActive(!levelData.IsUnlocked);
+        unlockedContainer.SetActive(levelData.IsUnlocked);
+
+        for (var i = 0; i < stars.Length; i++)
+        {
+            var isAchieved = i < levelData.StarsCount;
+            stars[i].SetState(isAchieved); // Toggles star icons based on earned progress
+        }
     }
 }
 ```
 
 ## Animations
-- `AUiAnimationBase` describes the five animation hooks: `Appear`, `AnimateFocusReturn`, `AnimateFocusRemoved`, `Disappear`, and `DisappearInstantly`.
-- `AUiAnimation<TParams>` provides DOTween-based `Appear` and `Disappear` implementations, optional waiting (`_needWaitAnimation`), access to default parameters injected into the component, and abstract methods `PrepareToAppear`, `AnimateAppear`, and `AnimateDisappear`.
-- `IUiAnimationParameters` marks parameter assets. `AUiAnimationParameters` is a `ScriptableObject` base for parameter storage. Built-in implementations live under `Element/Animations/Parameters/Impl`.
-- Default parameters can be registered through `DefaultAnimationsInstaller`, which binds fade, scale, and slide parameter instances as singletons.
 
-#### Example
+Animation components derive from `AUiAnimationBase` or `AUiAnimation<TParams>`. The Simple Sample uses DOTween to animate the title
+window while it is open. Controllers are free to start tweens in `OnOpen` and stop them in `OnClose`.
+
+#### Example: looped title animation
 ```csharp
-[CreateAssetMenu(menuName = AssetMenuPath.Animations + nameof(InventoryOpenAnimation))]
-public sealed class InventoryOpenAnimation : AUiAnimation<InventoryAnimationParams>
+public class TitleController : AUiController<TitleView>
 {
-    // Configure reusable tween parameters in the inspector
-    protected override void PrepareToAppear(InventoryAnimationParams parameters)
+    private Tween _animationTween;
+
+    protected override void OnOpen()
     {
-        transform.localScale = Vector3.zero; // Start collapsed
+        _animationTween?.Kill();
+
+        _animationTween = View.container.DOPunchScale(View.scalePunch, View.duration, View.vibrato, View.elasticity)
+            .SetEase(View.ease)
+            .SetLoops(-1, LoopType.Restart)
+            .SetLink(View.gameObject); // Disposes the tween automatically with the view
     }
 
-    protected override UniTask AnimateAppear(InventoryAnimationParams parameters)
+    protected override void OnClose()
     {
-        // Play DOTween scale tween and wait for completion
-        return transform.DOScale(Vector3.one, parameters.Duration).ToUniTask();
+        _animationTween?.Kill(); // Stops the tween when the window closes
     }
-
-    protected override UniTask AnimateDisappear(InventoryAnimationParams parameters)
-    {
-        // Shrink out without waiting (needWaitAnimation controls awaiting behaviour)
-        return transform.DOScale(Vector3.zero, parameters.Duration).ToUniTask();
-    }
-}
-
-[Serializable]
-public sealed class InventoryAnimationParams : AUiAnimationParameters
-{
-    public float Duration = 0.2f; // Default tween duration
 }
 ```
 
 ## Collections
-- `AUiCollection<TView>` manages instantiation through `IInstantiator`, stores a prefab and target container, and provides a protected `OnCreated` hook that sets the parent and plays the appear animation.
-- `AUiListCollection<TView>` keeps a list of created views, exposes an indexer, and destroys items on removal.
-- `AUiPooledCollection<TView>` keeps a pool of detached views. `ReturnToPool` hides and stores the view for later reuse. `Clear` returns every active view to the pool.
-- `AUiCollectionView` defines `Appear`, `Disappear`, `SetParent`, and `Destroy`. `AUiSimpleCollectionView` only toggles the object on appear/disappear.
-- Interfaces `IUiCollection<TView>`, `IUiListCollection<TView>`, `IUiPooledCollection<TView>`, and `IUiFactory<TView>` describe the available operations for iteration, pooling, and creation.
 
-#### Example
+Collections derive from `AUiCollection<TView>` implementations. `AUiListCollection<TView>` stores created items and destroys them on
+`Clear()`. Controllers iterate over data, call `Create()`, and configure each item before it becomes part of the hierarchy.
+
+#### Example: populating a list of level buttons
 ```csharp
-public sealed class InventorySlotsCollection : AUiPooledCollection<ItemSlotWidget>
+public class LevelSelectorController : AUiController<LevelSelectorView>
 {
-    [Inject] private IPlayerInventory _inventory;
+    private readonly ILevelProgressionService _levelProgressionService;
+    private LevelItemView _selectedItem;
 
-    // Called whenever a slot is created from the pool
-    protected override void OnCreated(ItemSlotWidget view)
+    public override void Initialize()
     {
-        base.OnCreated(view);
-        view.Initialize(OnSlotSelected); // Attach callbacks once
-    }
+        var collection = View.levelItemsCollection;
+        collection.Clear(); // Removes any previously created items
 
-    public void Render(IReadOnlyList<ItemData> items)
-    {
-        Clear(); // Return old slots to the pool
-
-        for (var index = 0; index < items.Count; index++)
+        var progression = _levelProgressionService.Progression;
+        foreach (var levelData in progression)
         {
-            var slot = Get(); // Acquire a pooled widget
-            slot.SetItem(items[index]);
-            slot.SetParent(Target); // Attach to the configured container
+            var item = collection.Create(); // Creates a new view instance
+            item.SetLevelData(levelData); // Populates the view with level metadata
+            item.SetSelectionState(false);
+            item.OnClick.Subscribe(_ => OnItemClicked(item)).AddTo(View); // Subscribes to selection events
         }
     }
 
-    private void OnSlotSelected(ItemSlotWidget slot)
+    private void OnItemClicked(LevelItemView item)
     {
-        _inventory.Select(slot.ItemId); // Update gameplay state
+        if (!item.Data.IsUnlocked)
+            return; // Locked levels cannot be selected
+
+        if(_selectedItem != null)
+            _selectedItem.SetSelectionState(false);
+
+        item.SetSelectionState(true);
+        _selectedItem = item;
+
+        View.loadButton.interactable = true; // Enables loading once a valid level is chosen
     }
 }
 ```
 
 ## Installers and binding
-- Use `DiContainerExtensions.BindWindowFromPrefab(canvasInstance, windowPrefab)` to instantiate a window prefab under a `Canvas`, queue it for injection, and bind it as a singleton service.
-- Project-level installers should bind shared resources (default animation parameters and `ProjectWindowsServiceInstaller`). Scene-level installers typically bind `LocalWindowsServiceInstaller` and local windows.
-- `LocalWindowsServiceInstaller` and `ProjectWindowsServiceInstaller` bind their corresponding services as eager singletons.
 
-#### Example
+Use `DiContainerExtensions.BindWindowFromPrefab` to instantiate and bind window prefabs to a canvas. The sample splits bindings into a
+project-wide installer for persistent windows and a scene installer for local UI.
+
+#### Example: scene-level bindings
 ```csharp
-public sealed class InventoryWindowsInstaller : MonoInstaller
+[CreateAssetMenu(fileName = nameof(MainMenuUiInstaller), menuName = "Simple Sample/" + nameof(MainMenuUiInstaller), order = 0)]
+public class MainMenuUiInstaller : ScriptableObjectInstaller
 {
-    [SerializeField] private Canvas _canvas;
-    [SerializeField] private InventoryWindow _inventoryWindowPrefab;
+    [SerializeField] private Canvas canvas;
+
+    [Header("Windows")]
+    [SerializeField] private MainMenuWindow mainMenuWindow;
+    [SerializeField] private SettingsWindow settingsWindow;
+    [SerializeField] private SettingsChangeConfirmationWindow settingsChangeConfirmationWindow;
+    [SerializeField] private LevelSelectorWindow levelSelectorWindow;
 
     public override void InstallBindings()
     {
-        // Bind the project-level windows service
-        Container.Install<ProjectWindowsServiceInstaller>();
+        var canvasInstance = Instantiate(canvas);
 
-        // Bind default animation parameters shared across windows
-        Container.Install<DefaultAnimationsInstaller>();
+        Container.BindWindowFromPrefab(canvasInstance, mainMenuWindow); // Registers the main menu window
+        Container.BindWindowFromPrefab(canvasInstance, settingsWindow); // Registers the settings window
+        Container.BindWindowFromPrefab(canvasInstance, settingsChangeConfirmationWindow); // Registers the confirmation popup
+        Container.BindWindowFromPrefab(canvasInstance, levelSelectorWindow); // Registers the level selector window
 
-        // Instantiate and bind the inventory window under the target canvas
-        Container.BindWindowFromPrefab(_canvas, _inventoryWindowPrefab);
+        Container.BindInterfacesTo<Bootstrap>().AsSingle().NonLazy(); // Starts the loading bootstrapper immediately
     }
 }
 ```
 
-## Utilities and helpers
-- `WindowsOrdersManager` updates sibling indices when windows appear or disappear. Override `ApplyOrder` in custom windows if the default transform ordering is not sufficient.
-- `IAutoFillable` is an optional marker compiled with `KOBOLD_ALCHEMY_SUPPORT` to expose editor-only `AutoFill` buttons.
-- `AssetMenuPath` centralises `CreateAssetMenu` prefixes for installers and animation parameters.
+#### Example: project-level bindings
+```csharp
+[CreateAssetMenu(fileName = nameof(ProjectUiInstaller), menuName = "Simple Sample/" + nameof(ProjectUiInstaller), order = 0)]
+public class ProjectUiInstaller : ScriptableObjectInstaller
+{
+    [SerializeField] private Canvas canvas;
+
+    [Header("Windows")]
+    [SerializeField] private LoadingWindow loadingWindow;
+
+    public override void InstallBindings()
+    {
+        var canvasInstance = Instantiate(canvas);
+        DontDestroyOnLoad(canvasInstance); // Keeps the loading canvas alive between scenes
+
+        Container.BindWindowFromPrefab(canvasInstance, loadingWindow); // Registers the global loading window
+    }
+}
+```
