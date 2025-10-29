@@ -14,13 +14,24 @@ public class Bootstrap : IInitializable, IDisposable
     private readonly CompositeDisposable _compositeDisposable = new();
     private readonly ILocalWindowsService _localWindowsService;
     private readonly IScenesService _scenesService;
+    // ...
 
     public void Initialize()
     {
         if (_scenesService.IsLoadingCompleted.Value)
             OpenMainMenu();
         else
-            _scenesService.IsLoadingCompleted.Subscribe(OnLoadingComplete).AddTo(_compositeDisposable);
+            _scenesService.IsLoadingCompleted
+                .Subscribe(OnLoadingComplete)
+                .AddTo(_compositeDisposable); // Подписываемся до завершения загрузки
+    }
+
+    private void OnLoadingComplete(bool isComplete)
+    {
+        if (!isComplete)
+            return;
+
+        OpenMainMenu();
     }
 
     private void OpenMainMenu()
@@ -28,6 +39,7 @@ public class Bootstrap : IInitializable, IDisposable
         _localWindowsService.OpenWindow<MainMenuWindow>(); // Открываем главное меню в локальном стеке окон
         _compositeDisposable.Dispose(); // Освобождаем подписки после появления первого окна
     }
+    // ...
 }
 ```
 
@@ -38,6 +50,7 @@ public class SettingsController : AUiController<SettingsView>
     private readonly ISettingsStorageService _settingsStorageService;
     private readonly ILocalWindowsService _localWindowsService;
     private readonly ReactiveProperty<bool> _wasSomethingChanged = new();
+    // ... остальная инициализация и вспомогательные методы
 
     private void OnCloseButtonClick()
     {
@@ -65,6 +78,8 @@ public class SettingsController : AUiController<SettingsView>
 
 public class SettingsChangeConfirmationController : AUiController<SettingsChangeConfirmationView>
 {
+    // Зависимости передаются через конструктор...
+
     private void OnYesButtonClicked()
     {
         _settingsStorageService.ApplyUnsavedSettings();
@@ -84,6 +99,7 @@ public class MainMenuWindow : AWindow
 {
     [SerializeField] private MainMenuView mainMenuView;
     [SerializeField] private TitleView titleView;
+    // ...
 
     protected override void AddControllers()
     {
@@ -104,6 +120,7 @@ public class MainMenuWindow : AWindow
 public class MainMenuController : AUiController<MainMenuView>
 {
     private readonly ILocalWindowsService _localWindowsService;
+    // ...
 
     public override void Initialize()
     {
@@ -123,6 +140,7 @@ public class MainMenuController : AUiController<MainMenuView>
 public class LoadingIndicatorController : AUiController<LoadingIndicatorView>
 {
     private readonly IScenesService _levelsService;
+    // ...
 
     public override void Initialize()
     {
@@ -159,6 +177,7 @@ public class SettingsView : AUiAnimatedView
     public Button applyButton;
     public Button cancelButton;
     public Button closeButton;
+    // ... параметры анимации задаются в инспекторе
 }
 ```
 
@@ -173,6 +192,7 @@ public class LevelItemView : AUiSimpleCollectionView
     [SerializeField] private GameObject unselectedBackground;
     [SerializeField] private StarGroup[] stars;
     [SerializeField] private Button button;
+    // ... остальные члены (например, SetSelectionState)
 
     public IObservable<Unit> OnClick => button.OnClickAsObservable(); // Событие выбора элемента
     public LevelData Data { get; private set; }
@@ -192,6 +212,7 @@ public class LevelItemView : AUiSimpleCollectionView
             stars[i].SetState(isAchieved); // Включаем иконки звёзд в зависимости от прогресса
         }
     }
+    // ... остальные методы (например, SetSelectionState)
 }
 ```
 
@@ -205,6 +226,7 @@ public class LevelItemView : AUiSimpleCollectionView
 public class TitleController : AUiController<TitleView>
 {
     private Tween _animationTween;
+    // ...
 
     protected override void OnOpen()
     {
@@ -234,14 +256,14 @@ public class LevelSelectorController : AUiController<LevelSelectorView>
 {
     private readonly ILevelProgressionService _levelProgressionService;
     private LevelItemView _selectedItem;
+    // ...
 
     public override void Initialize()
     {
         var collection = View.levelItemsCollection;
         collection.Clear(); // Удаляем элементы, созданные ранее
 
-        var progression = _levelProgressionService.Progression;
-        foreach (var levelData in progression)
+        foreach (var levelData in _levelProgressionService.Progression)
         {
             var item = collection.Create(); // Создаём новое представление уровня
             item.SetLevelData(levelData); // Передаём описание уровня
@@ -255,14 +277,14 @@ public class LevelSelectorController : AUiController<LevelSelectorView>
         if (!item.Data.IsUnlocked)
             return; // Заблокированные уровни нельзя выбрать
 
-        if(_selectedItem != null)
-            _selectedItem.SetSelectionState(false);
+        _selectedItem?.SetSelectionState(false);
 
         item.SetSelectionState(true);
         _selectedItem = item;
 
         View.loadButton.interactable = true; // Включаем кнопку загрузки после выбора доступного уровня
     }
+    // ...
 }
 ```
 
@@ -283,6 +305,7 @@ public class MainMenuUiInstaller : ScriptableObjectInstaller
     [SerializeField] private SettingsWindow settingsWindow;
     [SerializeField] private SettingsChangeConfirmationWindow settingsChangeConfirmationWindow;
     [SerializeField] private LevelSelectorWindow levelSelectorWindow;
+    // ...
 
     public override void InstallBindings()
     {
@@ -292,6 +315,7 @@ public class MainMenuUiInstaller : ScriptableObjectInstaller
         Container.BindWindowFromPrefab(canvasInstance, settingsWindow); // Регистрируем окно настроек
         Container.BindWindowFromPrefab(canvasInstance, settingsChangeConfirmationWindow); // Регистрируем окно подтверждения
         Container.BindWindowFromPrefab(canvasInstance, levelSelectorWindow); // Регистрируем окно выбора уровня
+        // ... регистрируйте дополнительные окна по той же схеме
 
         Container.BindInterfacesTo<Bootstrap>().AsSingle().NonLazy(); // Немедленно запускаем загрузочный сервис
     }
@@ -307,6 +331,7 @@ public class ProjectUiInstaller : ScriptableObjectInstaller
 
     [Header("Windows")]
     [SerializeField] private LoadingWindow loadingWindow;
+    // ...
 
     public override void InstallBindings()
     {
@@ -314,6 +339,7 @@ public class ProjectUiInstaller : ScriptableObjectInstaller
         DontDestroyOnLoad(canvasInstance); // Канвас не уничтожается между сценами
 
         Container.BindWindowFromPrefab(canvasInstance, loadingWindow); // Регистрируем глобальное окно загрузки
+        // ... при необходимости регистрируйте дополнительные окна
     }
 }
 ```

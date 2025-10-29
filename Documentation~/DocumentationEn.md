@@ -15,13 +15,24 @@ public class Bootstrap : IInitializable, IDisposable
     private readonly CompositeDisposable _compositeDisposable = new();
     private readonly ILocalWindowsService _localWindowsService;
     private readonly IScenesService _scenesService;
+    // ...
 
     public void Initialize()
     {
         if (_scenesService.IsLoadingCompleted.Value)
             OpenMainMenu();
         else
-            _scenesService.IsLoadingCompleted.Subscribe(OnLoadingComplete).AddTo(_compositeDisposable);
+            _scenesService.IsLoadingCompleted
+                .Subscribe(OnLoadingComplete)
+                .AddTo(_compositeDisposable); // Subscribes until loading finishes
+    }
+
+    private void OnLoadingComplete(bool isComplete)
+    {
+        if (!isComplete)
+            return;
+
+        OpenMainMenu();
     }
 
     private void OpenMainMenu()
@@ -29,6 +40,7 @@ public class Bootstrap : IInitializable, IDisposable
         _localWindowsService.OpenWindow<MainMenuWindow>(); // Pushes the main menu window to the local stack
         _compositeDisposable.Dispose(); // Releases subscriptions once the first window is shown
     }
+    // ...
 }
 ```
 
@@ -39,6 +51,7 @@ public class SettingsController : AUiController<SettingsView>
     private readonly ISettingsStorageService _settingsStorageService;
     private readonly ILocalWindowsService _localWindowsService;
     private readonly ReactiveProperty<bool> _wasSomethingChanged = new();
+    // ... other initialization and helper methods
 
     private void OnCloseButtonClick()
     {
@@ -66,6 +79,8 @@ public class SettingsController : AUiController<SettingsView>
 
 public class SettingsChangeConfirmationController : AUiController<SettingsChangeConfirmationView>
 {
+    // Dependencies are injected via constructor...
+
     private void OnYesButtonClicked()
     {
         _settingsStorageService.ApplyUnsavedSettings();
@@ -85,6 +100,7 @@ public class MainMenuWindow : AWindow
 {
     [SerializeField] private MainMenuView mainMenuView;
     [SerializeField] private TitleView titleView;
+    // ...
 
     protected override void AddControllers()
     {
@@ -105,6 +121,7 @@ state transitions.
 public class MainMenuController : AUiController<MainMenuView>
 {
     private readonly ILocalWindowsService _localWindowsService;
+    // ...
 
     public override void Initialize()
     {
@@ -124,15 +141,18 @@ public class MainMenuController : AUiController<MainMenuView>
 public class LoadingIndicatorController : AUiController<LoadingIndicatorView>
 {
     private readonly IScenesService _levelsService;
+    // ...
 
     public override void Initialize()
     {
-        _levelsService.LoadingProgress.Subscribe(OnLoadingProgress).AddTo(View); // Updates progress each frame
+        _levelsService.LoadingProgress
+            .Subscribe(OnLoadingProgress)
+            .AddTo(View); // Updates progress each frame
     }
 
     private void OnLoadingProgress(float progress)
     {
-        var progressPercentage = (int) (progress * 100f);
+        var progressPercentage = (int)(progress * 100f);
         progressPercentage = Mathf.Clamp(progressPercentage, 0, 100);
 
         View.loadingProgressText.text = $"{progressPercentage}%"; // Displays loading percentage
@@ -161,6 +181,7 @@ public class SettingsView : AUiAnimatedView
     public Button applyButton;
     public Button cancelButton;
     public Button closeButton;
+    // ... animation settings are configured in the inspector
 }
 ```
 
@@ -175,6 +196,7 @@ public class LevelItemView : AUiSimpleCollectionView
     [SerializeField] private GameObject unselectedBackground;
     [SerializeField] private StarGroup[] stars;
     [SerializeField] private Button button;
+    // ... additional helpers (e.g., SetSelectionState)
 
     public IObservable<Unit> OnClick => button.OnClickAsObservable(); // Emits when the user selects the item
     public LevelData Data { get; private set; }
@@ -194,6 +216,7 @@ public class LevelItemView : AUiSimpleCollectionView
             stars[i].SetState(isAchieved); // Toggles star icons based on earned progress
         }
     }
+    // ...
 }
 ```
 
@@ -207,12 +230,14 @@ window while it is open. Controllers are free to start tweens in `OnOpen` and st
 public class TitleController : AUiController<TitleView>
 {
     private Tween _animationTween;
+    // ...
 
     protected override void OnOpen()
     {
         _animationTween?.Kill();
 
-        _animationTween = View.container.DOPunchScale(View.scalePunch, View.duration, View.vibrato, View.elasticity)
+        _animationTween = View.container
+            .DOPunchScale(View.scalePunch, View.duration, View.vibrato, View.elasticity)
             .SetEase(View.ease)
             .SetLoops(-1, LoopType.Restart)
             .SetLink(View.gameObject); // Disposes the tween automatically with the view
@@ -236,14 +261,14 @@ public class LevelSelectorController : AUiController<LevelSelectorView>
 {
     private readonly ILevelProgressionService _levelProgressionService;
     private LevelItemView _selectedItem;
+    // ...
 
     public override void Initialize()
     {
         var collection = View.levelItemsCollection;
         collection.Clear(); // Removes any previously created items
 
-        var progression = _levelProgressionService.Progression;
-        foreach (var levelData in progression)
+        foreach (var levelData in _levelProgressionService.Progression)
         {
             var item = collection.Create(); // Creates a new view instance
             item.SetLevelData(levelData); // Populates the view with level metadata
@@ -257,14 +282,14 @@ public class LevelSelectorController : AUiController<LevelSelectorView>
         if (!item.Data.IsUnlocked)
             return; // Locked levels cannot be selected
 
-        if(_selectedItem != null)
-            _selectedItem.SetSelectionState(false);
+        _selectedItem?.SetSelectionState(false);
 
         item.SetSelectionState(true);
         _selectedItem = item;
 
         View.loadButton.interactable = true; // Enables loading once a valid level is chosen
     }
+    // ...
 }
 ```
 
@@ -279,12 +304,11 @@ project-wide installer for persistent windows and a scene installer for local UI
 public class MainMenuUiInstaller : ScriptableObjectInstaller
 {
     [SerializeField] private Canvas canvas;
-
-    [Header("Windows")]
     [SerializeField] private MainMenuWindow mainMenuWindow;
     [SerializeField] private SettingsWindow settingsWindow;
     [SerializeField] private SettingsChangeConfirmationWindow settingsChangeConfirmationWindow;
     [SerializeField] private LevelSelectorWindow levelSelectorWindow;
+    // ...
 
     public override void InstallBindings()
     {
@@ -294,6 +318,7 @@ public class MainMenuUiInstaller : ScriptableObjectInstaller
         Container.BindWindowFromPrefab(canvasInstance, settingsWindow); // Registers the settings window
         Container.BindWindowFromPrefab(canvasInstance, settingsChangeConfirmationWindow); // Registers the confirmation popup
         Container.BindWindowFromPrefab(canvasInstance, levelSelectorWindow); // Registers the level selector window
+        // ... bind other windows if needed
 
         Container.BindInterfacesTo<Bootstrap>().AsSingle().NonLazy(); // Starts the loading bootstrapper immediately
     }
@@ -306,9 +331,8 @@ public class MainMenuUiInstaller : ScriptableObjectInstaller
 public class ProjectUiInstaller : ScriptableObjectInstaller
 {
     [SerializeField] private Canvas canvas;
-
-    [Header("Windows")]
     [SerializeField] private LoadingWindow loadingWindow;
+    // ...
 
     public override void InstallBindings()
     {
@@ -316,6 +340,7 @@ public class ProjectUiInstaller : ScriptableObjectInstaller
         DontDestroyOnLoad(canvasInstance); // Keeps the loading canvas alive between scenes
 
         Container.BindWindowFromPrefab(canvasInstance, loadingWindow); // Registers the global loading window
+        // ... register additional windows if required by your project
     }
 }
 ```
