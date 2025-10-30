@@ -297,6 +297,8 @@ public class LevelSelectorController : AUiController<LevelSelectorView>
 }
 ```
 
+![UI collection example](Images/ui_collection.jpeg)
+
 ## Installers and binding
 Installers wrap window prefabs and canvases so Zenject can create them at runtime. Use `DiContainerExtensions.BindWindowFromPrefab` to register each window with the correct canvas. Scene installers typically configure local UI, while project installers register global overlays.
 

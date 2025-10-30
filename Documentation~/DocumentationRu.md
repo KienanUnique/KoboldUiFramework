@@ -297,6 +297,8 @@ public class LevelSelectorController : AUiController<LevelSelectorView>
 }
 ```
 
+![Пример UI коллекции](Images/ui_collection.jpeg)
+
 ## Installers and bindings
 Инсталлеры оборачивают префабы окон и Canvas, чтобы Zenject мог создать их в рантайме. Используйте `DiContainerExtensions.BindWindowFromPrefab`, чтобы зарегистрировать окно на нужном Canvas. Сценовые инсталлеры обычно настраивают локальный интерфейс, а проектные — глобальные окна.
 
