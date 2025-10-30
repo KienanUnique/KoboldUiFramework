@@ -1,20 +1,33 @@
 # Документация плагина Kobold UI
 
-## Сервис окон
+## Общее описание
+Плагин Kobold UI предоставляет композиционную систему окон поверх Zenject, UniRx и DOTween. Каждый экран интерфейса представлен окном, которое управляет контроллерами и вью, а сервисы управляют стеком окон и транслируют события жизненного цикла. Этот документ описывает контракт рантайма, поставляемый с пакетом, и ссылается на реализацию Simple Sample, чтобы показать ожидаемый способ использования.
 
-Плагин управляет окнами через `IWindowsService`, `ILocalWindowsService` и `IProjectWindowsService`. Сервис хранит стек реализаций
-`IWindow`, последовательно выполняет поставленные UI-действия и переключает состояние окна между `Active`, `NonFocused` и `Closed`.
+Структура интерфейса делится на три слоя:
 
-В Simple Sample показано, как сервисы разрешаются из Zenject и как каждое обращение ставит действие в очередь:
+- **Сервисы** управляют стеком окон и предоставляют API для открытия, закрытия и замены экранов.
+- **Окна** определяют, какие контроллеры работают внутри Canvas и как запускаются анимации.
+- **Контроллеры и вью** обрабатывают пользовательские действия и отображают данные, реагируя на обратные вызовы жизненного цикла.
 
-#### Пример: запуск локального стека окон
+В следующих разделах описаны обязанности каждого слоя и приведены выдержки из Simple Sample, демонстрирующие использование API.
+
+## Сервисы окон
+`IWindowsService` хранит глобальное состояние всех окон. Плагин предоставляет две специализированные реализации:
+
+- `ILocalWindowsService` работает с Canvas текущей сцены, что подходит для меню.
+- `IProjectWindowsService` управляет глобальными окнами, которые переживают смену сцен.
+
+Каждый запрос помещается в очередь, чтобы действия выполнялись последовательно. Открытие или закрытие окна планирует переход, который выполнится после завершения предыдущего действия. Сервисы также предоставляют наблюдаемые значения, показывающие, пуст ли стек и какое окно находится в фокусе.
+
+В Simple Sample сервис `Bootstrap` ожидает завершения загрузки сцены и открывает главное меню, когда проект готов:
+
 ```csharp
 public class Bootstrap : IInitializable, IDisposable
 {
     private readonly CompositeDisposable _compositeDisposable = new();
     private readonly ILocalWindowsService _localWindowsService;
     private readonly IScenesService _scenesService;
-    // ...
+    // ... конструктор сохраняет внедрённые сервисы
 
     public void Initialize()
     {
@@ -23,119 +36,99 @@ public class Bootstrap : IInitializable, IDisposable
         else
             _scenesService.IsLoadingCompleted
                 .Subscribe(OnLoadingComplete)
-                .AddTo(_compositeDisposable); // Подписываемся до завершения загрузки
-    }
-
-    private void OnLoadingComplete(bool isComplete)
-    {
-        if (!isComplete)
-            return;
-
-        OpenMainMenu();
+                .AddTo(_compositeDisposable); // Один раз отслеживаем флаг загрузки
     }
 
     private void OpenMainMenu()
     {
-        _localWindowsService.OpenWindow<MainMenuWindow>(); // Открываем главное меню в локальном стеке окон
-        _compositeDisposable.Dispose(); // Освобождаем подписки после появления первого окна
+        _localWindowsService.OpenWindow<MainMenuWindow>(); // Добавляем главное меню в локальный стек
+        _compositeDisposable.Dispose();
     }
     // ...
 }
 ```
 
-#### Пример: открытие, закрытие и возврат к окну
+Контроллеры используют тот же сервис, чтобы закрывать активное окно или вернуться к конкретному окну:
+
 ```csharp
-public class SettingsController : AUiController<SettingsView>
-{
-    private readonly ISettingsStorageService _settingsStorageService;
-    private readonly ILocalWindowsService _localWindowsService;
-    private readonly ReactiveProperty<bool> _wasSomethingChanged = new();
-    // ... остальная инициализация и вспомогательные методы
-
-    private void OnCloseButtonClick()
-    {
-        if (_wasSomethingChanged.Value)
-        {
-            var currentSettings = CreateSettingsData();
-            _settingsStorageService.RememberUnsavedSettings(currentSettings);
-
-            _localWindowsService.OpenWindow<SettingsChangeConfirmationWindow>(); // Показываем окно подтверждения
-        }
-        else
-        {
-            _localWindowsService.CloseWindow(); // Закрываем настройки и возвращаем предыдущее окно
-        }
-    }
-
-    private void OnCancelButtonClick()
-    {
-        _settingsStorageService.ForgetUnsavedSettings();
-        ResetSettings();
-
-        _localWindowsService.CloseWindow(); // Возвращаемся назад без сохранения
-    }
-}
-
 public class SettingsChangeConfirmationController : AUiController<SettingsChangeConfirmationView>
 {
-    // Зависимости передаются через конструктор...
+    private readonly ILocalWindowsService _localWindowsService;
+    private readonly ISettingsStorageService _settingsStorageService;
+    // ... сохраняем зависимости
+
+    public override void Initialize()
+    {
+        View.yesButton
+            .OnClickAsObservable()
+            .Subscribe(_ => OnYesButtonClicked())
+            .AddTo(View);
+        // ... подписываем остальные кнопки
+    }
 
     private void OnYesButtonClicked()
     {
         _settingsStorageService.ApplyUnsavedSettings();
-        _localWindowsService.CloseToWindow<MainMenuWindow>(); // Закрываем цепочку окон до главного меню
+        _localWindowsService.CloseToWindow<MainMenuWindow>(); // Удаляем всплывающие окна до возвращения к главному меню
     }
+    // ...
 }
 ```
 
-## Окна
+## Жизненный цикл окна
+Каждое окно реализует `IWindow` и наследуется от `AWindow`. Базовый класс получает `CanvasGroup`, отслеживает внутренние состояния (`Active`, `NonFocused`, `Closed`) и управляет переходами между ними. Колбэки `OnOpen`, `OnClose` и `OnFocusRemoved` передаются контроллерам, чтобы они могли запускать или останавливать анимации, сбрасывать данные или отписываться от сервисов, когда окно покидает стек.
 
-Окна реализуют `IWindow` и наследуются от `AWindow`. Базовый класс получает `CanvasGroup`, управляет дочерними контроллерами и
-отслеживает жизненный цикл. Переопределите `AddControllers()`, чтобы зарегистрировать контроллеры для отдельных участков окна.
+Окно регистрирует свои контроллеры в `AddControllers()`, чтобы фреймворк мог создать их вместе с привязанными вью:
 
-#### Пример: окно из нескольких представлений
 ```csharp
 public class MainMenuWindow : AWindow
 {
     [SerializeField] private MainMenuView mainMenuView;
     [SerializeField] private TitleView titleView;
-    // ...
 
     protected override void AddControllers()
     {
-        AddController<MainMenuController, MainMenuView>(mainMenuView); // Контроллер кнопок главного меню
+        AddController<MainMenuController, MainMenuView>(mainMenuView); // Контроллер кнопок навигации
         AddController<TitleController, TitleView>(titleView); // Контроллер анимированного заголовка
     }
 }
 ```
 
 ## Контроллеры
+Контроллеры наследуются от `AUiController<TView>`. Они получают сервисы через конструктор и переопределяют `Initialize()`, чтобы подписаться на наблюдаемые значения, предоставляемые вью. При необходимости контроллеры переопределяют методы жизненного цикла и сбрасывают состояние, когда окно открывается повторно.
 
-Контроллеры наследуются от `AUiController<TView>` и получают зависимости через конструктор. Метод `Initialize()` вызывается после
-инъекции представления и позволяет подписаться на события UI. Переопределяйте `OnOpen`, `OnClose` или `OnFocusRemove`, чтобы
-реагировать на смену состояния.
+Контроллер главного меню показывает, как пробрасывать клики в сервис окон:
 
-#### Пример: навигация по кнопкам
 ```csharp
 public class MainMenuController : AUiController<MainMenuView>
 {
     private readonly ILocalWindowsService _localWindowsService;
-    // ...
+    // ... конструктор сохраняет зависимость
 
     public override void Initialize()
     {
-        View.startButton.OnClickAsObservable().Subscribe(_ => OnStartButtonClick()).AddTo(View);
-        View.settingsButton.OnClickAsObservable().Subscribe(_ => OnSettingsButtonClick()).AddTo(View);
-        View.exitButton.OnClickAsObservable().Subscribe(_ => OnExitButtonClick()).AddTo(View);
+        View.startButton
+            .OnClickAsObservable()
+            .Subscribe(_ => OnStartButtonClick())
+            .AddTo(View);
+        View.settingsButton
+            .OnClickAsObservable()
+            .Subscribe(_ => OnSettingsButtonClick())
+            .AddTo(View);
+        View.exitButton
+            .OnClickAsObservable()
+            .Subscribe(_ => OnExitButtonClick())
+            .AddTo(View);
     }
 
-    private void OnStartButtonClick() => _localWindowsService.OpenWindow<LevelSelectorWindow>(); // Переход к выбору уровня
-    private void OnSettingsButtonClick() => _localWindowsService.OpenWindow<SettingsWindow>(); // Открываем настройки
-    private void OnExitButtonClick() => Application.Quit(); // Завершаем приложение в билде
+    private void OnStartButtonClick() => _localWindowsService.OpenWindow<LevelSelectorWindow>();
+    private void OnSettingsButtonClick() => _localWindowsService.OpenWindow<SettingsWindow>();
+    private void OnExitButtonClick() => Application.Quit();
 }
 ```
 
-#### Пример: реакция на данные сервиса
+Другие контроллеры реагируют на данные сервисов и обновляют вью:
+
 ```csharp
 public class LoadingIndicatorController : AUiController<LoadingIndicatorView>
 {
@@ -144,84 +137,106 @@ public class LoadingIndicatorController : AUiController<LoadingIndicatorView>
 
     public override void Initialize()
     {
-        _levelsService.LoadingProgress.Subscribe(OnLoadingProgress).AddTo(View); // Обновляем прогресс при каждом кадре
+        _levelsService.LoadingProgress
+            .Subscribe(OnLoadingProgress)
+            .AddTo(View); // Обновляем текст каждый кадр, пока окно активно
     }
 
     private void OnLoadingProgress(float progress)
     {
-        var progressPercentage = (int) (progress * 100f);
+        var progressPercentage = (int)(progress * 100f);
         progressPercentage = Mathf.Clamp(progressPercentage, 0, 100);
-
-        View.loadingProgressText.text = $"{progressPercentage}%"; // Отображаем процент загрузки
+        View.loadingProgressText.text = $"{progressPercentage}%";
     }
 }
 ```
 
-## Представления
+Состояние контроллера настроек показывает работу с пользовательским вводом и подтверждением закрытия:
 
-Представления наследуются от производных `AUiView`. `AUiAnimatedView` оставляет объект активным на время анимаций появления/скрытия,
-`AUiSimpleView` просто включает или выключает GameObject, а элементы коллекций наследуются от `AUiSimpleCollectionView`.
+```csharp
+public class SettingsController : AUiController<SettingsView>
+{
+    private readonly ISettingsStorageService _settingsStorageService;
+    private readonly ILocalWindowsService _localWindowsService;
+    private readonly ReactiveProperty<bool> _wasSomethingChanged = new();
+    // ...
 
-#### Пример: анимируемое представление с ссылками на UI
+    public override void Initialize()
+    {
+        View.applyButton
+            .OnClickAsObservable()
+            .Subscribe(_ => OnApplyButtonClick())
+            .AddTo(View);
+        View.closeButton
+            .OnClickAsObservable()
+            .Subscribe(_ => OnCloseButtonClick())
+            .AddTo(View);
+        _wasSomethingChanged.Subscribe(OnSomethingChanged).AddTo(View);
+    }
+
+    private void OnCloseButtonClick()
+    {
+        if (_wasSomethingChanged.Value)
+        {
+            var currentSettings = CreateSettingsData();
+            _settingsStorageService.RememberUnsavedSettings(currentSettings);
+            _localWindowsService.OpenWindow<SettingsChangeConfirmationWindow>();
+        }
+        else
+        {
+            _localWindowsService.CloseWindow();
+        }
+    }
+    // ...
+}
+```
+
+## Вью
+Вью наследуются от вариаций `AUiView`, которые определяют реакцию GameObject на события жизненного цикла. `AUiAnimatedView` оставляет иерархию активной во время анимаций, `AUiSimpleView` включает и отключает корневой объект, а коллекционные вью наследуются от `AUiSimpleCollectionView`, чтобы работать в составе пулов.
+
+Вью настроек содержит компоненты Unity UI, которыми управляет контроллер:
+
 ```csharp
 public class SettingsView : AUiAnimatedView
 {
     [Header("Sounds")]
     public Slider soundVolume;
     public Slider musicVolume;
-
-    [Header("Difficulty")]
-    public Toggle easyModeToggle;
+    // ... остальные элементы управления
 
     [Header("Buttons")]
     public Button applyButton;
     public Button cancelButton;
     public Button closeButton;
-    // ... параметры анимации задаются в инспекторе
 }
 ```
 
-#### Пример: элемент коллекции уровней
+Элемент коллекции хранит ссылки на элементы оформления и состояния выбора:
+
 ```csharp
 public class LevelItemView : AUiSimpleCollectionView
 {
     [SerializeField] private TextMeshProUGUI nameText;
     [SerializeField] private GameObject lockedContainer;
     [SerializeField] private GameObject unlockedContainer;
-    [SerializeField] private GameObject selectedBackground;
-    [SerializeField] private GameObject unselectedBackground;
-    [SerializeField] private StarGroup[] stars;
+    // ... дополнительные визуальные элементы
     [SerializeField] private Button button;
-    // ... остальные члены (например, SetSelectionState)
 
-    public IObservable<Unit> OnClick => button.OnClickAsObservable(); // Событие выбора элемента
+    public IObservable<Unit> OnClick => button.OnClickAsObservable();
     public LevelData Data { get; private set; }
 
     public void SetLevelData(LevelData levelData)
     {
         Data = levelData;
-
-        nameText.text = levelData.Name; // Обновляем подпись
-
-        lockedContainer.SetActive(!levelData.IsUnlocked);
-        unlockedContainer.SetActive(levelData.IsUnlocked);
-
-        for (var i = 0; i < stars.Length; i++)
-        {
-            var isAchieved = i < levelData.StarsCount;
-            stars[i].SetState(isAchieved); // Включаем иконки звёзд в зависимости от прогресса
-        }
+        nameText.text = levelData.Name; // Сохраняем метаданные для проверки выбора
+        // ... обновляем состояние замка и звёзд
     }
-    // ... остальные методы (например, SetSelectionState)
 }
 ```
 
 ## Анимации
+Анимации интерфейса наследуются от `AUiAnimationBase` или управляются напрямую внутри контроллеров. В Simple Sample DOTween анимирует заголовок при открытии главного меню и останавливает анимацию при закрытии окна.
 
-Компоненты анимаций наследуются от `AUiAnimationBase` или `AUiAnimation<TParams>`. В Simple Sample заголовок главного меню анимируется
-через DOTween: контроллер запускает tween в `OnOpen` и останавливает его в `OnClose`.
-
-#### Пример: циклическая анимация заголовка
 ```csharp
 public class TitleController : AUiController<TitleView>
 {
@@ -231,115 +246,98 @@ public class TitleController : AUiController<TitleView>
     protected override void OnOpen()
     {
         _animationTween?.Kill();
-
-        _animationTween = View.container.DOPunchScale(View.scalePunch, View.duration, View.vibrato, View.elasticity)
+        _animationTween = View.container
+            .DOPunchScale(View.scalePunch, View.duration, View.vibrato, View.elasticity)
             .SetEase(View.ease)
             .SetLoops(-1, LoopType.Restart)
-            .SetLink(View.gameObject); // Привязываем tween к объекту, чтобы он удалился вместе с ним
+            .SetLink(View.gameObject); // Гарантируем остановку твина вместе с вью
     }
 
     protected override void OnClose()
     {
-        _animationTween?.Kill(); // Останавливаем анимацию при закрытии окна
+        _animationTween?.Kill();
     }
 }
 ```
 
 ## Коллекции
+Коллекционные контроллеры наследуются от реализаций `AUiCollection<TView>`, создают элементы из пула и управляют их жизненным циклом. Перед заполнением список очищается, а состояние выбора обновляется вручную.
 
-Коллекции наследуются от реализаций `AUiCollection<TView>`. `AUiListCollection<TView>` хранит созданные элементы и удаляет их при
-вызове `Clear()`. Контроллеры проходят по данным, вызывают `Create()`, настраивают представление и подключают события.
-
-#### Пример: заполнение списка уровней
 ```csharp
 public class LevelSelectorController : AUiController<LevelSelectorView>
 {
-    private readonly ILevelProgressionService _levelProgressionService;
     private LevelItemView _selectedItem;
-    // ...
+    // ... внедрённые сервисы
 
     public override void Initialize()
     {
         var collection = View.levelItemsCollection;
-        collection.Clear(); // Удаляем элементы, созданные ранее
+        collection.Clear();
 
         foreach (var levelData in _levelProgressionService.Progression)
         {
-            var item = collection.Create(); // Создаём новое представление уровня
-            item.SetLevelData(levelData); // Передаём описание уровня
+            var item = collection.Create();
+            item.SetLevelData(levelData);
             item.SetSelectionState(false);
-            item.OnClick.Subscribe(_ => OnItemClicked(item)).AddTo(View); // Подписываемся на выбор уровня
+            item.OnClick.Subscribe(_ => OnItemClicked(item)).AddTo(View);
         }
     }
 
     private void OnItemClicked(LevelItemView item)
     {
         if (!item.Data.IsUnlocked)
-            return; // Заблокированные уровни нельзя выбрать
+            return;
 
         _selectedItem?.SetSelectionState(false);
-
         item.SetSelectionState(true);
         _selectedItem = item;
-
-        View.loadButton.interactable = true; // Включаем кнопку загрузки после выбора доступного уровня
+        View.loadButton.interactable = true;
     }
     // ...
 }
 ```
 
-## Инсталляторы и привязка
+## Инсталлеры и биндинги
+Инсталлеры оборачивают префабы окон и Canvas, чтобы Zenject мог создать их в рантайме. Используйте `DiContainerExtensions.BindWindowFromPrefab`, чтобы зарегистрировать окно на нужном Canvas. Сценовые инсталлеры обычно настраивают локальный интерфейс, а проектные — глобальные окна.
 
-Метод `DiContainerExtensions.BindWindowFromPrefab` создаёт экземпляр префаба окна под указанным канвасом и привязывает его в контейнере.
-В примере проект делится на установщик глобальных окон и сценовый установщик локального UI.
-
-#### Пример: привязки на уровне сцены
 ```csharp
 [CreateAssetMenu(fileName = nameof(MainMenuUiInstaller), menuName = "Simple Sample/" + nameof(MainMenuUiInstaller), order = 0)]
 public class MainMenuUiInstaller : ScriptableObjectInstaller
 {
     [SerializeField] private Canvas canvas;
-
-    [Header("Windows")]
     [SerializeField] private MainMenuWindow mainMenuWindow;
     [SerializeField] private SettingsWindow settingsWindow;
-    [SerializeField] private SettingsChangeConfirmationWindow settingsChangeConfirmationWindow;
-    [SerializeField] private LevelSelectorWindow levelSelectorWindow;
-    // ...
+    // ... остальные окна
 
     public override void InstallBindings()
     {
         var canvasInstance = Instantiate(canvas);
+        Container.BindWindowFromPrefab(canvasInstance, mainMenuWindow);
+        Container.BindWindowFromPrefab(canvasInstance, settingsWindow);
+        // ... связываем дополнительные окна
 
-        Container.BindWindowFromPrefab(canvasInstance, mainMenuWindow); // Регистрируем главное меню
-        Container.BindWindowFromPrefab(canvasInstance, settingsWindow); // Регистрируем окно настроек
-        Container.BindWindowFromPrefab(canvasInstance, settingsChangeConfirmationWindow); // Регистрируем окно подтверждения
-        Container.BindWindowFromPrefab(canvasInstance, levelSelectorWindow); // Регистрируем окно выбора уровня
-        // ... регистрируйте дополнительные окна по той же схеме
-
-        Container.BindInterfacesTo<Bootstrap>().AsSingle().NonLazy(); // Немедленно запускаем загрузочный сервис
+        Container.BindInterfacesTo<Bootstrap>().AsSingle().NonLazy();
     }
 }
 ```
 
-#### Пример: глобальные привязки проекта
+Проектный инсталлер сохраняет общие Canvas между сменами сцен:
+
 ```csharp
 [CreateAssetMenu(fileName = nameof(ProjectUiInstaller), menuName = "Simple Sample/" + nameof(ProjectUiInstaller), order = 0)]
 public class ProjectUiInstaller : ScriptableObjectInstaller
 {
     [SerializeField] private Canvas canvas;
-
-    [Header("Windows")]
     [SerializeField] private LoadingWindow loadingWindow;
     // ...
 
     public override void InstallBindings()
     {
         var canvasInstance = Instantiate(canvas);
-        DontDestroyOnLoad(canvasInstance); // Канвас не уничтожается между сценами
-
-        Container.BindWindowFromPrefab(canvasInstance, loadingWindow); // Регистрируем глобальное окно загрузки
-        // ... при необходимости регистрируйте дополнительные окна
+        DontDestroyOnLoad(canvasInstance);
+        Container.BindWindowFromPrefab(canvasInstance, loadingWindow);
     }
 }
 ```
+
+Эти примеры показывают, как Simple Sample объединяет строительные блоки плагина. Комбинируйте сервисы, окна, контроллеры и инсталлеры, чтобы расширять стек интерфейса собственными окнами, сохраняя единый жизненный цикл.
