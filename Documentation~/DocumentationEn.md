@@ -22,29 +22,21 @@ Every request is queued to guarantee sequential execution. Opening or closing a 
 In the Simple Sample, the `Bootstrap` service waits for scene loading and then opens the main menu once the project is ready:
 
 ```csharp
-public class Bootstrap : IInitializable, IDisposable
+public class Bootstrap : IInitializable
 {
-    private readonly CompositeDisposable _compositeDisposable = new();
     private readonly ILocalWindowsService _localWindowsService;
-    private readonly IScenesService _scenesService;
-    // ... constructor assigns the injected services
+    private readonly IScenesService _scenesService; // ...
 
     public void Initialize()
     {
-        if (_scenesService.IsLoadingCompleted.Value)
-            OpenMainMenu();
-        else
-            _scenesService.IsLoadingCompleted
-                .Subscribe(OnLoadingComplete)
-                .AddTo(_compositeDisposable); // Watches the loading flag once
+        _scenesService.IsLoadingCompleted
+            .Subscribe(_ => OpenMainMenu()); // ...
     }
 
     private void OpenMainMenu()
     {
-        _localWindowsService.OpenWindow<MainMenuWindow>(); // Pushes the first window into the local stack
-        _compositeDisposable.Dispose();
+        _localWindowsService.OpenWindow<MainMenuWindow>(); // ...
     }
-    // ...
 }
 ```
 
@@ -54,24 +46,15 @@ Controllers call the same service to close the active window or to navigate back
 public class SettingsChangeConfirmationController : AUiController<SettingsChangeConfirmationView>
 {
     private readonly ILocalWindowsService _localWindowsService;
-    private readonly ISettingsStorageService _settingsStorageService;
-    // ... dependency assignment
+    // ...
 
     public override void Initialize()
     {
         View.yesButton
             .OnClickAsObservable()
-            .Subscribe(_ => OnYesButtonClicked())
-            .AddTo(View);
-        // ... wire the remaining buttons
+            .Subscribe(_ => _localWindowsService.CloseToWindow<MainMenuWindow>()); // ...
+        // ...
     }
-
-    private void OnYesButtonClicked()
-    {
-        _settingsStorageService.ApplyUnsavedSettings();
-        _localWindowsService.CloseToWindow<MainMenuWindow>(); // Pops every overlay until the main menu becomes active
-    }
-    // ...
 }
 ```
 
@@ -103,27 +86,15 @@ The menu controller shows how to forward button clicks to the window service:
 public class MainMenuController : AUiController<MainMenuView>
 {
     private readonly ILocalWindowsService _localWindowsService;
-    // ... constructor stores the dependency
+    // ...
 
     public override void Initialize()
     {
         View.startButton
             .OnClickAsObservable()
-            .Subscribe(_ => OnStartButtonClick())
-            .AddTo(View);
-        View.settingsButton
-            .OnClickAsObservable()
-            .Subscribe(_ => OnSettingsButtonClick())
-            .AddTo(View);
-        View.exitButton
-            .OnClickAsObservable()
-            .Subscribe(_ => OnExitButtonClick())
-            .AddTo(View);
+            .Subscribe(_ => _localWindowsService.OpenWindow<LevelSelectorWindow>());
+        // ... handle other buttons
     }
-
-    private void OnStartButtonClick() => _localWindowsService.OpenWindow<LevelSelectorWindow>();
-    private void OnSettingsButtonClick() => _localWindowsService.OpenWindow<SettingsWindow>();
-    private void OnExitButtonClick() => Application.Quit();
 }
 ```
 
@@ -132,22 +103,16 @@ More advanced controllers react to service data and adjust their views according
 ```csharp
 public class LoadingIndicatorController : AUiController<LoadingIndicatorView>
 {
-    private readonly IScenesService _levelsService;
-    // ...
+    private readonly IScenesService _levelsService; // ...
 
     public override void Initialize()
     {
         _levelsService.LoadingProgress
-            .Subscribe(OnLoadingProgress)
-            .AddTo(View); // Updates the text every frame while the window is open
+            .Subscribe(progress => View.loadingProgressText.text = Format(progress))
+            .AddTo(View); // ...
     }
 
-    private void OnLoadingProgress(float progress)
-    {
-        var progressPercentage = (int)(progress * 100f);
-        progressPercentage = Mathf.Clamp(progressPercentage, 0, 100);
-        View.loadingProgressText.text = $"{progressPercentage}%";
-    }
+    private string Format(float progress) => $"{progress * 100f:0}%"; // ...
 }
 ```
 
@@ -156,37 +121,25 @@ Stateful controllers can track user input and react when a window closes or when
 ```csharp
 public class SettingsController : AUiController<SettingsView>
 {
-    private readonly ISettingsStorageService _settingsStorageService;
-    private readonly ILocalWindowsService _localWindowsService;
     private readonly ReactiveProperty<bool> _wasSomethingChanged = new();
-    // ...
+    // ... includes storage service and ILocalWindowsService
 
     public override void Initialize()
     {
-        View.applyButton
-            .OnClickAsObservable()
-            .Subscribe(_ => OnApplyButtonClick())
-            .AddTo(View);
-        View.closeButton
-            .OnClickAsObservable()
-            .Subscribe(_ => OnCloseButtonClick())
-            .AddTo(View);
-        _wasSomethingChanged.Subscribe(OnSomethingChanged).AddTo(View);
+        View.applyButton.OnClickAsObservable().Subscribe(_ => Apply()).AddTo(View);
+        View.closeButton.OnClickAsObservable().Subscribe(_ => HandleClose()).AddTo(View);
+        _wasSomethingChanged.Subscribe(OnSomethingChanged).AddTo(View); // ...
     }
 
-    private void OnCloseButtonClick()
+    private void HandleClose()
     {
         if (_wasSomethingChanged.Value)
-        {
-            var currentSettings = CreateSettingsData();
-            _settingsStorageService.RememberUnsavedSettings(currentSettings);
             _localWindowsService.OpenWindow<SettingsChangeConfirmationWindow>();
-        }
         else
-        {
             _localWindowsService.CloseWindow();
-        }
     }
+
+    private void Apply() => _settingsStorageService.ApplyUnsavedSettings(); // ...
     // ...
 }
 ```
@@ -199,14 +152,7 @@ A settings view exposes raw Unity UI components that controllers manipulate:
 ```csharp
 public class SettingsView : AUiAnimatedView
 {
-    [Header("Sounds")]
-    public Slider soundVolume;
-    public Slider musicVolume;
-    // ... additional controls
-
-    [Header("Buttons")]
-    public Button applyButton;
-    public Button cancelButton;
+    public Slider soundVolume; // ...
     public Button closeButton;
 }
 ```
@@ -216,21 +162,10 @@ Collection item views hold references for layout toggles and selection feedback:
 ```csharp
 public class LevelItemView : AUiSimpleCollectionView
 {
-    [SerializeField] private TextMeshProUGUI nameText;
-    [SerializeField] private GameObject lockedContainer;
-    [SerializeField] private GameObject unlockedContainer;
-    // ... visuals omitted for brevity
-    [SerializeField] private Button button;
-
+    [SerializeField] private Button button; // ...
     public IObservable<Unit> OnClick => button.OnClickAsObservable();
     public LevelData Data { get; private set; }
-
-    public void SetLevelData(LevelData levelData)
-    {
-        Data = levelData;
-        nameText.text = levelData.Name; // Stores metadata for later selection checks
-        // ... updates lock state and star icons
-    }
+    // ...
 }
 ```
 
@@ -240,23 +175,14 @@ UI animations extend `AUiAnimationBase` or are orchestrated directly inside cont
 ```csharp
 public class TitleController : AUiController<TitleView>
 {
-    private Tween _animationTween;
-    // ...
-
     protected override void OnOpen()
     {
-        _animationTween?.Kill();
-        _animationTween = View.container
-            .DOPunchScale(View.scalePunch, View.duration, View.vibrato, View.elasticity)
-            .SetEase(View.ease)
-            .SetLoops(-1, LoopType.Restart)
-            .SetLink(View.gameObject); // Ensures the tween stops with the view
+        View.container
+            .DOPunchScale(View.scalePunch, View.duration)
+            .SetLoops(-1)
+            .SetLink(View.gameObject); // ...
     }
-
-    protected override void OnClose()
-    {
-        _animationTween?.Kill();
-    }
+    // ...
 }
 ```
 
@@ -266,20 +192,16 @@ Collection controllers derive from `AUiCollection<TView>` implementations to spa
 ```csharp
 public class LevelSelectorController : AUiController<LevelSelectorView>
 {
-    private LevelItemView _selectedItem;
-    // ... injected services
+    private LevelItemView _selectedItem; // ...
+    private readonly ILevelProgressionService _levelProgressionService; // ...
 
     public override void Initialize()
     {
-        var collection = View.levelItemsCollection;
-        collection.Clear();
-
         foreach (var levelData in _levelProgressionService.Progression)
         {
-            var item = collection.Create();
+            var item = View.levelItemsCollection.Create();
             item.SetLevelData(levelData);
-            item.SetSelectionState(false);
-            item.OnClick.Subscribe(_ => OnItemClicked(item)).AddTo(View);
+            item.OnClick.Subscribe(_ => OnItemClicked(item));
         }
     }
 
@@ -288,12 +210,10 @@ public class LevelSelectorController : AUiController<LevelSelectorView>
         if (!item.Data.IsUnlocked)
             return;
 
-        _selectedItem?.SetSelectionState(false);
+        _selectedItem?.SetSelectionState(false); // ...
         item.SetSelectionState(true);
         _selectedItem = item;
-        View.loadButton.interactable = true;
     }
-    // ...
 }
 ```
 
@@ -303,22 +223,17 @@ public class LevelSelectorController : AUiController<LevelSelectorView>
 Installers wrap window prefabs and canvases so Zenject can create them at runtime. Use `DiContainerExtensions.BindWindowFromPrefab` to register each window with the correct canvas. Scene installers typically configure local UI, while project installers register global overlays.
 
 ```csharp
-[CreateAssetMenu(fileName = nameof(MainMenuUiInstaller), menuName = "Simple Sample/" + nameof(MainMenuUiInstaller), order = 0)]
+[CreateAssetMenu(...)]
 public class MainMenuUiInstaller : ScriptableObjectInstaller
 {
-    [SerializeField] private Canvas canvas;
+    [SerializeField] private Canvas canvas; // ...
     [SerializeField] private MainMenuWindow mainMenuWindow;
-    [SerializeField] private SettingsWindow settingsWindow;
-    // ... other window references
 
     public override void InstallBindings()
     {
-        var canvasInstance = Instantiate(canvas);
+        var canvasInstance = Instantiate(canvas); // ...
         Container.BindWindowFromPrefab(canvasInstance, mainMenuWindow);
-        Container.BindWindowFromPrefab(canvasInstance, settingsWindow);
-        // ... bind additional windows
-
-        Container.BindInterfacesTo<Bootstrap>().AsSingle().NonLazy();
+        Container.BindInterfacesTo<Bootstrap>().AsSingle();
     }
 }
 ```
@@ -326,16 +241,15 @@ public class MainMenuUiInstaller : ScriptableObjectInstaller
 Project-level installers keep shared canvases alive between scene loads:
 
 ```csharp
-[CreateAssetMenu(fileName = nameof(ProjectUiInstaller), menuName = "Simple Sample/" + nameof(ProjectUiInstaller), order = 0)]
+[CreateAssetMenu(...)]
 public class ProjectUiInstaller : ScriptableObjectInstaller
 {
-    [SerializeField] private Canvas canvas;
+    [SerializeField] private Canvas canvas; // ...
     [SerializeField] private LoadingWindow loadingWindow;
-    // ...
 
     public override void InstallBindings()
     {
-        var canvasInstance = Instantiate(canvas);
+        var canvasInstance = Instantiate(canvas); // ...
         DontDestroyOnLoad(canvasInstance);
         Container.BindWindowFromPrefab(canvasInstance, loadingWindow);
     }

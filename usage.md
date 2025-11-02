@@ -18,9 +18,8 @@ public override void InstallBindings()
 // Samples~/SimpleSample/Scripts/Installers/ProjectUiInstaller.cs
 public override void InstallBindings()
 {
-    var canvasInstance = Instantiate(canvas); // Create the shared UI canvas.
+    var canvasInstance = Instantiate(canvas); // ...
     DontDestroyOnLoad(canvasInstance);
-
     Container.BindWindowFromPrefab(canvasInstance, loadingWindow);
 }
 ```
@@ -31,14 +30,10 @@ public override void InstallBindings()
 // Samples~/SimpleSample/Scripts/MainMenuScreen/Installers/MainMenuUiInstaller.cs
 public override void InstallBindings()
 {
-    var canvasInstance = Instantiate(canvas);
-
+    var canvasInstance = Instantiate(canvas); // ...
     Container.BindWindowFromPrefab(canvasInstance, mainMenuWindow);
-    Container.BindWindowFromPrefab(canvasInstance, settingsWindow);
-    Container.BindWindowFromPrefab(canvasInstance, settingsChangeConfirmationWindow);
-    Container.BindWindowFromPrefab(canvasInstance, levelSelectorWindow);
-
-    Container.BindInterfacesTo<Bootstrap>().AsSingle().NonLazy(); //...
+    Container.BindWindowFromPrefab(canvasInstance, settingsWindow); // ...
+    Container.BindInterfacesTo<Bootstrap>().AsSingle();
 }
 ```
 
@@ -48,16 +43,14 @@ public override void InstallBindings()
 // Samples~/SimpleSample/Scripts/Services/Bootstrap/Bootstrap.cs
 private void OpenMainMenu()
 {
-    _localWindowsService.OpenWindow<MainMenuWindow>();
-    _compositeDisposable.Dispose();
+    _localWindowsService.OpenWindow<MainMenuWindow>(); // ...
 }
 ```
 
 ```csharp
 // Samples~/SimpleSample/Scripts/MainMenuScreen/Ui/MainMenu/Menu/MainMenuController.cs
 private void OnStartButtonClick() => _localWindowsService.OpenWindow<LevelSelectorWindow>();
-private void OnSettingsButtonClick() => _localWindowsService.OpenWindow<SettingsWindow>();
-private void OnExitButtonClick() => Application.Quit();
+// ... other buttons
 ```
 
 ## Defining windows and controllers
@@ -86,8 +79,7 @@ protected override void AddControllers()
 public class MainMenuView : AUiAnimatedView
 {
     public Button startButton;
-    public Button settingsButton;
-    public Button exitButton;
+    // ...
 }
 ```
 
@@ -95,11 +87,7 @@ public class MainMenuView : AUiAnimatedView
 // Samples~/SimpleSample/Scripts/MainMenuScreen/Ui/Settings/Settings/SettingsView.cs
 public class SettingsView : AUiAnimatedView
 {
-    public Slider soundVolume; //...
-    public Slider musicVolume;
-    public Toggle easyModeToggle;
-    public Button applyButton;
-    public Button cancelButton;
+    public Slider soundVolume; // ...
     public Button closeButton;
 }
 ```
@@ -110,16 +98,12 @@ public class SettingsView : AUiAnimatedView
 // Samples~/SimpleSample/Scripts/MainMenuScreen/Ui/Settings/Settings/SettingsController.cs
 public override void Initialize()
 {
-    View.musicVolume.OnValueChangedAsObservable().Subscribe(_ => RememberThatSomethingChanged()).AddTo(View);
-    View.soundVolume.OnValueChangedAsObservable().Subscribe(_ => RememberThatSomethingChanged()).AddTo(View);
-    //...
-    View.closeButton.OnClickAsObservable().Subscribe(_ => OnCloseButtonClick()).AddTo(View);
-
-    _settingsStorageService.UnsavedSettingsForgotten.Subscribe(_ => ResetSettings()).AddTo(View);
-    _wasSomethingChanged.Subscribe(OnSomethingChanged).AddTo(View);
+    View.closeButton
+        .OnClickAsObservable()
+        .Subscribe(_ => OnCloseButtonClick()); // ...
 }
 
-protected override void OnOpen() => ResetSettings();
+protected override void OnOpen() => ResetSettings(); // ...
 ```
 
 ```csharp
@@ -127,13 +111,7 @@ protected override void OnOpen() => ResetSettings();
 public override void Initialize()
 {
     foreach (var cancelButton in View.cancelButtons)
-        cancelButton.OnClickAsObservable().Subscribe(_ => OnCancelButtonPressed()).AddTo(View);
-
-    View.loadButton.OnClickAsObservable().Subscribe(_ => OnLoadButtonPressed()).AddTo(View);
-
-    var collection = View.levelItemsCollection;
-    collection.Clear();
-    //...
+        cancelButton.OnClickAsObservable().Subscribe(_ => OnCancelButtonPressed()); // ...
 }
 ```
 
@@ -148,16 +126,11 @@ public class LevelItemsCollection : AUiListCollection<LevelItemView>
 
 ```csharp
 // Samples~/SimpleSample/Scripts/MainMenuScreen/Ui/LevelSelector/Selector/LevelSelectorController.cs
-var collection = View.levelItemsCollection;
-collection.Clear();
-
-var progression = _levelProgressionService.Progression;
-foreach (var levelData in progression)
+foreach (var levelData in _levelProgressionService.Progression)
 {
-    var item = collection.Create();
+    var item = View.levelItemsCollection.Create();
     item.SetLevelData(levelData);
-    item.SetSelectionState(false);
-    item.OnClick.Subscribe(_ => OnItemClicked(item)).AddTo(View);
+    item.OnClick.Subscribe(_ => OnItemClicked(item)); // ...
 }
 ```
 
@@ -174,12 +147,10 @@ public void SetSelectionState(bool isSelected)
 // Samples~/SimpleSample/Scripts/MainMenuScreen/Ui/MainMenu/Title/TitleController.cs
 protected override void OnOpen()
 {
-    _animationTween?.Kill();
-
-    _animationTween = View.container.DOPunchScale(View.scalePunch, View.duration, View.vibrato, View.elasticity)
-        .SetEase(View.ease)
-        .SetLoops(-1, LoopType.Restart)
-        .SetLink(View.gameObject);
+    View.container
+        .DOPunchScale(View.scalePunch, View.duration)
+        .SetLoops(-1)
+        .SetLink(View.gameObject); // ...
 }
 ```
 
@@ -187,12 +158,7 @@ protected override void OnOpen()
 // Samples~/SimpleSample/Scripts/MainMenuScreen/Ui/MainMenu/Title/TitleView.cs
 public class TitleView : AUiAnimatedView
 {
-    public Vector3 scalePunch;
-    public float duration;
-    public int vibrato;
-    public float elasticity;
-    public Ease ease;
-    public RectTransform container;
+    public RectTransform container; // ...
 }
 ```
 
@@ -204,11 +170,7 @@ Simple Sample views that require animations inherit from `AUiAnimatedView` and k
 // Samples~/SimpleSample/Scripts/MainMenuScreen/Ui/Settings/Settings/SettingsView.cs
 public class SettingsView : AUiAnimatedView
 {
-    public Slider soundVolume; //...
-    public Slider musicVolume;
-    public Toggle easyModeToggle;
-    public Button applyButton;
-    public Button cancelButton;
+    public Slider soundVolume; // ...
     public Button closeButton;
 }
 ```

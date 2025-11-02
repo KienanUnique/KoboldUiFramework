@@ -22,29 +22,21 @@
 В Simple Sample сервис `Bootstrap` ожидает завершения загрузки сцены и открывает главное меню, когда проект готов:
 
 ```csharp
-public class Bootstrap : IInitializable, IDisposable
+public class Bootstrap : IInitializable
 {
-    private readonly CompositeDisposable _compositeDisposable = new();
     private readonly ILocalWindowsService _localWindowsService;
-    private readonly IScenesService _scenesService;
-    // ... конструктор сохраняет внедрённые сервисы
+    private readonly IScenesService _scenesService; // ...
 
     public void Initialize()
     {
-        if (_scenesService.IsLoadingCompleted.Value)
-            OpenMainMenu();
-        else
-            _scenesService.IsLoadingCompleted
-                .Subscribe(OnLoadingComplete)
-                .AddTo(_compositeDisposable); // Один раз отслеживаем флаг загрузки
+        _scenesService.IsLoadingCompleted
+            .Subscribe(_ => OpenMainMenu()); // ...
     }
 
     private void OpenMainMenu()
     {
-        _localWindowsService.OpenWindow<MainMenuWindow>(); // Добавляем главное меню в локальный стек
-        _compositeDisposable.Dispose();
+        _localWindowsService.OpenWindow<MainMenuWindow>(); // ...
     }
-    // ...
 }
 ```
 
@@ -54,24 +46,15 @@ public class Bootstrap : IInitializable, IDisposable
 public class SettingsChangeConfirmationController : AUiController<SettingsChangeConfirmationView>
 {
     private readonly ILocalWindowsService _localWindowsService;
-    private readonly ISettingsStorageService _settingsStorageService;
-    // ... сохраняем зависимости
+    // ...
 
     public override void Initialize()
     {
         View.yesButton
             .OnClickAsObservable()
-            .Subscribe(_ => OnYesButtonClicked())
-            .AddTo(View);
-        // ... подписываем остальные кнопки
+            .Subscribe(_ => _localWindowsService.CloseToWindow<MainMenuWindow>()); // ...
+        // ...
     }
-
-    private void OnYesButtonClicked()
-    {
-        _settingsStorageService.ApplyUnsavedSettings();
-        _localWindowsService.CloseToWindow<MainMenuWindow>(); // Удаляем всплывающие окна до возвращения к главному меню
-    }
-    // ...
 }
 ```
 
@@ -103,27 +86,15 @@ public class MainMenuWindow : AWindow
 public class MainMenuController : AUiController<MainMenuView>
 {
     private readonly ILocalWindowsService _localWindowsService;
-    // ... конструктор сохраняет зависимость
+    // ...
 
     public override void Initialize()
     {
         View.startButton
             .OnClickAsObservable()
-            .Subscribe(_ => OnStartButtonClick())
-            .AddTo(View);
-        View.settingsButton
-            .OnClickAsObservable()
-            .Subscribe(_ => OnSettingsButtonClick())
-            .AddTo(View);
-        View.exitButton
-            .OnClickAsObservable()
-            .Subscribe(_ => OnExitButtonClick())
-            .AddTo(View);
+            .Subscribe(_ => _localWindowsService.OpenWindow<LevelSelectorWindow>());
+        // ... обрабатываем остальные кнопки
     }
-
-    private void OnStartButtonClick() => _localWindowsService.OpenWindow<LevelSelectorWindow>();
-    private void OnSettingsButtonClick() => _localWindowsService.OpenWindow<SettingsWindow>();
-    private void OnExitButtonClick() => Application.Quit();
 }
 ```
 
@@ -132,22 +103,16 @@ public class MainMenuController : AUiController<MainMenuView>
 ```csharp
 public class LoadingIndicatorController : AUiController<LoadingIndicatorView>
 {
-    private readonly IScenesService _levelsService;
-    // ...
+    private readonly IScenesService _levelsService; // ...
 
     public override void Initialize()
     {
         _levelsService.LoadingProgress
-            .Subscribe(OnLoadingProgress)
-            .AddTo(View); // Обновляем текст каждый кадр, пока окно активно
+            .Subscribe(progress => View.loadingProgressText.text = Format(progress))
+            .AddTo(View); // ...
     }
 
-    private void OnLoadingProgress(float progress)
-    {
-        var progressPercentage = (int)(progress * 100f);
-        progressPercentage = Mathf.Clamp(progressPercentage, 0, 100);
-        View.loadingProgressText.text = $"{progressPercentage}%";
-    }
+    private string Format(float progress) => $"{progress * 100f:0}%"; // ...
 }
 ```
 
@@ -156,37 +121,25 @@ public class LoadingIndicatorController : AUiController<LoadingIndicatorView>
 ```csharp
 public class SettingsController : AUiController<SettingsView>
 {
-    private readonly ISettingsStorageService _settingsStorageService;
-    private readonly ILocalWindowsService _localWindowsService;
     private readonly ReactiveProperty<bool> _wasSomethingChanged = new();
-    // ...
+    // ... включает сервис хранения и ILocalWindowsService
 
     public override void Initialize()
     {
-        View.applyButton
-            .OnClickAsObservable()
-            .Subscribe(_ => OnApplyButtonClick())
-            .AddTo(View);
-        View.closeButton
-            .OnClickAsObservable()
-            .Subscribe(_ => OnCloseButtonClick())
-            .AddTo(View);
-        _wasSomethingChanged.Subscribe(OnSomethingChanged).AddTo(View);
+        View.applyButton.OnClickAsObservable().Subscribe(_ => Apply()).AddTo(View);
+        View.closeButton.OnClickAsObservable().Subscribe(_ => HandleClose()).AddTo(View);
+        _wasSomethingChanged.Subscribe(OnSomethingChanged).AddTo(View); // ...
     }
 
-    private void OnCloseButtonClick()
+    private void HandleClose()
     {
         if (_wasSomethingChanged.Value)
-        {
-            var currentSettings = CreateSettingsData();
-            _settingsStorageService.RememberUnsavedSettings(currentSettings);
             _localWindowsService.OpenWindow<SettingsChangeConfirmationWindow>();
-        }
         else
-        {
             _localWindowsService.CloseWindow();
-        }
     }
+
+    private void Apply() => _settingsStorageService.ApplyUnsavedSettings(); // ...
     // ...
 }
 ```
@@ -199,14 +152,7 @@ View настроек содержит компоненты Unity UI, котор
 ```csharp
 public class SettingsView : AUiAnimatedView
 {
-    [Header("Sounds")]
-    public Slider soundVolume;
-    public Slider musicVolume;
-    // ... остальные элементы управления
-
-    [Header("Buttons")]
-    public Button applyButton;
-    public Button cancelButton;
+    public Slider soundVolume; // ...
     public Button closeButton;
 }
 ```
@@ -216,21 +162,10 @@ public class SettingsView : AUiAnimatedView
 ```csharp
 public class LevelItemView : AUiSimpleCollectionView
 {
-    [SerializeField] private TextMeshProUGUI nameText;
-    [SerializeField] private GameObject lockedContainer;
-    [SerializeField] private GameObject unlockedContainer;
-    // ... дополнительные визуальные элементы
-    [SerializeField] private Button button;
-
+    [SerializeField] private Button button; // ...
     public IObservable<Unit> OnClick => button.OnClickAsObservable();
     public LevelData Data { get; private set; }
-
-    public void SetLevelData(LevelData levelData)
-    {
-        Data = levelData;
-        nameText.text = levelData.Name; // Сохраняем метаданные для проверки выбора
-        // ... обновляем состояние замка и звёзд
-    }
+    // ...
 }
 ```
 
@@ -240,23 +175,14 @@ public class LevelItemView : AUiSimpleCollectionView
 ```csharp
 public class TitleController : AUiController<TitleView>
 {
-    private Tween _animationTween;
-    // ...
-
     protected override void OnOpen()
     {
-        _animationTween?.Kill();
-        _animationTween = View.container
-            .DOPunchScale(View.scalePunch, View.duration, View.vibrato, View.elasticity)
-            .SetEase(View.ease)
-            .SetLoops(-1, LoopType.Restart)
-            .SetLink(View.gameObject); // Гарантируем остановку твина вместе с View
+        View.container
+            .DOPunchScale(View.scalePunch, View.duration)
+            .SetLoops(-1)
+            .SetLink(View.gameObject); // ...
     }
-
-    protected override void OnClose()
-    {
-        _animationTween?.Kill();
-    }
+    // ...
 }
 ```
 
@@ -266,20 +192,16 @@ public class TitleController : AUiController<TitleView>
 ```csharp
 public class LevelSelectorController : AUiController<LevelSelectorView>
 {
-    private LevelItemView _selectedItem;
-    // ... внедрённые сервисы
+    private LevelItemView _selectedItem; // ...
+    private readonly ILevelProgressionService _levelProgressionService; // ...
 
     public override void Initialize()
     {
-        var collection = View.levelItemsCollection;
-        collection.Clear();
-
         foreach (var levelData in _levelProgressionService.Progression)
         {
-            var item = collection.Create();
+            var item = View.levelItemsCollection.Create();
             item.SetLevelData(levelData);
-            item.SetSelectionState(false);
-            item.OnClick.Subscribe(_ => OnItemClicked(item)).AddTo(View);
+            item.OnClick.Subscribe(_ => OnItemClicked(item));
         }
     }
 
@@ -288,12 +210,10 @@ public class LevelSelectorController : AUiController<LevelSelectorView>
         if (!item.Data.IsUnlocked)
             return;
 
-        _selectedItem?.SetSelectionState(false);
+        _selectedItem?.SetSelectionState(false); // ...
         item.SetSelectionState(true);
         _selectedItem = item;
-        View.loadButton.interactable = true;
     }
-    // ...
 }
 ```
 
@@ -303,22 +223,17 @@ public class LevelSelectorController : AUiController<LevelSelectorView>
 Инсталлеры оборачивают префабы окон и Canvas, чтобы Zenject мог создать их в рантайме. Используйте `DiContainerExtensions.BindWindowFromPrefab`, чтобы зарегистрировать окно на нужном Canvas. Сценовые инсталлеры обычно настраивают локальный интерфейс, а проектные — глобальные окна.
 
 ```csharp
-[CreateAssetMenu(fileName = nameof(MainMenuUiInstaller), menuName = "Simple Sample/" + nameof(MainMenuUiInstaller), order = 0)]
+[CreateAssetMenu(...)]
 public class MainMenuUiInstaller : ScriptableObjectInstaller
 {
-    [SerializeField] private Canvas canvas;
+    [SerializeField] private Canvas canvas; // ...
     [SerializeField] private MainMenuWindow mainMenuWindow;
-    [SerializeField] private SettingsWindow settingsWindow;
-    // ... остальные окна
 
     public override void InstallBindings()
     {
-        var canvasInstance = Instantiate(canvas);
+        var canvasInstance = Instantiate(canvas); // ...
         Container.BindWindowFromPrefab(canvasInstance, mainMenuWindow);
-        Container.BindWindowFromPrefab(canvasInstance, settingsWindow);
-        // ... связываем дополнительные окна
-
-        Container.BindInterfacesTo<Bootstrap>().AsSingle().NonLazy();
+        Container.BindInterfacesTo<Bootstrap>().AsSingle();
     }
 }
 ```
@@ -326,16 +241,15 @@ public class MainMenuUiInstaller : ScriptableObjectInstaller
 Проектный инсталлер сохраняет общие Canvas между сменами сцен:
 
 ```csharp
-[CreateAssetMenu(fileName = nameof(ProjectUiInstaller), menuName = "Simple Sample/" + nameof(ProjectUiInstaller), order = 0)]
+[CreateAssetMenu(...)]
 public class ProjectUiInstaller : ScriptableObjectInstaller
 {
-    [SerializeField] private Canvas canvas;
+    [SerializeField] private Canvas canvas; // ...
     [SerializeField] private LoadingWindow loadingWindow;
-    // ...
 
     public override void InstallBindings()
     {
-        var canvasInstance = Instantiate(canvas);
+        var canvasInstance = Instantiate(canvas); // ...
         DontDestroyOnLoad(canvasInstance);
         Container.BindWindowFromPrefab(canvasInstance, loadingWindow);
     }
