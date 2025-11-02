@@ -170,8 +170,6 @@ public void SetSelectionState(bool isSelected)
 }
 ```
 
-## Animations
-
 ```csharp
 // Samples~/SimpleSample/Scripts/MainMenuScreen/Ui/MainMenu/Title/TitleController.cs
 protected override void OnOpen()
@@ -195,5 +193,22 @@ public class TitleView : AUiAnimatedView
     public float elasticity;
     public Ease ease;
     public RectTransform container;
+}
+```
+
+## Animations
+
+Simple Sample views that require animations inherit from `AUiAnimatedView` and keep their animation components serialized on the same GameObject. Drop the `AUiAnimationBase` MonoBehaviour scripts into the view component fields to wire open and close animations.
+
+```csharp
+// Samples~/SimpleSample/Scripts/MainMenuScreen/Ui/Settings/Settings/SettingsView.cs
+public class SettingsView : AUiAnimatedView
+{
+    public Slider soundVolume; //...
+    public Slider musicVolume;
+    public Toggle easyModeToggle;
+    public Button applyButton;
+    public Button cancelButton;
+    public Button closeButton;
 }
 ```
