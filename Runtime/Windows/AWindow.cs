@@ -16,11 +16,20 @@ using UnityEditor;
 
 namespace KoboldUi.Windows
 {
+    /// <summary>
+    /// Base implementation for windows composed of controllers and views.
+    /// </summary>
     [RequireComponent(typeof(CanvasGroup))]
     public abstract class AWindow : AWindowBase, IAutoFillable
     {
         [Header("Behaviour")]
+        /// <summary>
+        /// Indicates whether the window should be treated as a popup.
+        /// </summary>
         [SerializeField] public bool _isPopup;
+        /// <summary>
+        /// Indicates whether back navigation logic may ignore this window.
+        /// </summary>
         [SerializeField] public bool _isBackLogicIgnorable;
         
         [Space]
@@ -32,7 +41,9 @@ namespace KoboldUi.Windows
 
         private DiContainer _container;
         
+        /// <inheritdoc />
         public override bool IsPopup => _isPopup;
+        /// <inheritdoc />
         public override bool IsBackLogicIgnorable => _isBackLogicIgnorable;
 
         private void Awake()
@@ -41,11 +52,13 @@ namespace KoboldUi.Windows
             _canvasGroup.interactable = false;
         }
 
+        /// <inheritdoc />
         public sealed override void InstallBindings(DiContainer container)
         {
             _container = container;
         }
 
+        /// <inheritdoc />
         public sealed override void Initialize()
         {
             AddControllers();
@@ -53,6 +66,7 @@ namespace KoboldUi.Windows
             base.Initialize();
         }
 
+        /// <inheritdoc />
         public override IUiAction SetState(EWindowState state, in IUiActionsPool pool)
         {
             switch (state)
@@ -80,6 +94,7 @@ namespace KoboldUi.Windows
             return parallelAction;
         }
 
+        /// <inheritdoc />
         public sealed override void ApplyOrder(int order)
         {
             transform.SetSiblingIndex(order);
@@ -87,6 +102,12 @@ namespace KoboldUi.Windows
 
         protected abstract void AddControllers();
 
+        /// <summary>
+        /// Adds a controller bound to the specified view instance.
+        /// </summary>
+        /// <typeparam name="TController">Controller type to instantiate.</typeparam>
+        /// <typeparam name="TView">View type managed by the controller.</typeparam>
+        /// <param name="viewInstance">View instance associated with the controller.</param>
         protected void AddController<TController, TView>(TView viewInstance)
             where TView : IUiView
             where TController : AUiController<TView>
@@ -107,9 +128,10 @@ namespace KoboldUi.Windows
             foreach (var animatedEmptyView in _animatedEmptyViews)
                 AddController<AnimatedEmptyController, AnimatedEmptyView>(animatedEmptyView);
         }
-        
+
 #if KOBOLD_ALCHEMY_SUPPORT && UNITY_EDITOR
         [Button]
+        /// <inheritdoc />
         public void AutoFill()
         {
             _animatedEmptyViews = new List<AnimatedEmptyView>();

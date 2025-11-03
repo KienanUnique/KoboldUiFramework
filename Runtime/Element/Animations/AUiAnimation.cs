@@ -12,8 +12,15 @@ using Alchemy.Inspector;
 
 namespace KoboldUi.Element.Animations
 {
+    /// <summary>
+    /// Generic animation component that drives appear and disappear transitions using tween parameters.
+    /// </summary>
+    /// <typeparam name="TParams">Parameter type describing the animation behaviour.</typeparam>
     public abstract class AUiAnimation<TParams> : AUiAnimationBase where TParams : IUiAnimationParameters
     {
+        /// <summary>
+        /// Determines whether consumers should wait for the tween to finish before continuing.
+        /// </summary>
         [SerializeField] public bool _needWaitAnimation;
 
         [FormerlySerializedAs("useDefaultParameters")]
@@ -29,6 +36,9 @@ namespace KoboldUi.Element.Animations
 
         [InjectOptional] private TParams _defaultAnimationParameters;
 
+        /// <summary>
+        /// Gets the animation parameters in use, falling back to injected defaults if needed.
+        /// </summary>
         protected TParams AnimationParameters
         {
             get
@@ -43,11 +53,15 @@ namespace KoboldUi.Element.Animations
             }
         }
 
+        /// <summary>
+        /// Returns whether the component should expose custom parameter controls in the editor.
+        /// </summary>
         public bool NeedUseCustomParameters()
         {
             return !_useDefaultParameters;
         }
 
+        /// <inheritdoc />
         public override IUiAction Appear(in IUiActionsPool pool)
         {
             PrepareToAppear();
@@ -57,34 +71,47 @@ namespace KoboldUi.Element.Animations
             return SelectCorrectUiAction(pool, tween, _needWaitAnimation);
         }
 
+        /// <inheritdoc />
         public override IUiAction Disappear(in IUiActionsPool pool)
         {
             var tween = AnimateDisappear();
             tween.OnComplete(DisappearInstantly);
-            
+
             return SelectCorrectUiAction(pool, tween, _needWaitAnimation);
         }
 
+        /// <inheritdoc />
         public override IUiAction AnimateFocusReturn(in IUiActionsPool pool)
         {
             pool.GetAction(out EmptyAction emptyAction);
             return emptyAction;
         }
 
+        /// <inheritdoc />
         public override IUiAction AnimateFocusRemoved(in IUiActionsPool pool)
         {
             pool.GetAction(out EmptyAction emptyAction);
             return emptyAction;
         }
 
+        /// <inheritdoc />
         public override void DisappearInstantly()
         {
             gameObject.SetActive(false);
         }
 
 
+        /// <summary>
+        /// Performs any setup required before the appear animation starts.
+        /// </summary>
         protected abstract void PrepareToAppear();
+        /// <summary>
+        /// Builds the tween that plays when the view appears.
+        /// </summary>
         protected abstract Tween AnimateAppear();
+        /// <summary>
+        /// Builds the tween that plays when the view disappears.
+        /// </summary>
         protected abstract Tween AnimateDisappear();
         
         private static IUiAction SelectCorrectUiAction(in IUiActionsPool pool, Tween tween, bool needWaitAnimation)

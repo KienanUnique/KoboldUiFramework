@@ -7,12 +7,16 @@ using UnityEngine;
 
 namespace KoboldUi.TasksRunner.Impl
 {
+    /// <summary>
+    /// Processes UI actions sequentially on a background task queue.
+    /// </summary>
     public class TaskRunner : ITasksRunner
     {
         private readonly ConcurrentQueue<IUiAction> _actionQueue = new();
         private readonly CancellationTokenSource _cancellationTokenSource = new();
         private bool _isRunning;
 
+        /// <inheritdoc />
         public void AddToQueue(IUiAction uiAction)
         {
             _actionQueue.Enqueue(uiAction);
@@ -20,6 +24,7 @@ namespace KoboldUi.TasksRunner.Impl
                 StartProcessing().Forget();
         }
 
+        /// <inheritdoc />
         public void Dispose()
         {
             _cancellationTokenSource.Cancel();

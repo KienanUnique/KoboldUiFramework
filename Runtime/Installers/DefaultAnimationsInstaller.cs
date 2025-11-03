@@ -5,6 +5,9 @@ using Zenject;
 
 namespace KoboldUi.Installers
 {
+    /// <summary>
+    /// Installs default animation parameter assets into the dependency container.
+    /// </summary>
     [CreateAssetMenu(menuName = AssetMenuPath.INSTALLERS + nameof(DefaultAnimationsInstaller),
         fileName = nameof(DefaultAnimationsInstaller))]
     public class DefaultAnimationsInstaller : ScriptableObjectInstaller
@@ -13,6 +16,7 @@ namespace KoboldUi.Installers
         [SerializeField] private ScaleAnimationParameters scaleAnimationParameters;
         [SerializeField] private SlideAnimationParameters slideAnimationParameters;
 
+        /// <inheritdoc />
         public override void InstallBindings()
         {
             Container.BindInstance(fadeAnimationParameters).AsSingle();

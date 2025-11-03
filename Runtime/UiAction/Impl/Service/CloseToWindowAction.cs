@@ -6,6 +6,9 @@ using KoboldUi.WindowsStack;
 
 namespace KoboldUi.UiAction.Impl.Service
 {
+    /// <summary>
+    /// Closes windows until a target window becomes the top of the stack.
+    /// </summary>
     public class CloseToWindowAction : AUiAction
     {
         private readonly IWindowsStackHolder _windowsStackHolder;
@@ -21,17 +24,24 @@ namespace KoboldUi.UiAction.Impl.Service
             _windowsStackHolder = windowsStackHolder;
         }
 
+        /// <summary>
+        /// Configures the window to keep and whether back-logic checks should be enforced.
+        /// </summary>
+        /// <param name="targetWindow">Window that should remain open.</param>
+        /// <param name="useBackLogicIgnorableChecks">When true, respects back-logic ignore flags.</param>
         public void Setup(IWindow targetWindow, bool useBackLogicIgnorableChecks)
         {
             _targetWindow = targetWindow;
             _useBackLogicIgnorableChecks = useBackLogicIgnorableChecks;
         }
 
+        /// <inheritdoc />
         public override void Dispose()
         {
             _targetWindow = null;
         }
 
+        /// <inheritdoc />
         protected override UniTask HandleStart()
         {
             if (_targetWindow == null || _windowsStackHolder.IsEmpty ||
@@ -46,6 +56,7 @@ namespace KoboldUi.UiAction.Impl.Service
             return BackToWindow(_targetWindow);
         }
 
+        /// <inheritdoc />
         protected override void ReturnToPool()
         {
             _targetWindow = null;

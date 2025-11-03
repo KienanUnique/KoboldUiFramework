@@ -38,6 +38,7 @@ https://github.com/KienanUnique/KoboldUiFramework.git
 # Useful Links
 - [Documentation (En)](https://github.com/KienanUnique/KoboldUiFramework/blob/main/Documentation~/DocumentationEn.md)
 - [Documentation (Ru)](https://github.com/KienanUnique/KoboldUiFramework/blob/main/Documentation~/DocumentationRu.md)
+- [Usage guide](https://github.com/KienanUnique/KoboldUiFramework/blob/main/usage.md)
 
 <div align="center" valign="middle" style="page-break-after: always;">
 <br>
