@@ -7,6 +7,9 @@ using Alchemy.Inspector;
 
 namespace KoboldUi.Element.Animations.Impl
 {
+    /// <summary>
+    /// Animates a RectTransform between anchored positions to slide views.
+    /// </summary>
     [RequireComponent(typeof(RectTransform))]
     public class SlideAnimation : AUiAnimation<SlideAnimationParameters>
     {
@@ -30,17 +33,22 @@ namespace KoboldUi.Element.Animations.Impl
         }
 
 #if KOBOLD_ALCHEMY_SUPPORT
+        /// <summary>
+        /// Indicates whether the disappear animation returns to the appear origin.
+        /// </summary>
         public bool DisappearToTheSamePlace()
         {
             return _disappearToTheSamePlace;
         }
 #endif
 
+        /// <inheritdoc />
         protected override void PrepareToAppear()
         {
             _rectTransform.anchoredPosition = _fromAppearAnchoredPosition;
         }
 
+        /// <inheritdoc />
         protected override Tween AnimateAppear()
         {
             _currentAnimation?.Kill();
@@ -54,6 +62,7 @@ namespace KoboldUi.Element.Animations.Impl
             return _currentAnimation;
         }
 
+        /// <inheritdoc />
         protected override Tween AnimateDisappear()
         {
             _currentAnimation?.Kill();

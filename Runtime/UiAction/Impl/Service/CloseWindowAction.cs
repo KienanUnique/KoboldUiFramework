@@ -6,6 +6,9 @@ using KoboldUi.WindowsStack;
 
 namespace KoboldUi.UiAction.Impl.Service
 {
+    /// <summary>
+    /// Closes the current window and restores the previous entry in the stack.
+    /// </summary>
     public class CloseWindowAction : AUiAction
     {
         private readonly IWindowsStackHolder _windowsStackHolder;
@@ -21,17 +24,23 @@ namespace KoboldUi.UiAction.Impl.Service
             _windowsStackHolder = windowsStackHolder;
         }
 
+        /// <summary>
+        /// Configures whether closing should respect back-logic checks.
+        /// </summary>
+        /// <param name="useBackLogicIgnorableChecks">When true, skips windows marked as ignorable.</param>
         public void Setup(bool useBackLogicIgnorableChecks)
         {
             _windowToClose = _windowsStackHolder.CurrentWindow;
             _useBackLogicIgnorableChecks = useBackLogicIgnorableChecks;
         }
 
+        /// <inheritdoc />
         public override void Dispose()
         {
             _windowToClose = null;
         }
 
+        /// <inheritdoc />
         protected override UniTask HandleStart()
         {
             if (_windowToClose == null || _windowsStackHolder.IsEmpty ||
@@ -46,6 +55,7 @@ namespace KoboldUi.UiAction.Impl.Service
             return BackWindow(_windowsStackHolder.Pop());
         }
 
+        /// <inheritdoc />
         protected override void ReturnToPool()
         {
             _windowToClose = null;

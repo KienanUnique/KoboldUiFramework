@@ -10,31 +10,39 @@ using UnityEditor;
 
 namespace KoboldUi.Element.View
 {
+    /// <summary>
+    /// View that plays configured animations when opening or closing.
+    /// </summary>
     public class AUiAnimatedView : AUiView, IAutoFillable
     {
         [SerializeField] private AUiAnimationBase _openAnimation;
         [SerializeField] private AUiAnimationBase _closeAnimation;
 
+        /// <inheritdoc />
         public sealed override IUiAction Open(in IUiActionsPool pool)
         {
             return _openAnimation ? _openAnimation.Appear(pool) : base.Open(pool);
         }
 
+        /// <inheritdoc />
         public sealed override IUiAction ReturnFocus(in IUiActionsPool pool)
         {
             return base.ReturnFocus(pool);
         }
 
+        /// <inheritdoc />
         public sealed override IUiAction RemoveFocus(in IUiActionsPool pool)
         {
             return base.RemoveFocus(pool);
         }
 
+        /// <inheritdoc />
         public sealed override IUiAction Close(in IUiActionsPool pool)
         {
             return _closeAnimation ? _closeAnimation.Disappear(pool) : base.Close(pool);
         }
 
+        /// <inheritdoc />
         public sealed override void CloseInstantly()
         {
             if (_closeAnimation != null)
@@ -42,9 +50,10 @@ namespace KoboldUi.Element.View
             else
                 gameObject.SetActive(false);
         }
-        
+
 #if KOBOLD_ALCHEMY_SUPPORT && UNITY_EDITOR
         [Button]
+        /// <inheritdoc />
         public void AutoFill()
         {
             if(!TryGetComponent<AUiAnimationBase>(out var uiAnimation))

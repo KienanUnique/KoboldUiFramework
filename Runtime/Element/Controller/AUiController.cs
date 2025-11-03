@@ -7,17 +7,32 @@ using Zenject;
 
 namespace KoboldUi.Element.Controller
 {
+    /// <summary>
+    /// Base controller that orchestrates view lifecycle transitions based on window state changes.
+    /// </summary>
+    /// <typeparam name="TView">View type controlled by the controller.</typeparam>
     public abstract class AUiController<TView> : IUIController, IInitializable where TView : IUiView
     {
+        /// <summary>
+        /// View instance managed by the controller.
+        /// </summary>
         [Inject] protected readonly TView View;
 
+        /// <summary>
+        /// Indicates whether the view has been opened at least once.
+        /// </summary>
         protected bool IsOpened { get; private set; }
+        /// <summary>
+        /// Indicates whether the view currently holds input focus.
+        /// </summary>
         protected bool IsInFocus { get; private set; }
 
+        /// <inheritdoc />
         public virtual void Initialize()
         {
         }
 
+        /// <inheritdoc />
         public IUiAction SetState(EWindowState state, in IUiActionsPool pool)
         {
             IUiAction uiAction;
@@ -49,19 +64,29 @@ namespace KoboldUi.Element.Controller
             return uiAction;
         }
 
+        /// <inheritdoc />
         public void CloseInstantly()
         {
             View.CloseInstantly();
         }
 
+        /// <summary>
+        /// Called after the view has transitioned to the open state.
+        /// </summary>
         protected virtual void OnOpen()
         {
         }
 
+        /// <summary>
+        /// Called after the view has transitioned to the closed state.
+        /// </summary>
         protected virtual void OnClose()
         {
         }
 
+        /// <summary>
+        /// Called after the view has lost focus but remains open.
+        /// </summary>
         protected virtual void OnFocusRemove()
         {
         }

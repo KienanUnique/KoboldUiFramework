@@ -4,6 +4,9 @@ using UnityEngine;
 
 namespace KoboldUi.Element.Animations.Impl
 {
+    /// <summary>
+    /// Animates transform scale to show or hide views.
+    /// </summary>
     public class ScaleAnimation : AUiAnimation<ScaleAnimationParameters>
     {
         private readonly Vector3 _appearScale = Vector3.one;
@@ -11,11 +14,13 @@ namespace KoboldUi.Element.Animations.Impl
 
         private Tween _currentAnimation;
 
+        /// <inheritdoc />
         protected override void PrepareToAppear()
         {
             transform.localScale = _disappearScale;
         }
 
+        /// <inheritdoc />
         protected override Tween AnimateAppear()
         {
             _currentAnimation?.Kill();
@@ -28,6 +33,7 @@ namespace KoboldUi.Element.Animations.Impl
             return _currentAnimation;
         }
 
+        /// <inheritdoc />
         protected override Tween AnimateDisappear()
         {
             _currentAnimation?.Kill();

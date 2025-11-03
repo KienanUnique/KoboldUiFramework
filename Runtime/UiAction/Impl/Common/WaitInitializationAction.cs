@@ -5,6 +5,9 @@ using KoboldUi.Windows;
 
 namespace KoboldUi.UiAction.Impl.Common
 {
+    /// <summary>
+    /// Waits for a window to finish initialization before completing.
+    /// </summary>
     public class WaitInitializationAction : AUiAction
     {
         private CancellationTokenSource _linkedTokenSource;
@@ -14,11 +17,16 @@ namespace KoboldUi.UiAction.Impl.Common
         {
         }
 
+        /// <summary>
+        /// Specifies the window whose initialization should be awaited.
+        /// </summary>
+        /// <param name="window">Window to monitor.</param>
         public void Setup(AWindowBase window)
         {
             _window = window;
         }
 
+        /// <inheritdoc />
         public override void Dispose()
         {
             _linkedTokenSource?.Cancel();
@@ -28,6 +36,7 @@ namespace KoboldUi.UiAction.Impl.Common
             _window = null;
         }
 
+        /// <inheritdoc />
         protected override UniTask HandleStart()
         {
             if (_window.IsInitialized)
@@ -41,6 +50,7 @@ namespace KoboldUi.UiAction.Impl.Common
                 cancellationToken: _linkedTokenSource.Token);
         }
 
+        /// <inheritdoc />
         protected override void ReturnToPool()
         {
             _linkedTokenSource?.Cancel();
