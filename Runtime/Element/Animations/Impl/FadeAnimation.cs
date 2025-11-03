@@ -4,6 +4,9 @@ using UnityEngine;
 
 namespace KoboldUi.Element.Animations.Impl
 {
+    /// <summary>
+    /// Tweens a CanvasGroup alpha to fade views in and out.
+    /// </summary>
     [RequireComponent(typeof(CanvasGroup))]
     public class FadeAnimation : AUiAnimation<FadeAnimationParameters>
     {
@@ -19,11 +22,13 @@ namespace KoboldUi.Element.Animations.Impl
             _canvasGroup = GetComponent<CanvasGroup>();
         }
 
+        /// <inheritdoc />
         protected override void PrepareToAppear()
         {
             _canvasGroup.alpha = FADE_DISAPPEAR_VALUE;
         }
 
+        /// <inheritdoc />
         protected override Tween AnimateAppear()
         {
             _currentAnimation?.Kill();
@@ -36,6 +41,7 @@ namespace KoboldUi.Element.Animations.Impl
             return _currentAnimation;
         }
 
+        /// <inheritdoc />
         protected override Tween AnimateDisappear()
         {
             _currentAnimation?.Kill();

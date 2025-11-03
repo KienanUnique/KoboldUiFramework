@@ -6,6 +6,9 @@ using KoboldUi.WindowsStack;
 
 namespace KoboldUi.UiAction.Impl.Service
 {
+    /// <summary>
+    /// Opens a window through the windows stack service, closing or defocusing previous entries as needed.
+    /// </summary>
     public class OpenWindowAction : AUiAction
     {
         private readonly IWindowsStackHolder _windowsStackHolder;
@@ -20,21 +23,28 @@ namespace KoboldUi.UiAction.Impl.Service
             _windowsStackHolder = windowsStackHolder;
         }
 
+        /// <summary>
+        /// Specifies which window should be opened.
+        /// </summary>
+        /// <param name="windowToOpen">Window to make active.</param>
         public void Setup(IWindow windowToOpen)
         {
             _windowToOpen = windowToOpen;
         }
 
+        /// <inheritdoc />
         public override void Dispose()
         {
             _windowToOpen = null;
         }
 
+        /// <inheritdoc />
         protected override UniTask HandleStart()
         {
             return _windowsStackHolder.IsOpened(_windowToOpen) ? UniTask.CompletedTask : OpenWindow();
         }
 
+        /// <inheritdoc />
         protected override void ReturnToPool()
         {
             _windowToOpen = null;

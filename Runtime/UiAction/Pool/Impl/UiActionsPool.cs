@@ -10,6 +10,9 @@ using Zenject;
 
 namespace KoboldUi.UiAction.Pool.Impl
 {
+    /// <summary>
+    /// Maintains pools for the various UI action types used by the framework.
+    /// </summary>
     public class UiActionsPool : IUiActionsPool, IDisposable, IInitializable
     {
         private const int DEFAULT_POOL_SIZE = 2;
@@ -32,6 +35,9 @@ namespace KoboldUi.UiAction.Pool.Impl
         }
 
 
+        /// <summary>
+        /// Releases pooled action instances and their resources.
+        /// </summary>
         public void Dispose()
         {
             _emptyActionPool?.Dispose();
@@ -44,6 +50,9 @@ namespace KoboldUi.UiAction.Pool.Impl
             _tryBackWindowActionPool?.Dispose();
         }
 
+        /// <summary>
+        /// Initializes object pools for the known action types.
+        /// </summary>
         public void Initialize()
         {
             _emptyActionPool =
@@ -71,53 +80,62 @@ namespace KoboldUi.UiAction.Pool.Impl
 
         #region GetActions
 
+        /// <inheritdoc />
         public void GetAction(out EmptyAction action)
         {
             action = _emptyActionPool.Get();
         }
 
+        /// <inheritdoc />
         public void GetAction(out ParallelAction action, IReadOnlyList<IUiAction> actions)
         {
             action = _parallelActionPool.Get();
             action.Setup(actions);
         }
 
+        /// <inheritdoc />
         public void GetAction(out SimpleCallbackAction action, Action callback)
         {
             action = _simpleCallbackActionPool.Get();
             action.Setup(callback);
         }
 
+        /// <inheritdoc />
         public void GetAction(out TweenAction action, Tween tween)
         {
             action = _tweenActionPool.Get();
             action.Setup(tween);
         }
 
+        /// <inheritdoc />
         public void GetAction(out WaitInitializationAction action, AWindowBase window)
         {
             action = _waitInitializationActionPool.Get();
             action.Setup(window);
         }
 
+        /// <inheritdoc />
         public void GetAction(out OpenPreviousWindowAction action)
         {
             action = _openPreviousWindowActionPool.Get();
             action.Setup();
         }
 
+        /// <inheritdoc />
         public void GetAction(out OpenWindowAction action, IWindow windowToOpen)
         {
             action = _openWindowActionPool.Get();
             action.Setup(windowToOpen);
         }
 
+        /// <inheritdoc />
         public void GetAction(out CloseWindowAction action, bool useBackLogicIgnorableChecks)
         {
             action = _tryBackWindowActionPool.Get();
             action.Setup(useBackLogicIgnorableChecks);
         }
 
+        /// <inheritdoc />
         public void GetAction(out CloseToWindowAction action, IWindow targetWindow, bool useBackLogicIgnorableChecks)
         {
             action = _backToWindowActionPool.Get();
@@ -128,46 +146,55 @@ namespace KoboldUi.UiAction.Pool.Impl
 
         #region ReturnAction
 
+        /// <inheritdoc />
         public void ReturnAction(EmptyAction action)
         {
             _emptyActionPool.Release(action);
         }
 
+        /// <inheritdoc />
         public void ReturnAction(ParallelAction action)
         {
             _parallelActionPool.Release(action);
         }
 
+        /// <inheritdoc />
         public void ReturnAction(SimpleCallbackAction action)
         {
             _simpleCallbackActionPool.Release(action);
         }
 
+        /// <inheritdoc />
         public void ReturnAction(TweenAction action)
         {
             _tweenActionPool.Release(action);
         }
 
+        /// <inheritdoc />
         public void ReturnAction(WaitInitializationAction action)
         {
             _waitInitializationActionPool.Release(action);
         }
 
+        /// <inheritdoc />
         public void ReturnAction(OpenPreviousWindowAction action)
         {
             _openPreviousWindowActionPool.Release(action);
         }
 
+        /// <inheritdoc />
         public void ReturnAction(OpenWindowAction action)
         {
             _openWindowActionPool.Release(action);
         }
 
+        /// <inheritdoc />
         public void ReturnAction(CloseWindowAction action)
         {
             _tryBackWindowActionPool.Release(action);
         }
 
+        /// <inheritdoc />
         public void ReturnAction(CloseToWindowAction action)
         {
             _backToWindowActionPool.Release(action);

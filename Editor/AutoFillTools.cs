@@ -4,6 +4,9 @@ using UnityEngine;
 
 namespace Editor
 {
+    /// <summary>
+    /// Provides editor utilities for automatically wiring window and view references in prefabs.
+    /// </summary>
     public static class AutoFillTools
     {
         private const string SEARCH_FOLDER = "Assets/";
