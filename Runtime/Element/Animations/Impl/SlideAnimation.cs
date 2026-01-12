@@ -3,6 +3,8 @@ using KoboldUi.Element.Animations.Parameters.Impl;
 using UnityEngine;
 #if KOBOLD_ALCHEMY_SUPPORT
 using Alchemy.Inspector;
+#elif KOBOLD_ODIN_SUPPORT
+using Sirenix.OdinInspector;
 #endif
 
 namespace KoboldUi.Element.Animations.Impl
@@ -16,7 +18,7 @@ namespace KoboldUi.Element.Animations.Impl
         [SerializeField] private Vector2 _fromAppearAnchoredPosition;
         [SerializeField] private bool _disappearToTheSamePlace = true;
 
-#if KOBOLD_ALCHEMY_SUPPORT
+#if KOBOLD_ALCHEMY_SUPPORT || KOBOLD_ODIN_SUPPORT
         [HideIf(nameof(DisappearToTheSamePlace))]
 #endif
         [SerializeField]
@@ -32,7 +34,7 @@ namespace KoboldUi.Element.Animations.Impl
             _originalAnchoredPosition = _rectTransform.anchoredPosition;
         }
 
-#if KOBOLD_ALCHEMY_SUPPORT
+#if KOBOLD_ALCHEMY_SUPPORT || KOBOLD_ODIN_SUPPORT
         /// <summary>
         /// Indicates whether the disappear animation returns to the appear origin.
         /// </summary>

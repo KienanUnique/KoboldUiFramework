@@ -8,6 +8,8 @@ using UnityEngine.Serialization;
 using Zenject;
 #if KOBOLD_ALCHEMY_SUPPORT
 using Alchemy.Inspector;
+#elif KOBOLD_ODIN_SUPPORT
+using Sirenix.OdinInspector;
 #endif
 
 namespace KoboldUi.Element.Animations
@@ -27,7 +29,7 @@ namespace KoboldUi.Element.Animations
         [SerializeField]
         private bool _useDefaultParameters = true;
 
-#if KOBOLD_ALCHEMY_SUPPORT
+#if KOBOLD_ALCHEMY_SUPPORT || KOBOLD_ODIN_SUPPORT
         [ShowIf(nameof(NeedUseCustomParameters))]
 #endif
         [FormerlySerializedAs("animationParameters")]

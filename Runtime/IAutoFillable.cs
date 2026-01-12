@@ -5,7 +5,7 @@ namespace KoboldUi
     /// </summary>
     public interface IAutoFillable
     {
-#if KOBOLD_ALCHEMY_SUPPORT && UNITY_EDITOR
+#if (KOBOLD_ALCHEMY_SUPPORT || KOBOLD_ODIN_SUPPORT) && UNITY_EDITOR
         /// <summary>
         /// Populates serialized references using heuristics while running inside the editor.
         /// </summary>

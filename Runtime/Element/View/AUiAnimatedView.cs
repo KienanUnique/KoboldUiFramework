@@ -5,6 +5,11 @@ using KoboldUi.Element.Animations;
 
 #if KOBOLD_ALCHEMY_SUPPORT
 using Alchemy.Inspector;
+#elif KOBOLD_ODIN_SUPPORT
+using Sirenix.OdinInspector;
+#endif
+
+#if (KOBOLD_ALCHEMY_SUPPORT || KOBOLD_ODIN_SUPPORT) && UNITY_EDITOR
 using UnityEditor;
 #endif
 
@@ -51,7 +56,7 @@ namespace KoboldUi.Element.View
                 gameObject.SetActive(false);
         }
 
-#if KOBOLD_ALCHEMY_SUPPORT && UNITY_EDITOR
+#if (KOBOLD_ALCHEMY_SUPPORT || KOBOLD_ODIN_SUPPORT) && UNITY_EDITOR
         [Button]
         /// <inheritdoc />
         public void AutoFill()
