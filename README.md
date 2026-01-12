@@ -15,6 +15,8 @@
   * [https://dotween.demigiant.com](https://dotween.demigiant.com/getstarted.php)
 - **Alchemy** (optional) – extensions for the inspector
   * [https://github.com/AnnulusGames/Alchemy](https://github.com/AnnulusGames/Alchemy)
+- **Odin Inspector** (optional) – alternative inspector extensions
+  * [https://odininspector.com](https://odininspector.com)
 
 
 # Installation
@@ -29,7 +31,11 @@ UNITASK_DOTWEEN_SUPPORT
 ```
 KOBOLD_ALCHEMY_SUPPORT
 ```
-5. Install the plugin via Git: 
+5. If you installed **Odin Inspector**, add the define:
+```
+KOBOLD_ODIN_SUPPORT
+```
+6. Install the plugin via Git: 
 ```
 https://github.com/KienanUnique/KoboldUiFramework.git
 ```

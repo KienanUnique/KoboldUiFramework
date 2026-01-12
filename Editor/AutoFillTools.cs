@@ -11,7 +11,7 @@ namespace Editor
     {
         private const string SEARCH_FOLDER = "Assets/";
         
-#if KOBOLD_ALCHEMY_SUPPORT && UNITY_EDITOR
+#if (KOBOLD_ALCHEMY_SUPPORT || KOBOLD_ODIN_SUPPORT) && UNITY_EDITOR
         [MenuItem("Tools/Kobold Ui/Autofill all windows and views", false)]
         private static void AutofillAllWindowsAndViews()
         {
