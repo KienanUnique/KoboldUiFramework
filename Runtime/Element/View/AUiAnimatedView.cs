@@ -20,13 +20,28 @@ namespace KoboldUi.Element.View
     /// </summary>
     public class AUiAnimatedView : AUiView, IAutoFillable
     {
+#if KOBOLD_ODIN_SUPPORT
+        [InfoBox("Optional. If null, the animation is replaced with SetActive(true)", InfoMessageType.Info, nameof(IsOpenAnimationMissing))]
+#endif
         [SerializeField] private AUiAnimationBase _openAnimation;
+#if KOBOLD_ODIN_SUPPORT
+        [InfoBox("Optional. If null, the animation is replaced with SetActive(false)", InfoMessageType.Info, nameof(IsCloseAnimationMissing))]
+#endif
         [SerializeField] private AUiAnimationBase _closeAnimation;
+
+#if KOBOLD_ODIN_SUPPORT
+        private bool IsOpenAnimationMissing => _openAnimation == null;
+        private bool IsCloseAnimationMissing => _closeAnimation == null;
+#endif
 
         /// <inheritdoc />
         public sealed override IUiAction Open(in IUiActionsPool pool)
         {
-            return _openAnimation ? _openAnimation.Appear(pool) : base.Open(pool);
+            if (_openAnimation)
+                return _openAnimation.Appear(pool);
+
+            gameObject.SetActive(true);
+            return base.Open(pool);
         }
 
         /// <inheritdoc />
@@ -44,7 +59,11 @@ namespace KoboldUi.Element.View
         /// <inheritdoc />
         public sealed override IUiAction Close(in IUiActionsPool pool)
         {
-            return _closeAnimation ? _closeAnimation.Disappear(pool) : base.Close(pool);
+            if (_closeAnimation)
+                return _closeAnimation.Disappear(pool);
+            
+            gameObject.SetActive(false);
+            return base.Close(pool);
         }
 
         /// <inheritdoc />
