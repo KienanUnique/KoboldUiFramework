@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using DG.Tweening;
 using KoboldUi.UiAction.Impl.Common;
 using KoboldUi.UiAction.Impl.Service;
+using KoboldUi.Services.WindowsService;
 using KoboldUi.Windows;
 using KoboldUi.WindowsStack;
 using UnityEngine.Pool;
@@ -122,10 +123,10 @@ namespace KoboldUi.UiAction.Pool.Impl
         }
 
         /// <inheritdoc />
-        public void GetAction(out OpenWindowAction action, IWindow windowToOpen)
+        public void GetAction(out OpenWindowAction action, IWindow windowToOpen, EPreviousWindowPolicy previousWindowPolicy)
         {
             action = _openWindowActionPool.Get();
-            action.Setup(windowToOpen);
+            action.Setup(windowToOpen, previousWindowPolicy);
         }
 
         /// <inheritdoc />

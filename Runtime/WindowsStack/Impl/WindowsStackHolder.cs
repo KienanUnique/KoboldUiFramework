@@ -42,6 +42,33 @@ namespace KoboldUi.WindowsStack.Impl
         }
 
         /// <inheritdoc />
+        public bool Remove(IWindow window)
+        {
+            if (window == null || _windowsStack.Count == 0)
+                return false;
+
+            var removed = false;
+            var tempStack = new Stack<IWindow>(_windowsStack.Count);
+
+            while (_windowsStack.Count > 0)
+            {
+                var current = _windowsStack.Pop();
+                if (!removed && current == window)
+                {
+                    removed = true;
+                    continue;
+                }
+
+                tempStack.Push(current);
+            }
+
+            while (tempStack.Count > 0)
+                _windowsStack.Push(tempStack.Pop());
+
+            return removed;
+        }
+
+        /// <inheritdoc />
         public bool Contains(IWindow windowToClose)
         {
             return _windowsStack.Contains(windowToClose);

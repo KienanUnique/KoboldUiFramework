@@ -1,8 +1,10 @@
 ﻿using Cysharp.Threading.Tasks;
+using KoboldUi.Services.WindowsService;
 using KoboldUi.UiAction.Pool;
 using KoboldUi.Utils;
 using KoboldUi.Windows;
 using KoboldUi.WindowsStack;
+using UnityEngine;
 
 namespace KoboldUi.UiAction.Impl.Service
 {
@@ -14,6 +16,8 @@ namespace KoboldUi.UiAction.Impl.Service
         private readonly IWindowsStackHolder _windowsStackHolder;
 
         private IWindow _windowToOpen;
+        private IWindow _previousWindow;
+        private EPreviousWindowPolicy _previousWindowPolicy = EPreviousWindowPolicy.Default;
 
         public OpenWindowAction(
             IUiActionsPool pool,
@@ -27,15 +31,18 @@ namespace KoboldUi.UiAction.Impl.Service
         /// Specifies which window should be opened.
         /// </summary>
         /// <param name="windowToOpen">Window to make active.</param>
-        public void Setup(IWindow windowToOpen)
+        public void Setup(IWindow windowToOpen, EPreviousWindowPolicy previousWindowPolicy)
         {
             _windowToOpen = windowToOpen;
+            _previousWindowPolicy = previousWindowPolicy;
         }
 
         /// <inheritdoc />
         public override void Dispose()
         {
             _windowToOpen = null;
+            _previousWindow = null;
+            _previousWindowPolicy = EPreviousWindowPolicy.Default;
         }
 
         /// <inheritdoc />
@@ -48,19 +55,70 @@ namespace KoboldUi.UiAction.Impl.Service
         protected override void ReturnToPool()
         {
             _windowToOpen = null;
+            _previousWindow = null;
+            _previousWindowPolicy = EPreviousWindowPolicy.Default;
             Pool.ReturnAction(this);
         }
 
         private async UniTask OpenWindow()
         {
-            var isNextWindowPopUp = _windowToOpen.IsPopup;
-            if (!_windowsStackHolder.IsEmpty)
+            _previousWindow = _windowsStackHolder.IsEmpty ? null : _windowsStackHolder.CurrentWindow;
+
+            switch (_previousWindowPolicy)
             {
-                var currentWindow = _windowsStackHolder.CurrentWindow;
-                var newState = isNextWindowPopUp ? EWindowState.NonFocused : EWindowState.Closed;
-                await currentWindow.SetState(newState, Pool).Start();
+                case EPreviousWindowPolicy.Default:
+                    await HandleDefaultPolicy();
+                    break;
+                case EPreviousWindowPolicy.CloseAndForget:
+                    await HandleCloseAndForgetPolicy();
+                    break;
+                case EPreviousWindowPolicy.CloseAfterOpenAndForget:
+                    await HandleCloseAfterOpenAndForgetPolicy();
+                    break;
+                default:
+                    Debug.LogError($"[Kobold Ui {nameof(OpenWindowAction)}] | Invalid EPreviousWindowPolicy: {_previousWindowPolicy}");
+                    break;
+            }
+        }
+
+        private async UniTask HandleDefaultPolicy()
+        {
+            if (_previousWindow != null)
+            {
+                var newState = _windowToOpen.IsPopup ? EWindowState.NonFocused : EWindowState.Closed;
+                await _previousWindow.SetState(newState, Pool).Start();
             }
 
+            await OpenNextWindow();
+        }
+
+        private async UniTask HandleCloseAndForgetPolicy()
+        {
+            if (_previousWindow != null)
+            {
+                await _previousWindow.SetState(EWindowState.Closed, Pool).Start();
+                _windowsStackHolder.Remove(_previousWindow);
+            }
+
+            await OpenNextWindow();
+        }
+
+        private async UniTask HandleCloseAfterOpenAndForgetPolicy()
+        {
+            if (_previousWindow != null)
+                await _previousWindow.SetState(EWindowState.NonFocused, Pool).Start();
+
+            await OpenNextWindow();
+
+            if (_previousWindow != null)
+            {
+                await _previousWindow.SetState(EWindowState.Closed, Pool).Start();
+                _windowsStackHolder.Remove(_previousWindow);
+            }
+        }
+
+        private async UniTask OpenNextWindow()
+        {
             if (!_windowToOpen.IsInitialized)
                 await _windowToOpen.WaitInitialization(Pool).Start();
 

@@ -24,7 +24,9 @@ namespace KoboldUi.Services.WindowsService
         /// </summary>
         /// <typeparam name="TWindow">Window type to open.</typeparam>
         /// <param name="onComplete">Optional callback invoked after the transition completes.</param>
-        void OpenWindow<TWindow>(Action onComplete = null) where TWindow : IWindow;
+        /// <param name="previousWindowPolicy">Controls how the previously active window is handled.</param>
+        void OpenWindow<TWindow>(Action onComplete = null, EPreviousWindowPolicy previousWindowPolicy = EPreviousWindowPolicy.Default)
+            where TWindow : IWindow;
 
         /// <summary>
         /// Closes the current window.

@@ -45,10 +45,13 @@ namespace KoboldUi.Services.WindowsService.Impl
         }
 
         /// <inheritdoc />
-        public void OpenWindow<TWindow>(Action onComplete) where TWindow : IWindow
+        public void OpenWindow<TWindow>(
+            Action onComplete = null,
+            EPreviousWindowPolicy previousWindowPolicy = EPreviousWindowPolicy.Default
+        ) where TWindow : IWindow
         {
             var nextWindow = _diContainer.Resolve(typeof(TWindow)) as IWindow;
-            _uiActionsPool.GetAction(out OpenWindowAction openAction, nextWindow);
+            _uiActionsPool.GetAction(out OpenWindowAction openAction, nextWindow, previousWindowPolicy);
             _tasksRunner.AddToQueue(openAction);
 
             TryAppendCallback(onComplete);
