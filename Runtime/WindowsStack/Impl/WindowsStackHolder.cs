@@ -9,6 +9,7 @@ namespace KoboldUi.WindowsStack.Impl
     public class WindowsStackHolder : IWindowsStackHolder
     {
         private readonly Stack<IWindow> _windowsStack = new();
+        private readonly Stack<IWindow> _tempStack = new();
 
         /// <inheritdoc />
         public IWindow CurrentWindow => IsEmpty ? null : _windowsStack.Peek();
@@ -48,7 +49,8 @@ namespace KoboldUi.WindowsStack.Impl
                 return false;
 
             var removed = false;
-            var tempStack = new Stack<IWindow>(_windowsStack.Count);
+            
+            _tempStack.Clear();
 
             while (_windowsStack.Count > 0)
             {
@@ -59,11 +61,11 @@ namespace KoboldUi.WindowsStack.Impl
                     continue;
                 }
 
-                tempStack.Push(current);
+                _tempStack.Push(current);
             }
 
-            while (tempStack.Count > 0)
-                _windowsStack.Push(tempStack.Pop());
+            while (_tempStack.Count > 0)
+                _windowsStack.Push(_tempStack.Pop());
 
             return removed;
         }
