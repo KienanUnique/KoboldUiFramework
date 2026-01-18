@@ -48,6 +48,13 @@ namespace KoboldUi.WindowsStack
         IWindow Pop();
 
         /// <summary>
+        /// Removes the specified window from the stack.
+        /// </summary>
+        /// <param name="window">Window to remove.</param>
+        /// <returns>True if the window was removed.</returns>
+        bool Remove(IWindow window);
+
+        /// <summary>
         /// Determines whether the specified window exists in the stack.
         /// </summary>
         /// <param name="windowToClose">Window to find.</param>

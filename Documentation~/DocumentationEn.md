@@ -19,6 +19,21 @@ The following sections document the responsibilities of each layer and point to 
 
 Every request is queued to guarantee sequential execution. Opening or closing a window schedules a transition to run after the previous action completes. Services also surface observables that reflect whether the stack is empty and which window is currently focused.
 
+`OpenWindow` accepts an optional policy that defines how the previously active window is handled:
+
+```csharp
+_localWindowsService.OpenWindow<MainMenuWindow>(
+    onComplete: null,
+    previousWindowPolicy: EPreviousWindowPolicy.Default
+);
+```
+
+Policies behave as follows:
+
+- `Default` keeps the existing logic. If the new window is a popup, the previous window becomes `NonFocused`; otherwise it is set to `Closed`. The previous window stays in the navigation stack, so `CloseWindow()` can return to it later.
+- `CloseAndForget` closes the previous window (`Closed`) and removes it from the navigation stack before opening the new window. `CloseWindow()` will not return to it.
+- `CloseAfterOpenAndForget` first sets the previous window to `NonFocused`, opens and activates the new window, then closes the previous window (`Closed`) and removes it from the navigation stack after the new window finishes opening. `CloseWindow()` will not return to it.
+
 In the Simple Sample, the `Bootstrap` service waits for scene loading and then opens the main menu once the project is ready:
 
 ```csharp

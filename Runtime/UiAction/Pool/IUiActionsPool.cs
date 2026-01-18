@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using DG.Tweening;
 using KoboldUi.UiAction.Impl.Common;
 using KoboldUi.UiAction.Impl.Service;
+using KoboldUi.Services.WindowsService;
 using KoboldUi.Windows;
 
 namespace KoboldUi.UiAction.Pool
@@ -57,7 +58,7 @@ namespace KoboldUi.UiAction.Pool
         /// </summary>
         /// <param name="action">Action instance to use.</param>
         /// <param name="windowToOpen">Window to make active.</param>
-        void GetAction(out OpenWindowAction action, IWindow windowToOpen);
+        void GetAction(out OpenWindowAction action, IWindow windowToOpen, EPreviousWindowPolicy previousWindowPolicy);
 
         /// <summary>
         /// Retrieves an action that closes the current window.
