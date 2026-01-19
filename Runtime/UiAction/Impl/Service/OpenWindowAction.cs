@@ -122,7 +122,7 @@ namespace KoboldUi.UiAction.Impl.Service
             if (!_windowToOpen.IsInitialized)
                 await _windowToOpen.WaitInitialization(Pool).Start();
 
-            WindowsOrdersManager.HandleWindowAppear(_windowsStackHolder.Stack, _windowToOpen);
+            WindowsOrdersManager.HandleWindowAppearOnTop(_windowToOpen);
             _windowsStackHolder.Push(_windowToOpen);
 
             await _windowToOpen.SetState(EWindowState.Active, Pool).Start();
