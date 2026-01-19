@@ -9,14 +9,12 @@ namespace KoboldUi.Utils
     public static class WindowsOrdersManager
     {
         /// <summary>
-        /// Assigns the correct order to a window when it appears.
+        /// Forces the window to the top of its sibling order, regardless of the stack count.
         /// </summary>
-        /// <param name="openedWindowsStack">Current stack of opened windows.</param>
         /// <param name="openedWindow">Window that just opened.</param>
-        public static void HandleWindowAppear(IReadOnlyCollection<IWindow> openedWindowsStack, IWindow openedWindow)
+        public static void HandleWindowAppearOnTop(IWindow openedWindow)
         {
-            var newOrder = openedWindowsStack.Count;
-            openedWindow.ApplyOrder(newOrder);
+            openedWindow.ApplyOrder(int.MaxValue);
         }
 
         /// <summary>
