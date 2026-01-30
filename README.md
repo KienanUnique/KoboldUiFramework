@@ -1,7 +1,7 @@
 <div align="center" valign="middle" style="page-break-after: always;">
 <br>
     <h1>Kobold UI</h1>
-    <img src="Documentation~/Images/kobold_logo.png" width = "256" />
+    <img src="README-assets~/logo.png" width = "256" />
     <h2>uGUI framework for Unity</h2>
     <br>
 </div>
@@ -42,12 +42,14 @@ https://github.com/KienanUnique/KoboldUiFramework.git
 
 
 # Useful Links
-- [Documentation (En)](https://github.com/KienanUnique/KoboldUiFramework/blob/main/Documentation~/DocumentationEn.md)
-- [Documentation (Ru)](https://github.com/KienanUnique/KoboldUiFramework/blob/main/Documentation~/DocumentationRu.md)
-- [Usage guide](https://github.com/KienanUnique/KoboldUiFramework/blob/main/usage.md)
+- [Documentation (En)](https://github.com/KienanUnique/KoboldUiFramework/wiki/Documentation-EN)
+- [Documentation (Ru)](https://github.com/KienanUnique/KoboldUiFramework/wiki/Documentation-RU)
+- [Start Guide (En)](https://github.com/KienanUnique/KoboldUiFramework/wiki/Start-Guide-EN)
+- [Start Guide (Ru)](https://github.com/KienanUnique/KoboldUiFramework/wiki/Start-Guide-RU)
+- [Sample](https://github.com/KienanUnique/KoboldUiSample)
 
 <div align="center" valign="middle" style="page-break-after: always;">
 <br>
-    <img src="Documentation~/Images/demonstration.gif" width = "780" />
+    <img src="README-assets~/demo.gif" width = "780" />
 <br>
 </div>

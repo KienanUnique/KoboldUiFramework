@@ -1,7 +1,7 @@
 {
   "name": "com.kienanunique.kobolduiframework",
   "displayName": "KoboldUi",
-  "version": "1.1.6",
+  "version": "1.1.7",
   "description": "Simple Ui framework with animations for Unity",
   "keywords": [
     "ui",
@@ -13,12 +13,5 @@
   "author": {
     "name": "Kienan Unique",
     "email": "gizatullinakram@gmail.com"
-  },
-  "samples": [
-    {
-      "displayName": "Simple Sample",
-      "description": "Example of main menu and loading implementation",
-      "path": "Samples~/SimpleSample"
-    }
-  ]
-} 
+  }
+}
