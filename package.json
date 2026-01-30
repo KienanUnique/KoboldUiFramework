@@ -13,12 +13,5 @@
   "author": {
     "name": "Kienan Unique",
     "email": "gizatullinakram@gmail.com"
-  },
-  "samples": [
-    {
-      "displayName": "Simple Sample",
-      "description": "Example of main menu and loading implementation",
-      "path": "Samples~/SimpleSample"
-    }
-  ]
-} 
+  }
+}
