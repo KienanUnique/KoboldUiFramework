@@ -29,6 +29,7 @@ namespace KoboldUi.UiAction.Pool.Impl
         private ObjectPool<TweenAction> _tweenActionPool;
         private ObjectPool<WaitInitializationAction> _waitInitializationActionPool;
         private ObjectPool<CloseToWindowAction> _backToWindowActionPool;
+        private ObjectPool<CloseAllWindowsAction> _closeAllWindowsActionPool;
 
         public UiActionsPool(IWindowsStackHolder windowsStackHolder)
         {
@@ -49,6 +50,8 @@ namespace KoboldUi.UiAction.Pool.Impl
             _openPreviousWindowActionPool?.Dispose();
             _openWindowActionPool?.Dispose();
             _tryBackWindowActionPool?.Dispose();
+            _backToWindowActionPool?.Dispose();
+            _closeAllWindowsActionPool?.Dispose();
         }
 
         /// <summary>
@@ -77,6 +80,8 @@ namespace KoboldUi.UiAction.Pool.Impl
             
             _backToWindowActionPool = new ObjectPool<CloseToWindowAction>(
                 () => new CloseToWindowAction(this, _windowsStackHolder), defaultCapacity: DEFAULT_POOL_SIZE);
+            _closeAllWindowsActionPool = new ObjectPool<CloseAllWindowsAction>(
+                () => new CloseAllWindowsAction(this, _windowsStackHolder), defaultCapacity: DEFAULT_POOL_SIZE);
         }
 
         #region GetActions
@@ -143,6 +148,13 @@ namespace KoboldUi.UiAction.Pool.Impl
             action.Setup(targetWindow, useBackLogicIgnorableChecks);
         }
 
+        /// <inheritdoc />
+        public void GetAction(out CloseAllWindowsAction action, bool useBackLogicIgnorableChecks)
+        {
+            action = _closeAllWindowsActionPool.Get();
+            action.Setup(useBackLogicIgnorableChecks);
+        }
+
         #endregion
 
         #region ReturnAction
@@ -199,6 +211,12 @@ namespace KoboldUi.UiAction.Pool.Impl
         public void ReturnAction(CloseToWindowAction action)
         {
             _backToWindowActionPool.Release(action);
+        }
+
+        /// <inheritdoc />
+        public void ReturnAction(CloseAllWindowsAction action)
+        {
+            _closeAllWindowsActionPool.Release(action);
         }
 
         #endregion

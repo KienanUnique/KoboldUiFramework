@@ -76,6 +76,13 @@ namespace KoboldUi.UiAction.Pool
         void GetAction(out CloseToWindowAction action, IWindow targetWindow, bool useBackLogicIgnorableChecks);
 
         /// <summary>
+        /// Retrieves an action that closes all windows from the top of the stack down.
+        /// </summary>
+        /// <param name="action">Action instance to use.</param>
+        /// <param name="useBackLogicIgnorableChecks">When true, stops on windows marked as back-logic ignorable.</param>
+        void GetAction(out CloseAllWindowsAction action, bool useBackLogicIgnorableChecks);
+
+        /// <summary>
         /// Returns an empty action to the pool.
         /// </summary>
         void ReturnAction(EmptyAction action);
@@ -119,5 +126,10 @@ namespace KoboldUi.UiAction.Pool
         /// Returns a close-to-window action to the pool.
         /// </summary>
         void ReturnAction(CloseToWindowAction action);
+
+        /// <summary>
+        /// Returns a close-all-windows action to the pool.
+        /// </summary>
+        void ReturnAction(CloseAllWindowsAction action);
     }
 }

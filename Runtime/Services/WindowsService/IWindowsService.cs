@@ -42,5 +42,12 @@ namespace KoboldUi.Services.WindowsService
         /// <param name="onComplete">Optional callback invoked after the transition completes.</param>
         /// <param name="useBackLogicIgnorableChecks">When true, respects back-logic ignore flags.</param>
         void CloseToWindow<TWindow>(Action onComplete = null, bool useBackLogicIgnorableChecks = true);
+
+        /// <summary>
+        /// Closes all windows currently opened in the stack.
+        /// </summary>
+        /// <param name="onComplete">Optional callback invoked after the transition completes.</param>
+        /// <param name="useBackLogicIgnorableChecks">When true, stops when an ignorable back-logic window is reached.</param>
+        void CloseAllWindows(Action onComplete = null, bool useBackLogicIgnorableChecks = true);
     }
 }
