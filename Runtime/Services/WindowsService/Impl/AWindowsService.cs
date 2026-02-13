@@ -76,6 +76,15 @@ namespace KoboldUi.Services.WindowsService.Impl
             TryAppendCallback(onComplete);
         }
 
+        /// <inheritdoc />
+        public void CloseAllWindows(Action onComplete, bool useBackLogicIgnorableChecks)
+        {
+            _uiActionsPool.GetAction(out CloseAllWindowsAction closeAllWindowsAction, useBackLogicIgnorableChecks);
+            _tasksRunner.AddToQueue(closeAllWindowsAction);
+
+            TryAppendCallback(onComplete);
+        }
+
         private void TryAppendCallback(Action onComplete)
         {
             if (onComplete == null)
