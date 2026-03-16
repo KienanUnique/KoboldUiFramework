@@ -2,7 +2,7 @@
 using UnityEditor;
 using UnityEngine;
 
-namespace Editor
+namespace KoboldUiEditor
 {
     /// <summary>
     /// Provides editor utilities for automatically wiring window and view references in prefabs.
