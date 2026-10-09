@@ -7,7 +7,6 @@ using KoboldUi.UiAction;
 using KoboldUi.UiAction.Pool;
 using KoboldUi.Utils;
 using UnityEngine;
-using Zenject;
 
 #if KOBOLD_ALCHEMY_SUPPORT
 using Alchemy.Inspector;
@@ -44,7 +43,6 @@ namespace KoboldUi.Windows
         private readonly List<IUIController> _childControllers = new();
         private CanvasGroup _canvasGroup;
 
-        private DiContainer _container;
         
         /// <inheritdoc />
         public override bool IsPopup => _isPopup;
@@ -58,14 +56,12 @@ namespace KoboldUi.Windows
         }
 
         /// <inheritdoc />
-        public sealed override void InstallBindings(DiContainer container)
-        {
-            _container = container;
-        }
-
         /// <inheritdoc />
         public sealed override void Initialize()
         {
+            if (IsInitialized) return;
+            if (Activator == null)
+                throw new System.InvalidOperationException($"Window {name} has no UiActivator. Call Configure first.");
             AddControllers();
             AddEmptyElements();
             base.Initialize();
@@ -117,9 +113,7 @@ namespace KoboldUi.Windows
             where TView : IUiView
             where TController : AUiController<TView>
         {
-            var controller = _container.Instantiate<TController>(new List<object> {viewInstance});
-
-            _container.InjectGameObject(gameObject);
+            var controller = Activator.CreateController<TController, TView>(viewInstance);
 
             _childControllers.Add(controller);
 

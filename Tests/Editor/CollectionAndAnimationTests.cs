@@ -1,12 +1,13 @@
 using System;
 using DG.Tweening;
+using KoboldUi.Composition;
+using KoboldUi.Composition.Manual;
 using KoboldUi.Collections.Base;
 using KoboldUi.Collections.Concrete.Impl;
 using KoboldUi.Element.Animations;
 using KoboldUi.Element.Animations.Parameters.Impl;
 using NUnit.Framework;
 using UnityEngine;
-using Zenject;
 
 namespace KoboldUi.Tests
 {
@@ -16,8 +17,8 @@ namespace KoboldUi.Tests
         public void PooledCollectionInjectsNewItemOnlyOnceAndReusesIt()
         {
             var dependency = new CollectionDependency();
-            var container = new DiContainer();
-            container.BindInstance(dependency).AsSingle();
+            var resolver = new ManualUiResolver();
+            resolver.AddInstance(dependency);
             var collectionObject = new GameObject("Collection");
             var prefabObject = new GameObject("Item prefab");
             CollectionItem first = null;
@@ -27,7 +28,7 @@ namespace KoboldUi.Tests
                 var collection = collectionObject.AddComponent<TestPooledCollection>();
                 var prefab = prefabObject.AddComponent<CollectionItem>();
                 collection.Configure(prefab, collectionObject.transform);
-                container.InjectGameObject(collectionObject);
+                new UiActivator(resolver).InjectGameObject(collectionObject);
 
                 first = collection.Create();
                 Assert.That(first.Dependency, Is.SameAs(dependency));
@@ -56,14 +57,14 @@ namespace KoboldUi.Tests
         public void AnimationUsesDefaultParametersInjectedIntoComponent()
         {
             var parameters = ScriptableObject.CreateInstance<FadeAnimationParameters>();
-            var container = new DiContainer();
-            container.BindInstance(parameters).AsSingle();
+            var resolver = new ManualUiResolver();
+            resolver.AddInstance(parameters);
             var animationObject = new GameObject("Animation");
 
             try
             {
                 var animation = animationObject.AddComponent<ParameterProbeAnimation>();
-                container.InjectGameObject(animationObject);
+                new UiActivator(resolver).InjectGameObject(animationObject);
 
                 Assert.That(animation.ReadParameters(), Is.SameAs(parameters));
             }
@@ -113,7 +114,7 @@ namespace KoboldUi.Tests
         public int AppearCount { get; private set; }
         public int DisappearCount { get; private set; }
 
-        [Inject]
+        [UiInject]
         public void Construct(CollectionDependency dependency)
         {
             Dependency = dependency;

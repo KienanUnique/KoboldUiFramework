@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using System.Reflection;
+using KoboldUi.Composition;
+using KoboldUi.Composition.Manual;
 using KoboldUi.Element.Controller;
 using KoboldUi.Element.View;
 using KoboldUi.UiAction;
@@ -10,7 +12,6 @@ using KoboldUi.Windows;
 using KoboldUi.WindowsStack.Impl;
 using NUnit.Framework;
 using UnityEngine;
-using Zenject;
 
 namespace KoboldUi.Tests
 {
@@ -29,8 +30,8 @@ namespace KoboldUi.Tests
         public void InitializeInjectsWindowAndControllerBeforeTheirInitialization()
         {
             var dependency = new TestDependency();
-            var container = new DiContainer();
-            container.BindInstance(dependency).AsSingle();
+            var resolver = new ManualUiResolver();
+            resolver.AddInstance(dependency);
 
             _root = new GameObject("Test window");
             var view = _root.AddComponent<RecordingView>();
@@ -40,7 +41,9 @@ namespace KoboldUi.Tests
                 .GetField("_animatedEmptyViews", BindingFlags.Instance | BindingFlags.NonPublic)
                 .SetValue(window, new List<KoboldUi.Element.View.Impl.AnimatedEmptyView>());
 
-            window.InstallBindings(container);
+            var activator = new UiActivator(resolver);
+            window.Configure(activator);
+            activator.InjectGameObject(_root);
             window.Initialize();
 
             Assert.That(window.IsInitialized, Is.True);
@@ -56,8 +59,8 @@ namespace KoboldUi.Tests
         public void ControllerTransitionsUseInjectedView()
         {
             var dependency = new TestDependency();
-            var container = new DiContainer();
-            container.BindInstance(dependency).AsSingle();
+            var resolver = new ManualUiResolver();
+            resolver.AddInstance(dependency);
 
             _root = new GameObject("Test window");
             var view = _root.AddComponent<RecordingView>();
@@ -66,7 +69,9 @@ namespace KoboldUi.Tests
             typeof(AWindow)
                 .GetField("_animatedEmptyViews", BindingFlags.Instance | BindingFlags.NonPublic)
                 .SetValue(window, new List<KoboldUi.Element.View.Impl.AnimatedEmptyView>());
-            window.InstallBindings(container);
+            var activator = new UiActivator(resolver);
+            window.Configure(activator);
+            activator.InjectGameObject(_root);
             window.Initialize();
 
             var pool = new UiActionsPool(new WindowsStackHolder());
@@ -90,7 +95,7 @@ namespace KoboldUi.Tests
         }
 
         [Test]
-        public void BindWindowFromPrefabCreatesAndRegistersChildOfCanvas()
+        public void InstantiateWindowFromPrefabCreatesAndRegistersChildOfCanvas()
         {
             var canvasObject = new GameObject("Canvas");
             var prefabObject = new GameObject("Window prefab");
@@ -100,17 +105,21 @@ namespace KoboldUi.Tests
             {
                 var canvas = canvasObject.AddComponent<Canvas>();
                 var prefab = prefabObject.AddComponent<RecordingTestWindow>();
-                var container = new DiContainer();
                 var dependency = new TestDependency();
-                container.BindInstance(dependency).AsSingle();
+                var resolver = new ManualUiResolver();
+                resolver.AddInstance(dependency);
+                var activator = new UiActivator(resolver);
+                var registry = new WindowRegistry();
 
-                container.BindWindowFromPrefab(canvas, prefab);
-                instance = container.Resolve<RecordingTestWindow>();
+                instance = Object.Instantiate(prefab, canvas.transform);
+                instance.Configure(activator);
+                activator.InjectGameObject(instance.gameObject);
+                registry.Register(instance);
 
                 Assert.That(instance, Is.Not.SameAs(prefab));
                 Assert.That(instance.transform.parent, Is.SameAs(canvas.transform));
                 Assert.That(instance.InjectedDependency, Is.SameAs(dependency));
-                Assert.That(container.Resolve<IWindow>(), Is.SameAs(instance));
+                Assert.That(registry.Get<RecordingTestWindow>(), Is.SameAs(instance));
             }
             finally
             {
@@ -124,8 +133,8 @@ namespace KoboldUi.Tests
         [Test]
         public void WindowStateControlsCanvasInteractivityAndViewTransitions()
         {
-            var container = new DiContainer();
-            container.BindInstance(new TestDependency()).AsSingle();
+            var resolver = new ManualUiResolver();
+            resolver.AddInstance(new TestDependency());
             _root = new GameObject("Test window");
             var view = _root.AddComponent<RecordingView>();
             var window = _root.AddComponent<RecordingTestWindow>();
@@ -133,7 +142,9 @@ namespace KoboldUi.Tests
             typeof(AWindow)
                 .GetField("_animatedEmptyViews", BindingFlags.Instance | BindingFlags.NonPublic)
                 .SetValue(window, new List<KoboldUi.Element.View.Impl.AnimatedEmptyView>());
-            window.InstallBindings(container);
+            var activator = new UiActivator(resolver);
+            window.Configure(activator);
+            activator.InjectGameObject(_root);
             window.Initialize();
             typeof(AWindow)
                 .GetMethod("Awake", BindingFlags.Instance | BindingFlags.NonPublic)
@@ -163,7 +174,7 @@ namespace KoboldUi.Tests
 
     public sealed class RecordingTestWindow : AWindow
     {
-        [Inject] private TestDependency _dependency;
+        [UiInject] private TestDependency _dependency;
 
         public RecordingView ViewComponent { get; set; }
         public RecordingController Controller { get; private set; }

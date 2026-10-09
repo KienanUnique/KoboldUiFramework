@@ -1,0 +1,15 @@
+{
+    "name": "KoboldUi.Tests.Zenject.PlayMode",
+    "rootNamespace": "KoboldUi.Tests.Zenject",
+    "references": ["com.kienanunique.kobolduiframework", "KoboldUi.Zenject", "KoboldUi.Tests.Zenject.Fixtures", "Zenject"],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": ["Zenject-usage.dll", "nunit.framework.dll"],
+    "autoReferenced": false,
+    "defineConstraints": ["UNITY_INCLUDE_TESTS", "KOBOLD_ZENJECT_SUPPORT"],
+    "versionDefines": [],
+    "noEngineReferences": false,
+    "optionalUnityReferences": ["TestAssemblies"]
+}

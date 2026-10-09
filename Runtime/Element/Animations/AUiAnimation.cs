@@ -5,7 +5,7 @@ using KoboldUi.UiAction.Impl.Common;
 using KoboldUi.UiAction.Pool;
 using UnityEngine;
 using UnityEngine.Serialization;
-using Zenject;
+using KoboldUi.Composition;
 #if KOBOLD_ALCHEMY_SUPPORT
 using Alchemy.Inspector;
 #elif KOBOLD_ODIN_SUPPORT
@@ -36,7 +36,7 @@ namespace KoboldUi.Element.Animations
         [SerializeField]
         private TParams _animationParameters;
 
-        [InjectOptional] private TParams _defaultAnimationParameters;
+        [UiInject(Optional = true)] private TParams _defaultAnimationParameters;
 
         /// <summary>
         /// Gets the animation parameters in use, falling back to injected defaults if needed.

@@ -2,6 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using DG.Tweening;
+using KoboldUi.Composition;
+using KoboldUi.Composition.Manual;
 using KoboldUi.Element.Animations.Impl;
 using KoboldUi.Element.Animations.Parameters.Impl;
 using KoboldUi.Element.Controller;
@@ -15,7 +17,6 @@ using UniRx;
 using UnityEngine;
 using UnityEngine.TestTools;
 using UnityEngine.UI;
-using Zenject;
 
 namespace KoboldUi.Tests.PlayMode
 {
@@ -52,9 +53,9 @@ namespace KoboldUi.Tests.PlayMode
             var animationObject = new GameObject("Fade animation");
             _objects.Add(animationObject);
             var animation = animationObject.AddComponent<FadeAnimation>();
-            var container = new DiContainer();
-            container.BindInstance(parameters).AsSingle();
-            container.InjectGameObject(animationObject);
+            var resolver = new ManualUiResolver();
+            resolver.AddInstance(parameters);
+            new UiActivator(resolver).InjectGameObject(animationObject);
             var pool = new UiActionsPool(new WindowsStackHolder());
             pool.Initialize();
 
@@ -79,8 +80,8 @@ namespace KoboldUi.Tests.PlayMode
         public IEnumerator PrefabWindowInjectsControllerAndHandlesButtonClick()
         {
             var service = new ClickService();
-            var container = new DiContainer();
-            container.BindInstance(service).AsSingle();
+            var resolver = new ManualUiResolver();
+            resolver.AddInstance(service);
 
             var canvasObject = new GameObject("Canvas", typeof(Canvas));
             _objects.Add(canvasObject);
@@ -99,9 +100,11 @@ namespace KoboldUi.Tests.PlayMode
                 .GetField("_animatedEmptyViews", BindingFlags.Instance | BindingFlags.NonPublic)
                 .SetValue(prefab, new List<KoboldUi.Element.View.Impl.AnimatedEmptyView>());
 
-            container.BindWindowFromPrefab(canvas, prefab);
-            var instance = container.Resolve<ButtonWindow>();
+            var instance = Object.Instantiate(prefab, canvas.transform);
             _objects.Add(instance.gameObject);
+            var activator = new UiActivator(resolver);
+            instance.Configure(activator);
+            activator.InjectGameObject(instance.gameObject);
             instance.Initialize();
 
             Assert.That(instance.IsInitialized, Is.True);
@@ -128,7 +131,7 @@ namespace KoboldUi.Tests.PlayMode
     public sealed class ButtonWindow : AWindow
     {
         [SerializeField] private ButtonView view;
-        [Inject] private ClickService _service;
+        [UiInject] private ClickService _service;
 
         public ButtonView View => view;
         public ButtonController Controller => view.Controller;

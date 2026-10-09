@@ -1,0 +1,17 @@
+{
+    "name": "KoboldUi.Zenject",
+    "rootNamespace": "KoboldUi",
+    "references": [
+        "com.kienanunique.kobolduiframework",
+        "Zenject"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": ["KOBOLD_ZENJECT_SUPPORT"],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

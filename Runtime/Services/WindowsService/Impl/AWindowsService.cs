@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using KoboldUi.TasksRunner;
 using KoboldUi.TasksRunner.Impl;
 using KoboldUi.UiAction.Impl.Service;
@@ -7,7 +7,7 @@ using KoboldUi.UiAction.Pool.Impl;
 using KoboldUi.Windows;
 using KoboldUi.WindowsStack;
 using KoboldUi.WindowsStack.Impl;
-using Zenject;
+using KoboldUi.Composition;
 
 namespace KoboldUi.Services.WindowsService.Impl
 {
@@ -16,7 +16,7 @@ namespace KoboldUi.Services.WindowsService.Impl
     /// </summary>
     public abstract class AWindowsService : IWindowsService, IDisposable
     {
-        private readonly DiContainer _diContainer;
+        private readonly WindowRegistry _windowRegistry;
         private readonly ITasksRunner _tasksRunner = new TaskRunner();
         private readonly IUiActionsPool _uiActionsPool;
         private readonly IWindowsStackHolder _windowsStackHolder = new WindowsStackHolder();
@@ -24,9 +24,9 @@ namespace KoboldUi.Services.WindowsService.Impl
         /// <inheritdoc />
         public IWindow CurrentWindow => _windowsStackHolder.CurrentWindow;
 
-        protected AWindowsService(DiContainer diContainer)
+        protected AWindowsService(WindowRegistry windowRegistry)
         {
-            _diContainer = diContainer;
+            _windowRegistry = windowRegistry ?? throw new ArgumentNullException(nameof(windowRegistry));
             var uiActionsPool = new UiActionsPool(_windowsStackHolder);
             uiActionsPool.Initialize();
             _uiActionsPool = uiActionsPool;
@@ -50,7 +50,7 @@ namespace KoboldUi.Services.WindowsService.Impl
             EPreviousWindowPolicy previousWindowPolicy = EPreviousWindowPolicy.Default
         ) where TWindow : IWindow
         {
-            var nextWindow = _diContainer.Resolve(typeof(TWindow)) as IWindow;
+            var nextWindow = _windowRegistry.Get(typeof(TWindow));
             _uiActionsPool.GetAction(out OpenWindowAction openAction, nextWindow, previousWindowPolicy);
             _tasksRunner.AddToQueue(openAction);
 
@@ -69,7 +69,7 @@ namespace KoboldUi.Services.WindowsService.Impl
         /// <inheritdoc />
         public void CloseToWindow<TWindow>(Action onComplete, bool useBackLogicIgnorableChecks)
         {
-            var targetWindow = _diContainer.Resolve(typeof(TWindow)) as IWindow;
+            var targetWindow = _windowRegistry.Get(typeof(TWindow));
             _uiActionsPool.GetAction(out CloseToWindowAction backToWindowAction, targetWindow, useBackLogicIgnorableChecks);
 
             _tasksRunner.AddToQueue(backToWindowAction);

@@ -2,15 +2,21 @@
 using KoboldUi.UiAction.Pool;
 using KoboldUi.Utils;
 using UnityEngine;
-using Zenject;
+using KoboldUi.Composition;
 
 namespace KoboldUi.Windows
 {
     /// <summary>
     /// Base window behaviour that integrates with the window stack and DI container.
     /// </summary>
-    public abstract class AWindowBase : MonoBehaviour, IWindow, IInitializable
+    public abstract class AWindowBase : MonoBehaviour, IWindow
     {
+        protected UiActivator Activator { get; private set; }
+
+        public void Configure(UiActivator activator)
+        {
+            Activator = activator ?? throw new System.ArgumentNullException(nameof(activator));
+        }
         /// <inheritdoc />
         public virtual void Initialize()
         {
@@ -40,6 +46,5 @@ namespace KoboldUi.Windows
         public abstract void ApplyOrder(int order);
 
         /// <inheritdoc />
-        public abstract void InstallBindings(DiContainer container);
     }
 }

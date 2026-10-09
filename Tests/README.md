@@ -1,6 +1,6 @@
 # KoboldUi regression tests
 
-The `Editor` assembly characterizes KoboldUi 1.1.9 behavior before the DI migration. It covers window navigation policies, stack ordering, the public windows service, prefab binding, controller and view initialization, collection item injection, and default animation parameters. The `PlayMode` assembly checks prefab creation, dependency injection, controller initialization, a real UI Button observable, and deterministic fade transitions in the Unity lifecycle.
+The `Editor` assembly covers navigation, window services, catalog/bootstrap ordering, controller and view initialization, manual scopes, collection injection and animation defaults. Optional `KoboldUi.Tests.Zenject` and `KoboldUi.Tests.VContainer` assemblies test each adapter when its define and package are installed. The `PlayMode` assembly checks prefab creation, dependency injection, button observables and fade transitions.
 
 Run from the Unity project root with Unity 2022.3.62f2:
 
@@ -18,4 +18,4 @@ Run the Play Mode smoke test separately:
 
 The Play Mode command omits `-nographics` because this project's test runner needs an initialized graphics device when it enters Play Mode.
 
-The test assembly intentionally references Zenject while characterizing the current implementation. After the DI migration, move the Zenject-specific cases to the optional adapter tests and keep the navigation and lifecycle tests in the core test assembly.
+The core test assemblies contain no DI reference. Adapter tests are enabled separately by `KOBOLD_ZENJECT_SUPPORT` or `KOBOLD_VCONTAINER_SUPPORT`.

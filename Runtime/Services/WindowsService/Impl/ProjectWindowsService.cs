@@ -1,4 +1,4 @@
-﻿using Zenject;
+using KoboldUi.Composition;
 
 namespace KoboldUi.Services.WindowsService.Impl
 {
@@ -7,7 +7,7 @@ namespace KoboldUi.Services.WindowsService.Impl
     /// </summary>
     public class ProjectWindowsService : AWindowsService, IProjectWindowsService
     {
-        public ProjectWindowsService(DiContainer diContainer) : base(diContainer)
+        public ProjectWindowsService(WindowRegistry windowRegistry) : base(windowRegistry)
         {
         }
     }

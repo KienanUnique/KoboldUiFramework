@@ -7,8 +7,6 @@
 </div>
 
 # Dependencies
-- **Zenject** – a package for dependency injection
-  * [https://github.com/modesttree/Zenject](https://github.com/modesttree/Zenject)
 - **Unitask** – a package for more efficient and convenient async/await handling in Unity
   * [https://github.com/Cysharp/UniTask](https://github.com/Cysharp/UniTask)
 - **Dotween** – a plugin for tween animations
@@ -20,7 +18,7 @@
 
 
 # Installation
-1. Install all dependencies.
+1. Install UniTask and DOTween. A DI container is optional.
 2. Generate the `.asmdef` for **Dotween**:
 `Tools -> Demigiant -> DOTween Utility Panel -> Create .asmdef`
 3. Add the define to:`Edit -> Project Settings -> Player -> Scripting Define Symbols`
@@ -39,6 +37,30 @@ KOBOLD_ODIN_SUPPORT
 ```
 https://github.com/KienanUnique/KoboldUiFramework.git
 ```
+
+# Configure windows
+
+Add window prefabs to a `WindowCatalog` asset (`Assets -> Create -> KoboldUi -> Window Catalog`).
+Choose `Local` or `Project` for each entry. No per-window binding code is required.
+
+```csharp
+using KoboldUi.Composition;
+using KoboldUi.Composition.Manual;
+
+var project = new ManualUiResolver().AddInstance<ISettingsStore>(settingsStore);
+var local = project.CreateScope().AddInstance<ILevelState>(levelState);
+var ui = new UiBootstrap(localCanvas, projectCanvas);
+ui.Initialize(windowCatalog, project, local);
+ui.Open<SettingsWindow>();
+```
+
+Use `[UiInject]` on window, view and child-component members. Controllers receive
+services in their constructors and the view explicitly through a constructor parameter
+or their inherited `View` member. Default animation assets can be registered by type.
+
+The built-in manual resolver needs no DI package. Optional Zenject and VContainer
+adapters use separate assemblies and the `KOBOLD_ZENJECT_SUPPORT` or
+`KOBOLD_VCONTAINER_SUPPORT` define. See [DI migration](docs/DI_MIGRATION.md).
 
 
 # Useful Links
