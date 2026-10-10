@@ -6,11 +6,11 @@ inspect constructors or members for injection metadata.
 
 ## Without DI
 
-Create a `WindowCatalog`, then initialize and open the UI:
+Register the window prefabs, then open the UI:
 
 ```csharp
 var ui = new UiBootstrap(localCanvas, projectCanvas);
-ui.Initialize(catalog);
+ui.RegisterWindow(settingsPrefab);
 ui.Open<SettingsWindow>();
 ```
 
@@ -33,19 +33,16 @@ protected override void AddControllers()
 ```
 
 For dependencies that must be passed to a window before `Initialize`, use the
-`configureWindow` callback. It runs after all windows are registered and before
-any window is initialized:
+typed `RegisterWindow` callback. It runs after all windows are registered and
+before any window is initialized:
 
 ```csharp
-ui.Initialize(catalog, configureWindow: window =>
-{
-    if (window is SettingsWindow settingsWindow)
-        settingsWindow.Configure(settings, ui.LocalWindows);
-});
+ui.RegisterWindow(settingsPrefab, configure: window =>
+    window.Configure(settings, ui.LocalWindows));
 ```
 
 For shared animation parameters, create a `UiAnimationDefaults` asset, add
-parameter assets, and pass it to `ui.Initialize(catalog, animationDefaults)`.
+parameter assets, and pass it to the `UiBootstrap` constructor.
 Custom per-prefab parameters remain serialized on the animation component.
 
 ## With Zenject or VContainer
@@ -54,15 +51,22 @@ Enable `KOBOLD_ZENJECT_SUPPORT` or `KOBOLD_VCONTAINER_SUPPORT` and create the
 matching adapter:
 
 ```csharp
-ui.Initialize(catalog, new ZenjectUiCompositionAdapter(container));
-// or
-ui.Initialize(catalog, new VContainerUiCompositionAdapter(scope));
+var ui = new UiBootstrap(localCanvas, projectCanvas, new ZenjectUiCompositionAdapter(container));
+ui.RegisterWindow(settingsPrefab);
+```
+
+For VContainer, use the corresponding adapter instead:
+
+```csharp
+var ui = new UiBootstrap(localCanvas, projectCanvas, new VContainerUiCompositionAdapter(scope));
+ui.RegisterWindow(settingsPrefab);
 ```
 
 Pass project and local adapters separately when their containers differ:
 
 ```csharp
-ui.Initialize(catalog, projectAdapter, localAdapter);
+var ui = new UiBootstrap(localCanvas, projectCanvas, projectAdapter, localAdapter, null);
+ui.RegisterWindow(settingsPrefab);
 ```
 
 The same `AddController<TController, TView>(view)` call delegates controller

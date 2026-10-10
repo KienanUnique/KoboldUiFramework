@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
+using KoboldUi.Element.Animations;
 using KoboldUi.Services.WindowsService;
 using KoboldUi.Services.WindowsService.Impl;
-using KoboldUi.Element.Animations;
 using KoboldUi.Windows;
 using UnityEngine;
 
@@ -12,92 +12,131 @@ namespace KoboldUi.Composition
     {
         private readonly Canvas _localCanvas;
         private readonly Canvas _projectCanvas;
+        private readonly IUiCompositionAdapter _projectAdapter;
+        private readonly IUiCompositionAdapter _localAdapter;
+        private readonly UiAnimationDefaults _animationDefaults;
         private readonly WindowRegistry _localRegistry = new WindowRegistry();
         private readonly WindowRegistry _projectRegistry = new WindowRegistry();
+        private readonly List<WindowRegistration> _registrations = new List<WindowRegistration>();
         private readonly List<AWindowBase> _instances = new List<AWindowBase>();
-        private bool _initialized;
-        public ILocalWindowsService LocalWindows { get; private set; }
-        public IProjectWindowsService ProjectWindows { get; private set; }
+        private readonly ILocalWindowsService _localWindows;
+        private readonly IProjectWindowsService _projectWindows;
+        private bool _built;
+        private bool _building;
+        private bool _disposed;
 
-        public UiBootstrap(Canvas localCanvas, Canvas projectCanvas)
+        public ILocalWindowsService LocalWindows
+        {
+            get { EnsureBuilt(); return _localWindows; }
+        }
+
+        public IProjectWindowsService ProjectWindows
+        {
+            get { EnsureBuilt(); return _projectWindows; }
+        }
+
+        public UiBootstrap(Canvas localCanvas, Canvas projectCanvas,
+            IUiCompositionAdapter adapter = null, UiAnimationDefaults animationDefaults = null)
+            : this(localCanvas, projectCanvas, adapter, adapter, animationDefaults)
+        {
+        }
+
+        public UiBootstrap(Canvas localCanvas, Canvas projectCanvas, IUiCompositionAdapter projectAdapter,
+            IUiCompositionAdapter localAdapter, UiAnimationDefaults animationDefaults)
         {
             _localCanvas = localCanvas ?? throw new ArgumentNullException(nameof(localCanvas));
             _projectCanvas = projectCanvas ?? throw new ArgumentNullException(nameof(projectCanvas));
+            _projectAdapter = projectAdapter;
+            _localAdapter = localAdapter;
+            _animationDefaults = animationDefaults;
+            _localWindows = new LocalWindowsService(_localRegistry);
+            _projectWindows = new ProjectWindowsService(_projectRegistry);
         }
 
-        public void Initialize(WindowCatalog catalog, UiAnimationDefaults animationDefaults = null,
-            Action<AWindowBase> configureWindow = null) =>
-            Initialize(catalog, null, null, animationDefaults, configureWindow);
-
-        public void Initialize(WindowCatalog catalog, IUiCompositionAdapter adapter,
-            UiAnimationDefaults animationDefaults = null, Action<AWindowBase> configureWindow = null) =>
-            Initialize(catalog, adapter, adapter, animationDefaults, configureWindow);
-
-        public void Initialize(WindowCatalog catalog, IUiCompositionAdapter projectAdapter,
-            IUiCompositionAdapter localAdapter, UiAnimationDefaults animationDefaults = null,
-            Action<AWindowBase> configureWindow = null)
+        public UiBootstrap RegisterWindow<TWindow>(TWindow prefab, WindowScope scope = WindowScope.Local,
+            Action<TWindow> configure = null) where TWindow : AWindowBase
         {
-            if (_initialized) throw new InvalidOperationException("UiBootstrap is already initialized.");
-            if (catalog == null) throw new ArgumentNullException(nameof(catalog));
-            Validate(catalog);
-            LocalWindows = new LocalWindowsService(_localRegistry);
-            ProjectWindows = new ProjectWindowsService(_projectRegistry);
-            var localActivator = new UiActivator(localAdapter, animationDefaults, LocalWindows, ProjectWindows);
-            var projectActivator = new UiActivator(projectAdapter, animationDefaults, LocalWindows, ProjectWindows);
+            ThrowIfDisposed();
+            if (_built || _building)
+                throw new InvalidOperationException("Register windows before accessing or opening the UI.");
+            if (prefab == null) throw new ArgumentNullException(nameof(prefab));
+            if (scope != WindowScope.Local && scope != WindowScope.Project)
+                throw new ArgumentOutOfRangeException(nameof(scope));
+            foreach (var registration in _registrations)
+                if (registration.Prefab.GetType() == prefab.GetType())
+                    throw new InvalidOperationException($"Window {prefab.GetType().FullName} is already registered.");
+            _registrations.Add(new WindowRegistration(prefab, scope,
+                configure == null ? (Action<AWindowBase>)null : window => configure((TWindow)window)));
+            return this;
+        }
+
+        public void Open<TWindow>() where TWindow : IWindow
+        {
+            if (_building) throw new InvalidOperationException("Cannot open a window while UI windows are being initialized.");
+            EnsureBuilt();
+            if (_localRegistry.Contains(typeof(TWindow))) _localWindows.OpenWindow<TWindow>();
+            else { _projectRegistry.Get<TWindow>(); _projectWindows.OpenWindow<TWindow>(); }
+        }
+
+        public TWindow Get<TWindow>() where TWindow : IWindow
+        {
+            EnsureBuilt();
+            return _localRegistry.Contains(typeof(TWindow))
+                ? _localRegistry.Get<TWindow>() : _projectRegistry.Get<TWindow>();
+        }
+
+        private void EnsureBuilt()
+        {
+            ThrowIfDisposed();
+            if (_built || _building) return;
+            if (_registrations.Count == 0)
+                throw new InvalidOperationException("Register at least one window before using the UI.");
+
+            _building = true;
+            var localActivator = new UiActivator(_localAdapter, _animationDefaults, _localWindows, _projectWindows);
+            var projectActivator = new UiActivator(_projectAdapter, _animationDefaults, _localWindows, _projectWindows);
             var staging = new GameObject("KoboldUi window staging");
             staging.SetActive(false);
             try
             {
-                foreach (var entry in catalog.Windows)
+                foreach (var registration in _registrations)
                 {
-                    var project = entry.Scope == WindowScope.Project;
-                    var window = UnityEngine.Object.Instantiate(entry.Prefab, staging.transform);
+                    var project = registration.Scope == WindowScope.Project;
+                    var window = UnityEngine.Object.Instantiate(registration.Prefab, staging.transform);
                     _instances.Add(window);
                     (project ? _projectRegistry : _localRegistry).Register(window);
                     window.Configure(project ? projectActivator : localActivator);
                 }
                 for (var i = 0; i < _instances.Count; i++)
                 {
-                    var activator = catalog.Windows[i].Scope == WindowScope.Project ? projectActivator : localActivator;
+                    var activator = _registrations[i].Scope == WindowScope.Project ? projectActivator : localActivator;
                     activator.PrepareGameObject(_instances[i].gameObject);
                 }
-                if (configureWindow != null)
-                    foreach (var window in _instances)
-                        configureWindow(window);
+                for (var i = 0; i < _instances.Count; i++)
+                    _registrations[i].Configure?.Invoke(_instances[i]);
                 for (var i = 0; i < _instances.Count; i++)
                 {
-                    var canvas = catalog.Windows[i].Scope == WindowScope.Project ? _projectCanvas : _localCanvas;
+                    var canvas = _registrations[i].Scope == WindowScope.Project ? _projectCanvas : _localCanvas;
                     _instances[i].transform.SetParent(canvas.transform, false);
                     _instances[i].Initialize();
                 }
-                _initialized = true;
+                _built = true;
             }
             catch { Dispose(); throw; }
             finally
             {
+                _building = false;
                 if (Application.isPlaying) UnityEngine.Object.Destroy(staging);
                 else UnityEngine.Object.DestroyImmediate(staging);
             }
         }
 
-        public void Open<TWindow>() where TWindow : IWindow
-        {
-            if (!_initialized) throw new InvalidOperationException("UiBootstrap is not initialized.");
-            if (_localRegistry.Contains(typeof(TWindow))) LocalWindows.OpenWindow<TWindow>();
-            else { _projectRegistry.Get<TWindow>(); ProjectWindows.OpenWindow<TWindow>(); }
-        }
-
-        public TWindow Get<TWindow>() where TWindow : IWindow => _localRegistry.Contains(typeof(TWindow))
-            ? _localRegistry.Get<TWindow>() : _projectRegistry.Get<TWindow>();
-
         public void Dispose()
         {
-            var localWindows = LocalWindows;
-            var projectWindows = ProjectWindows;
-            LocalWindows = null;
-            ProjectWindows = null;
-            (localWindows as IDisposable)?.Dispose();
-            (projectWindows as IDisposable)?.Dispose();
+            if (_disposed) return;
+            _disposed = true;
+            (_localWindows as IDisposable)?.Dispose();
+            (_projectWindows as IDisposable)?.Dispose();
             foreach (var window in _instances)
             {
                 if (window == null) continue;
@@ -105,22 +144,29 @@ namespace KoboldUi.Composition
                 else UnityEngine.Object.DestroyImmediate(window.gameObject);
             }
             _instances.Clear();
+            _registrations.Clear();
             _localRegistry.Clear();
             _projectRegistry.Clear();
-            _initialized = false;
+            _built = false;
         }
 
-        private static void Validate(WindowCatalog catalog)
+        private void ThrowIfDisposed()
         {
-            var types = new HashSet<Type>();
-            foreach (var entry in catalog.Windows)
+            if (_disposed) throw new ObjectDisposedException(nameof(UiBootstrap));
+        }
+
+        private sealed class WindowRegistration
+        {
+            public readonly AWindowBase Prefab;
+            public readonly WindowScope Scope;
+            public readonly Action<AWindowBase> Configure;
+
+            public WindowRegistration(AWindowBase prefab, WindowScope scope, Action<AWindowBase> configure)
             {
-                if (entry == null || entry.Prefab == null)
-                    throw new InvalidOperationException("WindowCatalog contains an empty prefab entry.");
-                if (!types.Add(entry.Prefab.GetType()))
-                    throw new InvalidOperationException($"WindowCatalog contains duplicate {entry.Prefab.GetType().FullName}.");
+                Prefab = prefab;
+                Scope = scope;
+                Configure = configure;
             }
         }
-
     }
 }

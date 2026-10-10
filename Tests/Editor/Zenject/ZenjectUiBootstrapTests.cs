@@ -15,21 +15,23 @@ namespace KoboldUi.Tests.Zenject
             var projectCanvasObject = new GameObject("ProjectCanvas", typeof(Canvas));
             var localPrefabObject = new GameObject("LocalPrefab");
             var projectPrefabObject = new GameObject("ProjectPrefab");
-            var catalog = ScriptableObject.CreateInstance<WindowCatalog>();
-            var bootstrap = new UiBootstrap(localCanvasObject.GetComponent<Canvas>(),
-                projectCanvasObject.GetComponent<Canvas>());
+            UiBootstrap bootstrap = null;
             try
             {
-                catalog.Add(localPrefabObject.AddComponent<ZenjectBootstrapLocalWindow>(), WindowScope.Local);
-                catalog.Add(projectPrefabObject.AddComponent<ZenjectBootstrapProjectWindow>(), WindowScope.Project);
+                var localPrefab = localPrefabObject.AddComponent<ZenjectBootstrapLocalWindow>();
+                var projectPrefab = projectPrefabObject.AddComponent<ZenjectBootstrapProjectWindow>();
                 var localToken = new ZenjectBootstrapToken("local");
                 var projectToken = new ZenjectBootstrapToken("project");
                 var localContainer = new DiContainer();
                 var projectContainer = new DiContainer();
                 localContainer.BindInstance(localToken).AsSingle();
                 projectContainer.BindInstance(projectToken).AsSingle();
-                bootstrap.Initialize(catalog, new ZenjectUiCompositionAdapter(projectContainer),
-                    new ZenjectUiCompositionAdapter(localContainer));
+                bootstrap = new UiBootstrap(localCanvasObject.GetComponent<Canvas>(),
+                    projectCanvasObject.GetComponent<Canvas>(),
+                    new ZenjectUiCompositionAdapter(projectContainer),
+                    new ZenjectUiCompositionAdapter(localContainer), null);
+                bootstrap.RegisterWindow(localPrefab);
+                bootstrap.RegisterWindow(projectPrefab, WindowScope.Project);
                 var localWindow = bootstrap.Get<ZenjectBootstrapLocalWindow>();
                 var projectWindow = bootstrap.Get<ZenjectBootstrapProjectWindow>();
                 Assert.That(localWindow.Token, Is.SameAs(localToken));
@@ -47,8 +49,7 @@ namespace KoboldUi.Tests.Zenject
             }
             finally
             {
-                bootstrap.Dispose();
-                Object.DestroyImmediate(catalog);
+                bootstrap?.Dispose();
                 Object.DestroyImmediate(localCanvasObject);
                 Object.DestroyImmediate(projectCanvasObject);
                 Object.DestroyImmediate(localPrefabObject);

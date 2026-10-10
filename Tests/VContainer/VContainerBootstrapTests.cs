@@ -9,25 +9,22 @@ namespace KoboldUi.Tests.VContainer
     public class VContainerBootstrapTests
     {
         [Test]
-        public void BootstrapCreatesInjectsAndNavigatesToCatalogWindow()
+        public void BootstrapCreatesInjectsAndNavigatesToRegisteredWindow()
         {
             var localObject = new GameObject("Local canvas", typeof(Canvas));
             var projectObject = new GameObject("Project canvas", typeof(Canvas));
             var prefabObject = new GameObject("Window prefab");
-            var catalog = ScriptableObject.CreateInstance<WindowCatalog>();
             var dependency = new VContainerBootstrapTestDependency();
             var builder = new ContainerBuilder();
             builder.RegisterInstance(dependency);
             var container = builder.Build();
             var bootstrap = new UiBootstrap(localObject.GetComponent<Canvas>(),
-                projectObject.GetComponent<Canvas>());
+                projectObject.GetComponent<Canvas>(), new VContainerUiCompositionAdapter(container));
 
             try
             {
                 var prefab = prefabObject.AddComponent<VContainerBootstrapTestWindow>();
-                catalog.Add(prefab, WindowScope.Local);
-
-                bootstrap.Initialize(catalog, new VContainerUiCompositionAdapter(container));
+                bootstrap.RegisterWindow(prefab);
                 var window = bootstrap.Get<VContainerBootstrapTestWindow>();
 
                 Assert.That(window, Is.Not.SameAs(prefab));
@@ -46,7 +43,6 @@ namespace KoboldUi.Tests.VContainer
             {
                 bootstrap.Dispose();
                 container.Dispose();
-                Object.DestroyImmediate(catalog);
                 Object.DestroyImmediate(prefabObject);
                 Object.DestroyImmediate(projectObject);
                 Object.DestroyImmediate(localObject);

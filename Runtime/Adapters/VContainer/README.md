@@ -5,10 +5,12 @@ Install the `jp.hadashikick.vcontainer` package and add
 `KoboldUi.VContainer` assembly is enabled only when that symbol is present.
 
 Pass the active VContainer `IObjectResolver` (typically a `LifetimeScope.Container`)
-to `VContainerUiCompositionAdapter`, then pass the adapter to `UiBootstrap.Initialize`:
+to `VContainerUiCompositionAdapter`, then pass the adapter to the `UiBootstrap` constructor:
 
 ```csharp
 IUiCompositionAdapter adapter = new VContainerUiCompositionAdapter(lifetimeScope.Container);
+var ui = new UiBootstrap(localCanvas, projectCanvas, adapter);
+ui.RegisterWindow(settingsPrefab);
 ```
 
 Register dependencies with VContainer before creating UI objects. The adapter

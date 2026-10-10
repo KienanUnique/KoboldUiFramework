@@ -24,20 +24,73 @@ namespace KoboldUi.Tests
         }
 
         [Test]
+        public void RegisterWindowBuildsAllWindowsOnFirstGet()
+        {
+            var local = NewObject("local").AddComponent<Canvas>();
+            var project = NewObject("project").AddComponent<Canvas>();
+            var first = NewObject("first prefab").AddComponent<LocalWindow>();
+            var second = NewObject("second prefab").AddComponent<ProjectWindow>();
+            var ui = new UiBootstrap(local, project);
+            try
+            {
+                ui.RegisterWindow(first);
+                ui.RegisterWindow(second, WindowScope.Project);
+                Assert.That(ui.Get<LocalWindow>(), Is.Not.SameAs(first));
+                Assert.That(ui.Get<ProjectWindow>(), Is.Not.SameAs(second));
+                Assert.That(ui.Get<LocalWindow>().IsInitialized, Is.True);
+                Assert.That(ui.Get<ProjectWindow>().IsInitialized, Is.True);
+            }
+            finally { ui.Dispose(); }
+        }
+
+        [Test]
+        public void RegisterWindowRejectsDuplicateAndLateRegistration()
+        {
+            var local = NewObject("local").AddComponent<Canvas>();
+            var project = NewObject("project").AddComponent<Canvas>();
+            var prefab = NewObject("prefab").AddComponent<ProbeWindow>();
+            var ui = new UiBootstrap(local, project);
+            try
+            {
+                ui.RegisterWindow(prefab);
+                Assert.Throws<InvalidOperationException>(() => ui.RegisterWindow(prefab));
+                ui.Get<ProbeWindow>();
+                Assert.Throws<InvalidOperationException>(() => ui.RegisterWindow(
+                    NewObject("late prefab").AddComponent<LocalWindow>()));
+            }
+            finally { ui.Dispose(); }
+        }
+
+        [Test]
+        public void AccessingWindowServiceBuildsRegisteredWindows()
+        {
+            var local = NewObject("local").AddComponent<Canvas>();
+            var project = NewObject("project").AddComponent<Canvas>();
+            var prefab = NewObject("prefab").AddComponent<ProbeWindow>();
+            var ui = new UiBootstrap(local, project);
+            try
+            {
+                ui.RegisterWindow(prefab);
+                Assert.That(ui.LocalWindows, Is.Not.Null);
+                Assert.That(ui.Get<ProbeWindow>().IsInitialized, Is.True);
+            }
+            finally { ui.Dispose(); }
+        }
+
+        [Test]
         public void BootstrapInitializesWithoutCompositionAdapter()
         {
             var local = NewObject("local").AddComponent<Canvas>();
             var project = NewObject("project").AddComponent<Canvas>();
             var prefab = NewObject("prefab").AddComponent<ProbeWindow>();
-            var catalog = Catalog(prefab, WindowScope.Local);
             var ui = new UiBootstrap(local, project);
             try
             {
-                ui.Initialize(catalog);
+                ui.RegisterWindow(prefab);
                 Assert.That(ui.Get<ProbeWindow>(), Is.Not.SameAs(prefab));
                 Assert.That(ui.Get<ProbeWindow>().IsInitialized, Is.True);
                 Assert.That(ui.Get<ProbeWindow>().InitializeCount, Is.EqualTo(1));
-                Assert.Throws<InvalidOperationException>(() => ui.Initialize(catalog));
+                Assert.Throws<InvalidOperationException>(() => ui.RegisterWindow(prefab));
             }
             finally { ui.Dispose(); }
         }
@@ -47,12 +100,12 @@ namespace KoboldUi.Tests
         {
             var local = NewObject("local").AddComponent<Canvas>();
             var project = NewObject("project").AddComponent<Canvas>();
-            var catalog = Catalog(NewObject("prefab").AddComponent<ProbeWindow>(), WindowScope.Local);
+            var prefab = NewObject("prefab").AddComponent<ProbeWindow>();
             var dependency = new Dependency();
             var ui = new UiBootstrap(local, project);
             try
             {
-                ui.Initialize(catalog, configureWindow: window => ((ProbeWindow)window).SetDependency(dependency));
+                ui.RegisterWindow(prefab, configure: window => window.SetDependency(dependency));
                 Assert.That(ui.Get<ProbeWindow>().Dependency, Is.SameAs(dependency));
                 Assert.That(ui.Get<ProbeWindow>().WasInjectedBeforeInitialize, Is.True);
             }
@@ -60,21 +113,24 @@ namespace KoboldUi.Tests
         }
 
         [Test]
-        public void ConfigurationRunsAfterAllCatalogWindowsAreRegistered()
+        public void ConfigurationRunsAfterAllWindowsAreRegistered()
         {
             var local = NewObject("local").AddComponent<Canvas>();
             var project = NewObject("project").AddComponent<Canvas>();
-            var catalog = ScriptableObject.CreateInstance<WindowCatalog>();
-            _objects.Add(catalog);
-            catalog.Add(NewObject("local prefab").AddComponent<LocalWindow>(), WindowScope.Local);
-            catalog.Add(NewObject("project prefab").AddComponent<ProjectWindow>(), WindowScope.Project);
+            var localPrefab = NewObject("local prefab").AddComponent<LocalWindow>();
+            var projectPrefab = NewObject("project prefab").AddComponent<ProjectWindow>();
             var ui = new UiBootstrap(local, project);
-            ui.Initialize(catalog, configureWindow: _ =>
+            try
             {
-                Assert.That(ui.Get<LocalWindow>(), Is.Not.Null);
-                Assert.That(ui.Get<ProjectWindow>(), Is.Not.Null);
-            });
-            ui.Dispose();
+                ui.RegisterWindow(localPrefab, configure: _ =>
+                {
+                    Assert.That(ui.Get<LocalWindow>(), Is.Not.Null);
+                    Assert.That(ui.Get<ProjectWindow>(), Is.Not.Null);
+                });
+                ui.RegisterWindow(projectPrefab, WindowScope.Project);
+                ui.Get<LocalWindow>();
+            }
+            finally { ui.Dispose(); }
         }
 
         [Test]
@@ -82,10 +138,11 @@ namespace KoboldUi.Tests
         {
             var local = NewObject("local").AddComponent<Canvas>();
             var project = NewObject("project").AddComponent<Canvas>();
-            var catalog = Catalog(NewObject("prefab").AddComponent<ProbeWindow>(), WindowScope.Local);
+            var prefab = NewObject("prefab").AddComponent<ProbeWindow>();
             var ui = new UiBootstrap(local, project);
+            ui.RegisterWindow(prefab, configure: _ => throw new InvalidOperationException("Setup failed"));
             Assert.Throws<InvalidOperationException>(() =>
-                ui.Initialize(catalog, configureWindow: _ => throw new InvalidOperationException("Setup failed")));
+                ui.Get<ProbeWindow>());
             Assert.DoesNotThrow(() => ui.Dispose());
         }
 
@@ -94,16 +151,16 @@ namespace KoboldUi.Tests
         {
             var local = NewObject("local").AddComponent<Canvas>();
             var project = NewObject("project").AddComponent<Canvas>();
-            var catalog = ScriptableObject.CreateInstance<WindowCatalog>();
-            _objects.Add(catalog);
-            catalog.Add(NewObject("local prefab").AddComponent<LocalWindow>(), WindowScope.Local);
-            catalog.Add(NewObject("project prefab").AddComponent<ProjectWindow>(), WindowScope.Project);
+            var localPrefab = NewObject("local prefab").AddComponent<LocalWindow>();
+            var projectPrefab = NewObject("project prefab").AddComponent<ProjectWindow>();
             var localDependency = new Dependency();
             var projectDependency = new Dependency();
-            var ui = new UiBootstrap(local, project);
+            var ui = new UiBootstrap(local, project, new ProbeAdapter(projectDependency),
+                new ProbeAdapter(localDependency), null);
             try
             {
-                ui.Initialize(catalog, new ProbeAdapter(projectDependency), new ProbeAdapter(localDependency));
+                ui.RegisterWindow(localPrefab);
+                ui.RegisterWindow(projectPrefab, WindowScope.Project);
                 Assert.That(ui.Get<LocalWindow>().Dependency, Is.SameAs(localDependency));
                 Assert.That(ui.Get<ProjectWindow>().Dependency, Is.SameAs(projectDependency));
             }
@@ -121,10 +178,10 @@ namespace KoboldUi.Tests
             child.SetActive(false);
             child.AddComponent<ProbeComponent>();
             var dependency = new Dependency();
-            var ui = new UiBootstrap(local, project);
+            var ui = new UiBootstrap(local, project, new ProbeAdapter(dependency));
             try
             {
-                ui.Initialize(Catalog(prefab, WindowScope.Local), new ProbeAdapter(dependency));
+                ui.RegisterWindow(prefab);
                 var instance = ui.Get<ProbeWindow>();
                 Assert.That(instance.GetComponentInChildren<ProbeComponent>(true).Dependency, Is.SameAs(dependency));
                 Assert.That(instance.WasInjectedBeforeInitialize, Is.True);
@@ -137,13 +194,14 @@ namespace KoboldUi.Tests
         {
             var local = NewObject("local").AddComponent<Canvas>();
             var project = NewObject("project").AddComponent<Canvas>();
-            var catalog = Catalog(NewObject("prefab").AddComponent<ProbeWindow>(), WindowScope.Local);
+            var prefab = NewObject("prefab").AddComponent<ProbeWindow>();
             var dependency = new Dependency();
-            var ui = new UiBootstrap(local, project);
+            var ui = new UiBootstrap(local, project, new ProbeAdapter(dependency));
             try
             {
-                ui.Initialize(catalog, new ProbeAdapter(dependency), configureWindow: window =>
-                    Assert.That(((ProbeWindow)window).Dependency, Is.SameAs(dependency)));
+                ui.RegisterWindow(prefab, configure: window =>
+                    Assert.That(window.Dependency, Is.SameAs(dependency)));
+                ui.Get<ProbeWindow>();
             }
             finally { ui.Dispose(); }
         }
@@ -205,29 +263,21 @@ namespace KoboldUi.Tests
         }
 
         [Test]
-        public void BootstrapCanReinitializeAfterDispose()
+        public void BootstrapRejectsUseAfterDispose()
         {
             var local = NewObject("local").AddComponent<Canvas>();
             var project = NewObject("project").AddComponent<Canvas>();
-            var catalog = Catalog(NewObject("prefab").AddComponent<ProbeWindow>(), WindowScope.Local);
+            var prefab = NewObject("prefab").AddComponent<ProbeWindow>();
             var ui = new UiBootstrap(local, project);
             try
             {
-                ui.Initialize(catalog);
-                var first = ui.Get<ProbeWindow>();
+                ui.RegisterWindow(prefab);
+                ui.Get<ProbeWindow>();
                 ui.Dispose();
-                ui.Initialize(catalog);
-                Assert.That(ui.Get<ProbeWindow>(), Is.Not.SameAs(first));
+                Assert.Throws<ObjectDisposedException>(() => ui.Get<ProbeWindow>());
+                Assert.Throws<ObjectDisposedException>(() => ui.RegisterWindow(prefab));
             }
             finally { ui.Dispose(); }
-        }
-
-        private WindowCatalog Catalog(AWindowBase prefab, WindowScope scope)
-        {
-            var catalog = ScriptableObject.CreateInstance<WindowCatalog>();
-            _objects.Add(catalog);
-            catalog.Add(prefab, scope);
-            return catalog;
         }
 
         private GameObject NewObject(string name)

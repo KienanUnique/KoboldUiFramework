@@ -42,12 +42,12 @@ namespace KoboldUi.Tests.PlayMode
             var projectObject = new GameObject("project", typeof(Canvas));
             var prefabObject = new GameObject("window prefab");
             var prefab = prefabObject.AddComponent<LifecycleWindow>();
-            var catalog = ScriptableObject.CreateInstance<WindowCatalog>();
-            catalog.Add(prefab, WindowScope.Local);
-            var ui = new UiBootstrap(localObject.GetComponent<Canvas>(), projectObject.GetComponent<Canvas>());
+            var ui = new UiBootstrap(localObject.GetComponent<Canvas>(), projectObject.GetComponent<Canvas>(),
+                new LifecycleAdapter(dependency));
             try
             {
-                ui.Initialize(catalog, new LifecycleAdapter(dependency));
+                ui.RegisterWindow(prefab);
+                ui.Get<LifecycleWindow>();
                 yield return null;
                 var window = ui.Get<LifecycleWindow>();
                 Assert.That(window.AwakeCount, Is.EqualTo(1));
@@ -56,7 +56,6 @@ namespace KoboldUi.Tests.PlayMode
             finally
             {
                 ui.Dispose();
-                UnityEngine.Object.Destroy(catalog);
                 UnityEngine.Object.Destroy(prefabObject);
                 UnityEngine.Object.Destroy(localObject);
                 UnityEngine.Object.Destroy(projectObject);

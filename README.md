@@ -40,13 +40,13 @@ https://github.com/KienanUnique/KoboldUiFramework.git
 
 # Configure windows
 
-Add window prefabs to a `WindowCatalog` asset (`Assets -> Create -> KoboldUi -> Window Catalog`).
-Choose `Local` or `Project` for each entry. No per-window binding code is required.
+Register window prefabs directly. Windows use the local scope by default; pass
+`WindowScope.Project` for application-wide windows.
 
 ```csharp
 using KoboldUi.Composition;
 var ui = new UiBootstrap(localCanvas, projectCanvas);
-ui.Initialize(windowCatalog);
+ui.RegisterWindow(settingsPrefab);
 ui.Open<SettingsWindow>();
 ```
 
@@ -57,7 +57,7 @@ custom dependencies without DI, use the factory overload:
 Existing windows and views can receive dependencies through explicit `Configure`
 methods called before initialization.
 Shared animation settings live in a `UiAnimationDefaults` asset, passed to
-`Initialize(windowCatalog, animationDefaults)`.
+`new UiBootstrap(localCanvas, projectCanvas, animationDefaults: animationDefaults)`.
 
 Optional Zenject and VContainer composition adapters use separate assemblies and the `KOBOLD_ZENJECT_SUPPORT` or
 `KOBOLD_VCONTAINER_SUPPORT` define. See [DI migration](docs/DI_MIGRATION.md).
