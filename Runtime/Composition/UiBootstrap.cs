@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using KoboldUi.Services.WindowsService;
 using KoboldUi.Services.WindowsService.Impl;
+using KoboldUi.Element.Animations;
 using KoboldUi.Windows;
 using UnityEngine;
 
@@ -24,19 +25,25 @@ namespace KoboldUi.Composition
             _projectCanvas = projectCanvas ?? throw new ArgumentNullException(nameof(projectCanvas));
         }
 
-        public void Initialize(WindowCatalog catalog, IUiResolver resolver) => Initialize(catalog, resolver, resolver);
+        public void Initialize(WindowCatalog catalog, UiAnimationDefaults animationDefaults = null,
+            Action<AWindowBase> configureWindow = null) =>
+            Initialize(catalog, null, null, animationDefaults, configureWindow);
 
-        public void Initialize(WindowCatalog catalog, IUiResolver projectResolver, IUiResolver localResolver)
+        public void Initialize(WindowCatalog catalog, IUiCompositionAdapter adapter,
+            UiAnimationDefaults animationDefaults = null, Action<AWindowBase> configureWindow = null) =>
+            Initialize(catalog, adapter, adapter, animationDefaults, configureWindow);
+
+        public void Initialize(WindowCatalog catalog, IUiCompositionAdapter projectAdapter,
+            IUiCompositionAdapter localAdapter, UiAnimationDefaults animationDefaults = null,
+            Action<AWindowBase> configureWindow = null)
         {
             if (_initialized) throw new InvalidOperationException("UiBootstrap is already initialized.");
             if (catalog == null) throw new ArgumentNullException(nameof(catalog));
-            if (projectResolver == null) throw new ArgumentNullException(nameof(projectResolver));
-            if (localResolver == null) throw new ArgumentNullException(nameof(localResolver));
             Validate(catalog);
             LocalWindows = new LocalWindowsService(_localRegistry);
             ProjectWindows = new ProjectWindowsService(_projectRegistry);
-            var localActivator = new UiActivator(new ServiceResolver(localResolver, LocalWindows, ProjectWindows));
-            var projectActivator = new UiActivator(new ServiceResolver(projectResolver, LocalWindows, ProjectWindows));
+            var localActivator = new UiActivator(localAdapter, animationDefaults, LocalWindows, ProjectWindows);
+            var projectActivator = new UiActivator(projectAdapter, animationDefaults, LocalWindows, ProjectWindows);
             var staging = new GameObject("KoboldUi window staging");
             staging.SetActive(false);
             try
@@ -52,8 +59,11 @@ namespace KoboldUi.Composition
                 for (var i = 0; i < _instances.Count; i++)
                 {
                     var activator = catalog.Windows[i].Scope == WindowScope.Project ? projectActivator : localActivator;
-                    activator.InjectGameObject(_instances[i].gameObject);
+                    activator.PrepareGameObject(_instances[i].gameObject);
                 }
+                if (configureWindow != null)
+                    foreach (var window in _instances)
+                        configureWindow(window);
                 for (var i = 0; i < _instances.Count; i++)
                 {
                     var canvas = catalog.Windows[i].Scope == WindowScope.Project ? _projectCanvas : _localCanvas;
@@ -82,8 +92,12 @@ namespace KoboldUi.Composition
 
         public void Dispose()
         {
-            (LocalWindows as IDisposable)?.Dispose();
-            (ProjectWindows as IDisposable)?.Dispose();
+            var localWindows = LocalWindows;
+            var projectWindows = ProjectWindows;
+            LocalWindows = null;
+            ProjectWindows = null;
+            (localWindows as IDisposable)?.Dispose();
+            (projectWindows as IDisposable)?.Dispose();
             foreach (var window in _instances)
             {
                 if (window == null) continue;
@@ -108,19 +122,5 @@ namespace KoboldUi.Composition
             }
         }
 
-        private sealed class ServiceResolver : IUiResolver
-        {
-            private readonly IUiResolver _inner;
-            private readonly ILocalWindowsService _local;
-            private readonly IProjectWindowsService _project;
-            public ServiceResolver(IUiResolver inner, ILocalWindowsService local, IProjectWindowsService project)
-            { _inner = inner; _local = local; _project = project; }
-            public bool TryResolve(Type type, out object value)
-            {
-                if (type == typeof(ILocalWindowsService)) { value = _local; return true; }
-                if (type == typeof(IProjectWindowsService)) { value = _project; return true; }
-                return _inner.TryResolve(type, out value);
-            }
-        }
     }
 }

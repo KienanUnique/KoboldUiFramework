@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using DG.Tweening;
 using KoboldUi.Composition;
-using KoboldUi.Composition.Manual;
+using KoboldUi.Element.Animations;
 using KoboldUi.Element.Animations.Impl;
 using KoboldUi.Element.Animations.Parameters.Impl;
 using KoboldUi.Element.Controller;
@@ -46,16 +46,17 @@ namespace KoboldUi.Tests.PlayMode
         }
 
         [Test]
-        public void FadeAnimationAppearsAndDisappearsWithInjectedDefaults()
+        public void FadeAnimationAppearsAndDisappearsWithAssetDefaults()
         {
             var parameters = ScriptableObject.CreateInstance<FadeAnimationParameters>();
             _assets.Add(parameters);
             var animationObject = new GameObject("Fade animation");
             _objects.Add(animationObject);
             var animation = animationObject.AddComponent<FadeAnimation>();
-            var resolver = new ManualUiResolver();
-            resolver.AddInstance(parameters);
-            new UiActivator(resolver).InjectGameObject(animationObject);
+            var defaults = ScriptableObject.CreateInstance<UiAnimationDefaults>();
+            _assets.Add(defaults);
+            defaults.Add(parameters);
+            new UiActivator(animationDefaults: defaults).PrepareGameObject(animationObject);
             var pool = new UiActionsPool(new WindowsStackHolder());
             pool.Initialize();
 
@@ -77,11 +78,9 @@ namespace KoboldUi.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator PrefabWindowInjectsControllerAndHandlesButtonClick()
+        public IEnumerator PrefabWindowUsesExplicitControllerFactoryAndHandlesButtonClick()
         {
             var service = new ClickService();
-            var resolver = new ManualUiResolver();
-            resolver.AddInstance(service);
 
             var canvasObject = new GameObject("Canvas", typeof(Canvas));
             _objects.Add(canvasObject);
@@ -95,16 +94,17 @@ namespace KoboldUi.Tests.PlayMode
             _objects.Add(buttonObject);
             buttonObject.transform.SetParent(prefabObject.transform);
             view.Configure(buttonObject.GetComponent<Button>());
-            prefab.Configure(view);
+            prefab.Configure(view, null);
             typeof(AWindow)
                 .GetField("_animatedEmptyViews", BindingFlags.Instance | BindingFlags.NonPublic)
                 .SetValue(prefab, new List<KoboldUi.Element.View.Impl.AnimatedEmptyView>());
 
             var instance = Object.Instantiate(prefab, canvas.transform);
             _objects.Add(instance.gameObject);
-            var activator = new UiActivator(resolver);
+            instance.Configure(instance.View, service);
+            var activator = new UiActivator();
             instance.Configure(activator);
-            activator.InjectGameObject(instance.gameObject);
+            activator.PrepareGameObject(instance.gameObject);
             instance.Initialize();
 
             Assert.That(instance.IsInitialized, Is.True);
@@ -131,20 +131,21 @@ namespace KoboldUi.Tests.PlayMode
     public sealed class ButtonWindow : AWindow
     {
         [SerializeField] private ButtonView view;
-        [UiInject] private ClickService _service;
+        private ClickService _service;
 
         public ButtonView View => view;
         public ButtonController Controller => view.Controller;
         public ClickService InjectedService => _service;
 
-        public void Configure(ButtonView buttonView)
+        public void Configure(ButtonView buttonView, ClickService service)
         {
             view = buttonView;
+            _service = service;
         }
 
         protected override void AddControllers()
         {
-            AddController<ButtonController, ButtonView>(view);
+            AddController(view, _ => new ButtonController(_service));
         }
     }
 

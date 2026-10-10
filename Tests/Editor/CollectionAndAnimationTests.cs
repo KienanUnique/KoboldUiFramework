@@ -1,7 +1,6 @@
 using System;
 using DG.Tweening;
 using KoboldUi.Composition;
-using KoboldUi.Composition.Manual;
 using KoboldUi.Collections.Base;
 using KoboldUi.Collections.Concrete.Impl;
 using KoboldUi.Element.Animations;
@@ -14,11 +13,33 @@ namespace KoboldUi.Tests
     public class CollectionAndAnimationTests
     {
         [Test]
+        public void PooledCollectionCreatesAndReusesItemsWithoutAdapter()
+        {
+            var collectionObject = new GameObject("Collection");
+            var prefabObject = new GameObject("Item prefab");
+            CollectionItem first = null;
+            try
+            {
+                var collection = collectionObject.AddComponent<TestPooledCollection>();
+                collection.Configure(prefabObject.AddComponent<CollectionItem>(), collectionObject.transform);
+                first = collection.Create();
+                Assert.That(first, Is.Not.Null);
+                Assert.That(first.InjectionCount, Is.Zero);
+                collection.ReturnToPool(first);
+                Assert.That(collection.Create(), Is.SameAs(first));
+            }
+            finally
+            {
+                if (first != null) UnityEngine.Object.DestroyImmediate(first.gameObject);
+                UnityEngine.Object.DestroyImmediate(prefabObject);
+                UnityEngine.Object.DestroyImmediate(collectionObject);
+            }
+        }
+
+        [Test]
         public void PooledCollectionInjectsNewItemOnlyOnceAndReusesIt()
         {
             var dependency = new CollectionDependency();
-            var resolver = new ManualUiResolver();
-            resolver.AddInstance(dependency);
             var collectionObject = new GameObject("Collection");
             var prefabObject = new GameObject("Item prefab");
             CollectionItem first = null;
@@ -28,7 +49,7 @@ namespace KoboldUi.Tests
                 var collection = collectionObject.AddComponent<TestPooledCollection>();
                 var prefab = prefabObject.AddComponent<CollectionItem>();
                 collection.Configure(prefab, collectionObject.transform);
-                new UiActivator(resolver).InjectGameObject(collectionObject);
+                new UiActivator(new CollectionAdapter(dependency)).PrepareGameObject(collectionObject);
 
                 first = collection.Create();
                 Assert.That(first.Dependency, Is.SameAs(dependency));
@@ -54,17 +75,17 @@ namespace KoboldUi.Tests
         }
 
         [Test]
-        public void AnimationUsesDefaultParametersInjectedIntoComponent()
+        public void AnimationUsesDefaultsFromAsset()
         {
             var parameters = ScriptableObject.CreateInstance<FadeAnimationParameters>();
-            var resolver = new ManualUiResolver();
-            resolver.AddInstance(parameters);
+            var defaults = ScriptableObject.CreateInstance<UiAnimationDefaults>();
+            defaults.Add(parameters);
             var animationObject = new GameObject("Animation");
 
             try
             {
                 var animation = animationObject.AddComponent<ParameterProbeAnimation>();
-                new UiActivator(resolver).InjectGameObject(animationObject);
+                new UiActivator(animationDefaults: defaults).PrepareGameObject(animationObject);
 
                 Assert.That(animation.ReadParameters(), Is.SameAs(parameters));
             }
@@ -72,6 +93,7 @@ namespace KoboldUi.Tests
             {
                 UnityEngine.Object.DestroyImmediate(animationObject);
                 UnityEngine.Object.DestroyImmediate(parameters);
+                UnityEngine.Object.DestroyImmediate(defaults);
             }
         }
 
@@ -98,6 +120,18 @@ namespace KoboldUi.Tests
     {
     }
 
+    public sealed class CollectionAdapter : IUiCompositionAdapter
+    {
+        private readonly CollectionDependency _dependency;
+        public CollectionAdapter(CollectionDependency dependency) { _dependency = dependency; }
+        public void Inject(object instance)
+        {
+            if (instance is CollectionItem item) item.Construct(_dependency);
+        }
+        public T Create<T>(params object[] arguments) where T : class =>
+            throw new NotSupportedException(typeof(T).Name);
+    }
+
     public sealed class TestPooledCollection : AUiPooledCollection<CollectionItem>
     {
         public void Configure(CollectionItem itemPrefab, Transform parent)
@@ -114,7 +148,6 @@ namespace KoboldUi.Tests
         public int AppearCount { get; private set; }
         public int DisappearCount { get; private set; }
 
-        [UiInject]
         public void Construct(CollectionDependency dependency)
         {
             Dependency = dependency;

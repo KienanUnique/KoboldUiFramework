@@ -1,77 +1,73 @@
-# DI-independent KoboldUi migration
+# KoboldUi composition migration
 
-The core runtime no longer references Zenject or VContainer. The same UI classes work
-with a manual resolver or an adapter. This changes the public setup API.
-
-1. Create a `WindowCatalog` asset and add each window prefab with `Local` or `Project` scope.
-2. Create `UiBootstrap(localCanvas, projectCanvas)` and call `Initialize(catalog, resolver)`.
-   For separate scene dependencies, pass project and local resolvers separately.
-3. Open windows with `ui.Open<TWindow>()` or `ui.LocalWindows.OpenWindow<TWindow>()`.
-   The service's `OpenWindow<T>()` and `CloseToWindow<T>()` signatures remain available.
-4. Replace Zenject `[Inject]` on UI components with `[UiInject]`; use
-   `[UiInject(Optional = true)]` for optional services. Controller dependencies are
-   constructor parameters; the view can be a constructor parameter or the inherited
-   `View` member.
-5. Register default animation parameter assets under their concrete types.
-
-Bootstrap registers every window before injecting components and initializing controllers.
-Collection items are injected once when instantiated, including items later reused by a pool.
+KoboldUi runs without a DI container. `IUiResolver`, `ManualUiResolver`, and the
+framework-specific `[UiInject]` attribute have been removed. The core does not
+inspect constructors or members for injection metadata.
 
 ## Without DI
 
-```csharp
-var project = new ManualUiResolver()
-    .AddInstance<ISettingsStore>(settingsStore)
-    .AddInstance(fadeAnimationParameters);
-var local = project.CreateScope().AddInstance<ILevelState>(levelState);
-ui.Initialize(catalog, project, local);
-```
-
-`AddFactory<T>(() => CreateService())` creates a fresh value per resolution. A scope
-can override a parent registration; duplicates within one scope throw.
-
-## Zenject
-
-Install Zenject and enable `KOBOLD_ZENJECT_SUPPORT`. The `KoboldUi.Zenject` assembly
-provides `ZenjectUiResolver`, migrated installers and the legacy
-`BindWindowFromPrefab` extension. New code can use:
+Create a `WindowCatalog`, then initialize and open the UI:
 
 ```csharp
-ui.Initialize(catalog, new ZenjectUiResolver(projectContainer),
-    new ZenjectUiResolver(sceneContainer));
+var ui = new UiBootstrap(localCanvas, projectCanvas);
+ui.Initialize(catalog);
+ui.Open<SettingsWindow>();
 ```
 
-The legacy extension registers its window immediately and injects and initializes it
-during Zenject's `IInitializable` phase after bindings are complete. It also supports
-existing Zenject `[Inject]` fields on window components and controllers. Collection
-item prefabs created later must migrate their injected members to `[UiInject]`.
-
-## VContainer
-
-Install VContainer and enable `KOBOLD_VCONTAINER_SUPPORT`. The `KoboldUi.VContainer`
-assembly provides `VContainerUiResolver`:
+Create controllers through factories in each `AWindow`:
 
 ```csharp
-ui.Initialize(catalog, new VContainerUiResolver(projectScope),
-    new VContainerUiResolver(sceneScope));
+protected override void AddControllers()
+{
+    AddController(settingsView, view => new SettingsController(view, settings));
+}
 ```
 
-The two scopes are `VContainer.IObjectResolver` instances. UI classes and the catalog
-are identical across all three presets. An adapter assembly is excluded when its
-define is absent.
+For dependencies that must be passed to a window before `Initialize`, use the
+`configureWindow` callback. It runs after all windows are registered and before
+any window is initialized:
 
-## IL2CPP and managed stripping
-
-The activator uses reflection for controller constructors and `[UiInject]` members.
-For application classes used only through reflection, mark constructors and injected
-private members with `UnityEngine.Scripting.Preserve`, or add a `link.xml` in the
-application project:
-
-```xml
-<linker>
-  <assembly fullname="Assembly-CSharp">
-    <type fullname="Game.Ui.SettingsController" preserve="all" />
-    <type fullname="Game.Ui.SettingsWindow" preserve="all" />
-  </assembly>
-</linker>
+```csharp
+ui.Initialize(catalog, configureWindow: window =>
+{
+    if (window is SettingsWindow settingsWindow)
+        settingsWindow.Configure(settings, ui.LocalWindows);
+});
 ```
+
+For shared animation parameters, create a `UiAnimationDefaults` asset, add
+parameter assets, and pass it to `ui.Initialize(catalog, animationDefaults)`.
+Custom per-prefab parameters remain serialized on the animation component.
+
+## With Zenject or VContainer
+
+Enable `KOBOLD_ZENJECT_SUPPORT` or `KOBOLD_VCONTAINER_SUPPORT` and create the
+matching adapter:
+
+```csharp
+ui.Initialize(catalog, new ZenjectUiCompositionAdapter(container));
+// or
+ui.Initialize(catalog, new VContainerUiCompositionAdapter(scope));
+```
+
+Pass project and local adapters separately when their containers differ:
+
+```csharp
+ui.Initialize(catalog, projectAdapter, localAdapter);
+```
+
+`IUiCompositionAdapter.Inject` applies the container's native member injection
+to existing windows, views, and other components. `Create<T>(arguments)` creates
+controllers with explicit runtime arguments, such as their view, plus container
+dependencies. KoboldUi calls each method once per new object. Container-specific
+attributes such as Zenject or VContainer `[Inject]` remain supported inside
+those projects. There is no KoboldUi injection attribute.
+
+KoboldUi window services are available as `ui.LocalWindows` and
+`ui.ProjectWindows`. Pass them explicitly through `configureWindow`, controller
+factories, or `AddInjectedController` arguments. They are no longer silently
+registered with an external container.
+
+The application owns the Zenject or VContainer scope. Disposing `UiBootstrap`
+does not dispose it. If IL2CPP stripping affects objects created by a DI adapter,
+follow that container's preservation or code-generation instructions.

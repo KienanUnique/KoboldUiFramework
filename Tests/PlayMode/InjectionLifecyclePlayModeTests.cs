@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using KoboldUi.Composition;
-using KoboldUi.Composition.Manual;
 using KoboldUi.UiAction;
 using KoboldUi.UiAction.Pool;
 using KoboldUi.Utils;
@@ -23,7 +22,7 @@ namespace KoboldUi.Tests.PlayMode
             LifecycleItem clone = null;
             try
             {
-                clone = new UiActivator(new ManualUiResolver().AddInstance(dependency)).InstantiatePrefab(prefab);
+                clone = new UiActivator(new LifecycleAdapter(dependency)).InstantiatePrefab(prefab);
                 yield return null;
                 Assert.That(clone.AwakeCount, Is.EqualTo(1));
                 Assert.That(clone.HadDependencyInAwake, Is.True);
@@ -48,7 +47,7 @@ namespace KoboldUi.Tests.PlayMode
             var ui = new UiBootstrap(localObject.GetComponent<Canvas>(), projectObject.GetComponent<Canvas>());
             try
             {
-                ui.Initialize(catalog, new ManualUiResolver().AddInstance(dependency));
+                ui.Initialize(catalog, new LifecycleAdapter(dependency));
                 yield return null;
                 var window = ui.Get<LifecycleWindow>();
                 Assert.That(window.AwakeCount, Is.EqualTo(1));
@@ -66,16 +65,30 @@ namespace KoboldUi.Tests.PlayMode
     }
 
     public sealed class LifecycleDependency { }
+    public sealed class LifecycleAdapter : IUiCompositionAdapter
+    {
+        private readonly LifecycleDependency _dependency;
+        public LifecycleAdapter(LifecycleDependency dependency) { _dependency = dependency; }
+        public void Inject(object instance)
+        {
+            if (instance is LifecycleItem item) item.SetDependency(_dependency);
+            if (instance is LifecycleWindow window) window.SetDependency(_dependency);
+        }
+        public T Create<T>(params object[] arguments) where T : class =>
+            throw new NotSupportedException(typeof(T).Name);
+    }
     public sealed class LifecycleItem : MonoBehaviour
     {
-        [UiInject] private LifecycleDependency _dependency;
+        private LifecycleDependency _dependency;
+        public void SetDependency(LifecycleDependency dependency) { _dependency = dependency; }
         public int AwakeCount { get; private set; }
         public bool HadDependencyInAwake { get; private set; }
         private void Awake() { AwakeCount++; HadDependencyInAwake = _dependency != null; }
     }
     public sealed class LifecycleWindow : AWindowBase
     {
-        [UiInject] private LifecycleDependency _dependency;
+        private LifecycleDependency _dependency;
+        public void SetDependency(LifecycleDependency dependency) { _dependency = dependency; }
         public int AwakeCount { get; private set; }
         public bool HadDependencyInAwake { get; private set; }
         public override bool IsPopup => false;

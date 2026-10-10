@@ -2,7 +2,8 @@
     "name": "KoboldUi.Tests.VContainer.Fixtures",
     "rootNamespace": "KoboldUi.Tests.VContainer",
     "references": [
-        "com.kienanunique.kobolduiframework"
+        "com.kienanunique.kobolduiframework",
+        "VContainer"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

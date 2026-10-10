@@ -22,7 +22,7 @@ namespace KoboldUi.Collections.Base
         [SerializeField] protected Transform collectionContainer;
 
         /// <summary>
-        /// Instantiator used to spawn new view instances.
+        /// Optional activator used when spawned views need animation defaults or composition.
         /// </summary>
         protected UiActivator Activator;
 
@@ -57,9 +57,7 @@ namespace KoboldUi.Collections.Base
 
         protected TView CreateView()
         {
-            if (Activator == null)
-                throw new System.InvalidOperationException($"Collection {name} has no UiActivator.");
-            return Activator.InstantiatePrefab(prefab);
+            return Activator == null ? Instantiate(prefab) : Activator.InstantiatePrefab(prefab);
         }
     }
 }

@@ -5,7 +5,6 @@ using KoboldUi.UiAction.Impl.Common;
 using KoboldUi.UiAction.Pool;
 using UnityEngine;
 using UnityEngine.Serialization;
-using KoboldUi.Composition;
 #if KOBOLD_ALCHEMY_SUPPORT
 using Alchemy.Inspector;
 #elif KOBOLD_ODIN_SUPPORT
@@ -18,7 +17,7 @@ namespace KoboldUi.Element.Animations
     /// Generic animation component that drives appear and disappear transitions using tween parameters.
     /// </summary>
     /// <typeparam name="TParams">Parameter type describing the animation behaviour.</typeparam>
-    public abstract class AUiAnimation<TParams> : AUiAnimationBase where TParams : IUiAnimationParameters
+    public abstract class AUiAnimation<TParams> : AUiAnimationBase, IUiAnimationDefaultsReceiver where TParams : IUiAnimationParameters
     {
         /// <summary>
         /// Determines whether consumers should wait for the tween to finish before continuing.
@@ -36,10 +35,16 @@ namespace KoboldUi.Element.Animations
         [SerializeField]
         private TParams _animationParameters;
 
-        [UiInject(Optional = true)] private TParams _defaultAnimationParameters;
+        private TParams _defaultAnimationParameters;
+
+        public void ApplyDefaults(UiAnimationDefaults defaults)
+        {
+            if (defaults == null) throw new ArgumentNullException(nameof(defaults));
+            defaults.TryGet(out _defaultAnimationParameters);
+        }
 
         /// <summary>
-        /// Gets the animation parameters in use, falling back to injected defaults if needed.
+        /// Gets the animation parameters in use, falling back to the shared defaults asset if needed.
         /// </summary>
         protected TParams AnimationParameters
         {

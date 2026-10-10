@@ -28,8 +28,8 @@ namespace KoboldUi.Tests.Zenject
                 var projectContainer = new DiContainer();
                 localContainer.BindInstance(localToken).AsSingle();
                 projectContainer.BindInstance(projectToken).AsSingle();
-                bootstrap.Initialize(catalog, new ZenjectUiResolver(projectContainer),
-                    new ZenjectUiResolver(localContainer));
+                bootstrap.Initialize(catalog, new ZenjectUiCompositionAdapter(projectContainer),
+                    new ZenjectUiCompositionAdapter(localContainer));
                 var localWindow = bootstrap.Get<ZenjectBootstrapLocalWindow>();
                 var projectWindow = bootstrap.Get<ZenjectBootstrapProjectWindow>();
                 Assert.That(localWindow.Token, Is.SameAs(localToken));

@@ -1,4 +1,4 @@
-using KoboldUi.Composition;
+using VContainer;
 using KoboldUi.Services.WindowsService;
 using KoboldUi.UiAction;
 using KoboldUi.UiAction.Impl.Common;
@@ -10,11 +10,10 @@ namespace KoboldUi.Tests.VContainer
 {
     public sealed class VContainerBootstrapTestWindow : AWindowBase
     {
-        [UiInject] private VContainerBootstrapTestDependency _dependency;
-        [UiInject] private ILocalWindowsService _localWindows;
+        [Inject] private VContainerBootstrapTestDependency _dependency;
 
         public VContainerBootstrapTestDependency Dependency => _dependency;
-        public ILocalWindowsService LocalWindows => _localWindows;
+        public ILocalWindowsService LocalWindows => Activator.LocalWindows;
         public int InitializeCount { get; private set; }
         public EWindowState? LastState { get; private set; }
         public override bool IsPopup => false;

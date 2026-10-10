@@ -5,13 +5,13 @@ Install the `jp.hadashikick.vcontainer` package and add
 `KoboldUi.VContainer` assembly is enabled only when that symbol is present.
 
 Pass the active VContainer `IObjectResolver` (typically a `LifetimeScope.Container`)
-to `VContainerUiResolver`, then pass the adapter wherever KoboldUi requests an
-`IUiResolver`:
+to `VContainerUiCompositionAdapter`, then pass the adapter to `UiBootstrap.Initialize`:
 
 ```csharp
-IUiResolver resolver = new VContainerUiResolver(lifetimeScope.Container);
+IUiCompositionAdapter adapter = new VContainerUiCompositionAdapter(lifetimeScope.Container);
 ```
 
-Register controllers and other dependencies with VContainer before using the
-resolver. The adapter uses `TryResolve` and does not dispose the VContainer
-scope; the application owns its lifetime.
+Register dependencies with VContainer before creating UI objects. The adapter
+creates controllers with VContainer's injector and explicit constructor arguments,
+and injects existing Unity components through `IObjectResolver.Inject`. It does
+not dispose the VContainer scope; the application owns its lifetime.

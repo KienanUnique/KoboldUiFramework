@@ -13,7 +13,7 @@ namespace KoboldUi.Installers
         /// <inheritdoc />
         public override void InstallBindings()
         {
-            Container.Bind<IUiResolver>().To<ZenjectUiResolver>().AsSingle().IfNotBound();
+            Container.Bind<IUiCompositionAdapter>().To<ZenjectUiCompositionAdapter>().AsSingle().IfNotBound();
             Container.Bind<WindowRegistry>().AsSingle().IfNotBound();
             Container.BindInterfacesTo<ProjectWindowsService>().AsSingle().NonLazy();
         }

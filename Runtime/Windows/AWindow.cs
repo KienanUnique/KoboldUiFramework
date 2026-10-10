@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using KoboldUi.Element.Controller;
 using KoboldUi.Element.Controller.Impl;
 using KoboldUi.Element.View;
@@ -115,6 +116,31 @@ namespace KoboldUi.Windows
         {
             var controller = Activator.CreateController<TController, TView>(viewInstance);
 
+            RegisterController(viewInstance, controller);
+        }
+
+        protected void AddController<TController, TView>(TView viewInstance, Func<TView, TController> factory)
+            where TView : IUiView
+            where TController : AUiController<TView>
+        {
+            var controller = Activator.CreateController(viewInstance, factory);
+
+            RegisterController(viewInstance, controller);
+        }
+
+        protected void AddInjectedController<TController, TView>(TView viewInstance,
+            params object[] additionalArguments)
+            where TView : IUiView
+            where TController : AUiController<TView>
+        {
+            var controller = Activator.CreateController<TController, TView>(viewInstance, additionalArguments);
+            RegisterController(viewInstance, controller);
+        }
+
+        private void RegisterController<TController, TView>(TView viewInstance, TController controller)
+            where TView : IUiView
+            where TController : AUiController<TView>
+        {
             _childControllers.Add(controller);
 
             viewInstance.Initialize();
@@ -125,7 +151,7 @@ namespace KoboldUi.Windows
         private void AddEmptyElements()
         {
             foreach (var animatedEmptyView in _animatedEmptyViews)
-                AddController<AnimatedEmptyController, AnimatedEmptyView>(animatedEmptyView);
+                AddController(animatedEmptyView, _ => new AnimatedEmptyController());
         }
 
 #if (KOBOLD_ALCHEMY_SUPPORT || KOBOLD_ODIN_SUPPORT) && UNITY_EDITOR

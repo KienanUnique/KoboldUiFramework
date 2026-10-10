@@ -1,23 +1,23 @@
-using KoboldUi.Composition;
 using KoboldUi.Services.WindowsService;
 using KoboldUi.UiAction;
 using KoboldUi.UiAction.Impl.Common;
 using KoboldUi.UiAction.Pool;
 using KoboldUi.Utils;
 using KoboldUi.Windows;
+using Zenject;
 
 namespace KoboldUi.Tests.Zenject
 {
     public abstract class ZenjectBootstrapWindow : AWindowBase
     {
-        [UiInject] public ZenjectBootstrapToken Token;
+        [Inject] public ZenjectBootstrapToken Token;
         public ZenjectBootstrapController Controller { get; private set; }
         public override bool IsPopup => false;
         public override bool IsBackLogicIgnorable => false;
 
         public override void Initialize()
         {
-            Controller = Activator.CreateController<ZenjectBootstrapController, object>(new object());
+            Controller = Activator.CreateController<ZenjectBootstrapController, object>(new object(), Activator.LocalWindows);
             base.Initialize();
         }
 

@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
 using KoboldUi.Composition;
-using KoboldUi.Composition.Manual;
-using KoboldUi.Services.WindowsService;
 using KoboldUi.UiAction;
 using KoboldUi.UiAction.Pool;
 using KoboldUi.Utils;
@@ -15,6 +13,7 @@ namespace KoboldUi.Tests
     public class CompositionTests
     {
         private readonly List<UnityEngine.Object> _objects = new List<UnityEngine.Object>();
+
         [TearDown]
         public void TearDown()
         {
@@ -24,132 +23,156 @@ namespace KoboldUi.Tests
         }
 
         [Test]
-        public void InjectGameObjectInjectsInactiveChildrenAndOptionalFields()
+        public void BootstrapInitializesWithoutCompositionAdapter()
         {
+            var local = NewObject("local").AddComponent<Canvas>();
+            var project = NewObject("project").AddComponent<Canvas>();
+            var prefab = NewObject("prefab").AddComponent<ProbeWindow>();
+            var catalog = Catalog(prefab, WindowScope.Local);
+            var ui = new UiBootstrap(local, project);
+            try
+            {
+                ui.Initialize(catalog);
+                Assert.That(ui.Get<ProbeWindow>(), Is.Not.SameAs(prefab));
+                Assert.That(ui.Get<ProbeWindow>().IsInitialized, Is.True);
+                Assert.That(ui.Get<ProbeWindow>().InitializeCount, Is.EqualTo(1));
+                Assert.Throws<InvalidOperationException>(() => ui.Initialize(catalog));
+            }
+            finally { ui.Dispose(); }
+        }
+
+        [Test]
+        public void BootstrapConfiguresWindowExplicitlyBeforeInitialization()
+        {
+            var local = NewObject("local").AddComponent<Canvas>();
+            var project = NewObject("project").AddComponent<Canvas>();
+            var catalog = Catalog(NewObject("prefab").AddComponent<ProbeWindow>(), WindowScope.Local);
             var dependency = new Dependency();
-            var root = NewObject("root");
+            var ui = new UiBootstrap(local, project);
+            try
+            {
+                ui.Initialize(catalog, configureWindow: window => ((ProbeWindow)window).SetDependency(dependency));
+                Assert.That(ui.Get<ProbeWindow>().Dependency, Is.SameAs(dependency));
+                Assert.That(ui.Get<ProbeWindow>().WasInjectedBeforeInitialize, Is.True);
+            }
+            finally { ui.Dispose(); }
+        }
+
+        [Test]
+        public void ConfigurationRunsAfterAllCatalogWindowsAreRegistered()
+        {
+            var local = NewObject("local").AddComponent<Canvas>();
+            var project = NewObject("project").AddComponent<Canvas>();
+            var catalog = ScriptableObject.CreateInstance<WindowCatalog>();
+            _objects.Add(catalog);
+            catalog.Add(NewObject("local prefab").AddComponent<LocalWindow>(), WindowScope.Local);
+            catalog.Add(NewObject("project prefab").AddComponent<ProjectWindow>(), WindowScope.Project);
+            var ui = new UiBootstrap(local, project);
+            ui.Initialize(catalog, configureWindow: _ =>
+            {
+                Assert.That(ui.Get<LocalWindow>(), Is.Not.Null);
+                Assert.That(ui.Get<ProjectWindow>(), Is.Not.Null);
+            });
+            ui.Dispose();
+        }
+
+        [Test]
+        public void BootstrapCanBeDisposedAgainAfterConfigurationFails()
+        {
+            var local = NewObject("local").AddComponent<Canvas>();
+            var project = NewObject("project").AddComponent<Canvas>();
+            var catalog = Catalog(NewObject("prefab").AddComponent<ProbeWindow>(), WindowScope.Local);
+            var ui = new UiBootstrap(local, project);
+            Assert.Throws<InvalidOperationException>(() =>
+                ui.Initialize(catalog, configureWindow: _ => throw new InvalidOperationException("Setup failed")));
+            Assert.DoesNotThrow(() => ui.Dispose());
+        }
+
+        [Test]
+        public void BootstrapUsesSeparateAdaptersForLocalAndProjectWindows()
+        {
+            var local = NewObject("local").AddComponent<Canvas>();
+            var project = NewObject("project").AddComponent<Canvas>();
+            var catalog = ScriptableObject.CreateInstance<WindowCatalog>();
+            _objects.Add(catalog);
+            catalog.Add(NewObject("local prefab").AddComponent<LocalWindow>(), WindowScope.Local);
+            catalog.Add(NewObject("project prefab").AddComponent<ProjectWindow>(), WindowScope.Project);
+            var localDependency = new Dependency();
+            var projectDependency = new Dependency();
+            var ui = new UiBootstrap(local, project);
+            try
+            {
+                ui.Initialize(catalog, new ProbeAdapter(projectDependency), new ProbeAdapter(localDependency));
+                Assert.That(ui.Get<LocalWindow>().Dependency, Is.SameAs(localDependency));
+                Assert.That(ui.Get<ProjectWindow>().Dependency, Is.SameAs(projectDependency));
+            }
+            finally { ui.Dispose(); }
+        }
+
+        [Test]
+        public void AdapterInjectsInactiveChildBeforeWindowInitialization()
+        {
+            var local = NewObject("local").AddComponent<Canvas>();
+            var project = NewObject("project").AddComponent<Canvas>();
+            var prefab = NewObject("prefab").AddComponent<ProbeWindow>();
             var child = NewObject("child");
-            child.transform.SetParent(root.transform);
+            child.transform.SetParent(prefab.transform);
             child.SetActive(false);
-            var probe = child.AddComponent<InjectionProbe>();
-            new UiActivator(new ManualUiResolver().AddInstance(dependency)).InjectGameObject(root);
-            Assert.That(probe.Dependency, Is.SameAs(dependency));
-            Assert.That(probe.Optional, Is.Null);
-            Assert.That(probe.MethodCalls, Is.EqualTo(1));
-        }
-
-        [Test]
-        public void MissingRequiredDependencyReportsWindowAndComponent()
-        {
-            var root = NewObject("SettingsWindow");
-            root.AddComponent<InjectionProbe>();
-            var error = Assert.Throws<UiActivationException>(() =>
-                new UiActivator(new ManualUiResolver()).InjectGameObject(root));
-            Assert.That(error.Message, Does.Contain("SettingsWindow"));
-            Assert.That(error.Message, Does.Contain(nameof(InjectionProbe)));
-            Assert.That(error.Message, Does.Contain(nameof(Dependency)));
-        }
-
-        [Test]
-        public void InstantiatePrefabInjectsNewItem()
-        {
+            child.AddComponent<ProbeComponent>();
             var dependency = new Dependency();
-            var prefab = NewObject("item prefab").AddComponent<InjectionProbe>();
-            var clone = new UiActivator(new ManualUiResolver().AddInstance(dependency)).InstantiatePrefab(prefab);
-            _objects.Add(clone.gameObject);
-            Assert.That(clone.Dependency, Is.SameAs(dependency));
-            Assert.That(clone.MethodCalls, Is.EqualTo(1));
+            var ui = new UiBootstrap(local, project);
+            try
+            {
+                ui.Initialize(Catalog(prefab, WindowScope.Local), new ProbeAdapter(dependency));
+                var instance = ui.Get<ProbeWindow>();
+                Assert.That(instance.GetComponentInChildren<ProbeComponent>(true).Dependency, Is.SameAs(dependency));
+                Assert.That(instance.WasInjectedBeforeInitialize, Is.True);
+            }
+            finally { ui.Dispose(); }
         }
 
         [Test]
-        public void ControllerReceivesExplicitViewAndResolvedService()
+        public void AdapterInjectsWindowBeforeConfigurationCallback()
         {
+            var local = NewObject("local").AddComponent<Canvas>();
+            var project = NewObject("project").AddComponent<Canvas>();
+            var catalog = Catalog(NewObject("prefab").AddComponent<ProbeWindow>(), WindowScope.Local);
             var dependency = new Dependency();
+            var ui = new UiBootstrap(local, project);
+            try
+            {
+                ui.Initialize(catalog, new ProbeAdapter(dependency), configureWindow: window =>
+                    Assert.That(((ProbeWindow)window).Dependency, Is.SameAs(dependency)));
+            }
+            finally { ui.Dispose(); }
+        }
+
+        [Test]
+        public void ExplicitFactoryCreatesControllerWithoutAdapter()
+        {
             var view = new ViewToken();
-            var controller = new UiActivator(new ManualUiResolver().AddInstance(dependency))
+            var dependency = new Dependency();
+            var controller = new UiActivator().CreateController(view, v => new ConstructorController(v, dependency));
+            Assert.That(controller.View, Is.SameAs(view));
+            Assert.That(controller.Dependency, Is.SameAs(dependency));
+        }
+
+        [Test]
+        public void AdapterCreatesControllerWithExplicitViewAndDependency()
+        {
+            var view = new ViewToken();
+            var dependency = new Dependency();
+            var controller = new UiActivator(new ProbeAdapter(dependency))
                 .CreateController<ConstructorController, ViewToken>(view);
             Assert.That(controller.View, Is.SameAs(view));
             Assert.That(controller.Dependency, Is.SameAs(dependency));
         }
 
         [Test]
-        public void ControllerUsesOptionalConstructorDefaultWhenServiceMissing()
+        public void ControllerWithoutFactoryOrAdapterReportsError()
         {
-            var controller = new UiActivator(new ManualUiResolver())
-                .CreateController<OptionalController, ViewToken>(new ViewToken());
-            Assert.That(controller.Retries, Is.EqualTo(7));
-        }
-
-        [Test]
-        public void ResolverReturningWrongTypeIsRejectedWithContext()
-        {
-            var root = NewObject("SettingsWindow");
-            root.AddComponent<InjectionProbe>();
-            var error = Assert.Throws<UiActivationException>(() =>
-                new UiActivator(new WrongTypeResolver()).InjectGameObject(root));
-            Assert.That(error.Message, Does.Contain(nameof(Dependency)));
-            Assert.That(error.Message, Does.Contain("SettingsWindow"));
-        }
-
-        [Test]
-        public void RegistryRejectsDuplicateTypesAndAmbiguousContracts()
-        {
-            var registry = new WindowRegistry();
-            var first = NewObject("first").AddComponent<ProbeWindow>();
-            var second = NewObject("second").AddComponent<ProbeWindow>();
-            registry.Register(first);
-            Assert.That(registry.Get<ProbeWindow>(), Is.SameAs(first));
-            Assert.That(registry.Get<IWindow>(), Is.SameAs(first));
-            Assert.Throws<InvalidOperationException>(() => registry.Register(second));
-            Assert.Throws<InvalidOperationException>(() => registry.Get(typeof(OtherWindow)));
-            registry.Register(NewObject("other").AddComponent<OtherWindow>());
-            Assert.That(() => registry.Get<IWindow>(), Throws.InvalidOperationException.With.Message.Contains("Several"));
-        }
-
-        [Test]
-        public void BootstrapRegistersAndInitializesWindowOnce()
-        {
-            var local = NewObject("local").AddComponent<Canvas>();
-            var project = NewObject("project").AddComponent<Canvas>();
-            var prefab = NewObject("prefab").AddComponent<ProbeWindow>();
-            var catalog = ScriptableObject.CreateInstance<WindowCatalog>();
-            _objects.Add(catalog);
-            catalog.Add(prefab, WindowScope.Local);
-            var ui = new UiBootstrap(local, project);
-            try
-            {
-                ui.Initialize(catalog, new ManualUiResolver());
-                var window = ui.Get<ProbeWindow>();
-                Assert.That(window, Is.Not.SameAs(prefab));
-                Assert.That(window.transform.parent, Is.SameAs(local.transform));
-                Assert.That(window.Service, Is.SameAs(ui.LocalWindows));
-                Assert.That(window.InitializeCount, Is.EqualTo(1));
-                Assert.Throws<InvalidOperationException>(() => ui.Initialize(catalog, new ManualUiResolver()));
-            }
-            finally { ui.Dispose(); }
-        }
-
-        [Test]
-        public void BootstrapUsesSeparateLocalAndProjectResolvers()
-        {
-            var local = NewObject("local").AddComponent<Canvas>();
-            var project = NewObject("project").AddComponent<Canvas>();
-            var catalog = ScriptableObject.CreateInstance<WindowCatalog>();
-            _objects.Add(catalog);
-            catalog.Add(NewObject("local prefab").AddComponent<LocalScopeWindow>(), WindowScope.Local);
-            catalog.Add(NewObject("project prefab").AddComponent<ProjectScopeWindow>(), WindowScope.Project);
-            var projectDependency = new Dependency();
-            var localDependency = new Dependency();
-            var projectResolver = new ManualUiResolver().AddInstance(projectDependency);
-            var localResolver = projectResolver.CreateScope().AddInstance(localDependency);
-            var ui = new UiBootstrap(local, project);
-            try
-            {
-                ui.Initialize(catalog, projectResolver, localResolver);
-                Assert.That(ui.Get<LocalScopeWindow>().Dependency, Is.SameAs(localDependency));
-                Assert.That(ui.Get<ProjectScopeWindow>().Dependency, Is.SameAs(projectDependency));
-            }
-            finally { ui.Dispose(); }
+            Assert.That(() => new UiActivator().CreateController<ConstructorController, ViewToken>(new ViewToken()),
+                Throws.TypeOf<UiActivationException>().With.Message.Contains("factory"));
         }
 
         [Test]
@@ -157,86 +180,105 @@ namespace KoboldUi.Tests
         {
             var local = NewObject("local").AddComponent<Canvas>();
             var project = NewObject("project").AddComponent<Canvas>();
-            var catalog = ScriptableObject.CreateInstance<WindowCatalog>();
-            _objects.Add(catalog);
-            catalog.Add(NewObject("prefab").AddComponent<ProbeWindow>(), WindowScope.Local);
+            var catalog = Catalog(NewObject("prefab").AddComponent<ProbeWindow>(), WindowScope.Local);
             var ui = new UiBootstrap(local, project);
             try
             {
-                ui.Initialize(catalog, new ManualUiResolver());
+                ui.Initialize(catalog);
                 var first = ui.Get<ProbeWindow>();
                 ui.Dispose();
-                ui.Initialize(catalog, new ManualUiResolver());
+                ui.Initialize(catalog);
                 Assert.That(ui.Get<ProbeWindow>(), Is.Not.SameAs(first));
             }
             finally { ui.Dispose(); }
         }
 
+        private WindowCatalog Catalog(AWindowBase prefab, WindowScope scope)
+        {
+            var catalog = ScriptableObject.CreateInstance<WindowCatalog>();
+            _objects.Add(catalog);
+            catalog.Add(prefab, scope);
+            return catalog;
+        }
+
         private GameObject NewObject(string name)
         {
-            var obj = new GameObject(name);
-            _objects.Add(obj);
-            return obj;
+            var result = new GameObject(name);
+            _objects.Add(result);
+            return result;
         }
 
         public sealed class Dependency { }
         public sealed class ViewToken { }
-        private sealed class WrongTypeResolver : IUiResolver
-        { public bool TryResolve(Type type, out object value) { value = new object(); return true; } }
+
         public sealed class ConstructorController
         {
             public ViewToken View { get; }
             public Dependency Dependency { get; }
-            public ConstructorController(ViewToken view, Dependency dependency) { View = view; Dependency = dependency; }
+            public ConstructorController(ViewToken view, Dependency dependency)
+            { View = view; Dependency = dependency; }
         }
-        public sealed class OptionalController
+
+        private sealed class ProbeAdapter : IUiCompositionAdapter
         {
-            public int Retries { get; }
-            public OptionalController(ViewToken view, int retries = 7) { Retries = retries; }
+            private readonly Dependency _dependency;
+            public ProbeAdapter(Dependency dependency) { _dependency = dependency; }
+            public void Inject(object instance)
+            {
+                if (instance is ProbeWindow window) window.SetDependency(_dependency);
+                if (instance is LocalWindow local) local.SetDependency(_dependency);
+                if (instance is ProjectWindow project) project.SetDependency(_dependency);
+                if (instance is ProbeComponent component) component.SetDependency(_dependency);
+            }
+            public T Create<T>(params object[] arguments) where T : class
+            {
+                if (typeof(T) == typeof(ConstructorController))
+                    return new ConstructorController((ViewToken)arguments[0], _dependency) as T;
+                throw new NotSupportedException(typeof(T).Name);
+            }
         }
-        public sealed class InjectionProbe : MonoBehaviour
+
+        public sealed class ProbeComponent : MonoBehaviour
         {
-            [UiInject] private Dependency _dependency;
-            [UiInject(Optional = true)] private IDisposable _optional;
-            public Dependency Dependency => _dependency;
-            public IDisposable Optional => _optional;
-            public int MethodCalls { get; private set; }
-            [UiInject] private void Construct(Dependency dependency) { MethodCalls++; }
+            public Dependency Dependency { get; private set; }
+            public void SetDependency(Dependency dependency) { Dependency = dependency; }
         }
+
         public sealed class ProbeWindow : AWindowBase
         {
-            [UiInject] private ILocalWindowsService _service;
-            public ILocalWindowsService Service => _service;
+            public Dependency Dependency { get; private set; }
+            public bool WasInjectedBeforeInitialize { get; private set; }
             public int InitializeCount { get; private set; }
+            public void SetDependency(Dependency dependency) { Dependency = dependency; }
             public override bool IsPopup => false;
             public override bool IsBackLogicIgnorable => false;
-            public override void Initialize() { InitializeCount++; base.Initialize(); }
-            public override IUiAction SetState(EWindowState state, in IUiActionsPool pool) { throw new NotSupportedException(); }
+            public override void Initialize()
+            {
+                WasInjectedBeforeInitialize = Dependency != null;
+                InitializeCount++;
+                base.Initialize();
+            }
+            public override IUiAction SetState(EWindowState state, in IUiActionsPool pool) => throw new NotSupportedException();
             public override void ApplyOrder(int order) { }
         }
-        public sealed class OtherWindow : AWindowBase
+
+        public sealed class LocalWindow : AWindowBase
         {
+            public Dependency Dependency { get; private set; }
+            public void SetDependency(Dependency dependency) { Dependency = dependency; }
             public override bool IsPopup => false;
             public override bool IsBackLogicIgnorable => false;
-            public override IUiAction SetState(EWindowState state, in IUiActionsPool pool) { throw new NotSupportedException(); }
+            public override IUiAction SetState(EWindowState state, in IUiActionsPool pool) => throw new NotSupportedException();
             public override void ApplyOrder(int order) { }
         }
-        public sealed class LocalScopeWindow : AWindowBase
+
+        public sealed class ProjectWindow : AWindowBase
         {
-            [UiInject] private Dependency _dependency;
-            public Dependency Dependency => _dependency;
+            public Dependency Dependency { get; private set; }
+            public void SetDependency(Dependency dependency) { Dependency = dependency; }
             public override bool IsPopup => false;
             public override bool IsBackLogicIgnorable => false;
-            public override IUiAction SetState(EWindowState state, in IUiActionsPool pool) { throw new NotSupportedException(); }
-            public override void ApplyOrder(int order) { }
-        }
-        public sealed class ProjectScopeWindow : AWindowBase
-        {
-            [UiInject] private Dependency _dependency;
-            public Dependency Dependency => _dependency;
-            public override bool IsPopup => false;
-            public override bool IsBackLogicIgnorable => false;
-            public override IUiAction SetState(EWindowState state, in IUiActionsPool pool) { throw new NotSupportedException(); }
+            public override IUiAction SetState(EWindowState state, in IUiActionsPool pool) => throw new NotSupportedException();
             public override void ApplyOrder(int order) { }
         }
     }

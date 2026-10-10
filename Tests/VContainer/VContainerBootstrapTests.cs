@@ -27,7 +27,7 @@ namespace KoboldUi.Tests.VContainer
                 var prefab = prefabObject.AddComponent<VContainerBootstrapTestWindow>();
                 catalog.Add(prefab, WindowScope.Local);
 
-                bootstrap.Initialize(catalog, new VContainerUiResolver(container));
+                bootstrap.Initialize(catalog, new VContainerUiCompositionAdapter(container));
                 var window = bootstrap.Get<VContainerBootstrapTestWindow>();
 
                 Assert.That(window, Is.Not.SameAs(prefab));

@@ -45,21 +45,18 @@ Choose `Local` or `Project` for each entry. No per-window binding code is requir
 
 ```csharp
 using KoboldUi.Composition;
-using KoboldUi.Composition.Manual;
-
-var project = new ManualUiResolver().AddInstance<ISettingsStore>(settingsStore);
-var local = project.CreateScope().AddInstance<ILevelState>(levelState);
 var ui = new UiBootstrap(localCanvas, projectCanvas);
-ui.Initialize(windowCatalog, project, local);
+ui.Initialize(windowCatalog);
 ui.Open<SettingsWindow>();
 ```
 
-Use `[UiInject]` on window, view and child-component members. Controllers receive
-services in their constructors and the view explicitly through a constructor parameter
-or their inherited `View` member. Default animation assets can be registered by type.
+Without DI, windows supply controller factories with `AddController(view,
+v => new SettingsController(v, settingsStore))`. Existing windows and views can
+receive dependencies through explicit `Configure` methods called before initialization.
+Shared animation settings live in a `UiAnimationDefaults` asset, passed to
+`Initialize(windowCatalog, animationDefaults)`.
 
-The built-in manual resolver needs no DI package. Optional Zenject and VContainer
-adapters use separate assemblies and the `KOBOLD_ZENJECT_SUPPORT` or
+Optional Zenject and VContainer composition adapters use separate assemblies and the `KOBOLD_ZENJECT_SUPPORT` or
 `KOBOLD_VCONTAINER_SUPPORT` define. See [DI migration](docs/DI_MIGRATION.md).
 
 

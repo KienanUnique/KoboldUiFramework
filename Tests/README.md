@@ -1,6 +1,6 @@
 # KoboldUi regression tests
 
-The `Editor` assembly covers navigation, window services, catalog/bootstrap ordering, controller and view initialization, manual scopes, collection injection and animation defaults. Optional `KoboldUi.Tests.Zenject` and `KoboldUi.Tests.VContainer` assemblies test each adapter when its define and package are installed. The `PlayMode` assembly checks prefab creation, dependency injection, button observables and fade transitions.
+The `Editor` assembly covers navigation, window services, catalog/bootstrap ordering, explicit controller factories, optional composition adapters, collections, and animation defaults. Optional `KoboldUi.Tests.Zenject` and `KoboldUi.Tests.VContainer` assemblies test each adapter when its define and package are installed. The `PlayMode` assembly checks prefab creation, button observables and fade transitions.
 
 Run from the Unity project root with Unity 2022.3.62f2:
 

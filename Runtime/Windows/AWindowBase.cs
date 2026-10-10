@@ -7,7 +7,7 @@ using KoboldUi.Composition;
 namespace KoboldUi.Windows
 {
     /// <summary>
-    /// Base window behaviour that integrates with the window stack and DI container.
+    /// Base window behaviour that integrates with the window stack and optional object composition.
     /// </summary>
     public abstract class AWindowBase : MonoBehaviour, IWindow
     {

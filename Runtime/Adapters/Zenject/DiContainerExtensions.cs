@@ -2,6 +2,7 @@ using System;
 using KoboldUi.Composition;
 using KoboldUi.Composition.Zenject;
 using KoboldUi.Windows;
+using KoboldUi.Element.Animations;
 using UnityEngine;
 using Zenject;
 
@@ -62,10 +63,11 @@ namespace KoboldUi.Utils
             {
                 try
                 {
-                    var activator = new UiActivator(new ZenjectUiResolver(_container), _container.Inject);
+                    var defaults = _container.HasBinding<UiAnimationDefaults>()
+                        ? _container.Resolve<UiAnimationDefaults>() : null;
+                    var activator = new UiActivator(new ZenjectUiCompositionAdapter(_container), defaults);
                     _window.Configure(activator);
-                    activator.InjectGameObject(_window.gameObject);
-                    _container.InjectGameObject(_window.gameObject);
+                    activator.PrepareGameObject(_window.gameObject);
                     _window.transform.SetParent(_canvas.transform, false);
                     _window.Initialize();
                 }
