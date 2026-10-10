@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using KoboldUi.Composition;
+using KoboldUi.Services.WindowsService.Impl;
 using KoboldUi.UiAction;
 using KoboldUi.UiAction.Pool;
 using KoboldUi.Utils;
@@ -158,6 +159,14 @@ namespace KoboldUi.Tests
         }
 
         [Test]
+        public void ParameterlessControllerIsCreatedWithoutAdapter()
+        {
+            var view = new ViewToken();
+            var controller = new UiActivator().CreateController<ParameterlessController, ViewToken>(view);
+            Assert.That(controller.View, Is.SameAs(view));
+        }
+
+        [Test]
         public void AdapterCreatesControllerWithExplicitViewAndDependency()
         {
             var view = new ViewToken();
@@ -169,10 +178,30 @@ namespace KoboldUi.Tests
         }
 
         [Test]
-        public void ControllerWithoutFactoryOrAdapterReportsError()
+        public void AdapterReceivesWindowServicesAsConstructorArguments()
+        {
+            var view = new ViewToken();
+            var localWindows = new LocalWindowsService(new WindowRegistry());
+            var projectWindows = new ProjectWindowsService(new WindowRegistry());
+            var adapter = new CaptureAdapter();
+            try
+            {
+                new UiActivator(adapter, localWindows: localWindows, projectWindows: projectWindows)
+                    .CreateController<ParameterlessController, ViewToken>(view);
+                Assert.That(adapter.Arguments, Is.EqualTo(new object[] { view, localWindows, projectWindows }));
+            }
+            finally
+            {
+                localWindows.Dispose();
+                projectWindows.Dispose();
+            }
+        }
+
+        [Test]
+        public void ControllerWithoutDefaultConstructorReportsError()
         {
             Assert.That(() => new UiActivator().CreateController<ConstructorController, ViewToken>(new ViewToken()),
-                Throws.TypeOf<UiActivationException>().With.Message.Contains("factory"));
+                Throws.TypeOf<UiActivationException>().With.Message.Contains("parameterless constructor"));
         }
 
         [Test]
@@ -211,6 +240,12 @@ namespace KoboldUi.Tests
         public sealed class Dependency { }
         public sealed class ViewToken { }
 
+        public sealed class ParameterlessController : KoboldUi.Element.Controller.IUiViewReceiver<ViewToken>
+        {
+            public ViewToken View { get; private set; }
+            public void SetView(ViewToken view) { View = view; }
+        }
+
         public sealed class ConstructorController
         {
             public ViewToken View { get; }
@@ -235,6 +270,17 @@ namespace KoboldUi.Tests
                 if (typeof(T) == typeof(ConstructorController))
                     return new ConstructorController((ViewToken)arguments[0], _dependency) as T;
                 throw new NotSupportedException(typeof(T).Name);
+            }
+        }
+
+        private sealed class CaptureAdapter : IUiCompositionAdapter
+        {
+            public object[] Arguments { get; private set; }
+            public void Inject(object instance) { }
+            public T Create<T>(params object[] arguments) where T : class
+            {
+                Arguments = arguments;
+                return new ParameterlessController() as T;
             }
         }
 

@@ -128,15 +128,6 @@ namespace KoboldUi.Windows
             RegisterController(viewInstance, controller);
         }
 
-        protected void AddInjectedController<TController, TView>(TView viewInstance,
-            params object[] additionalArguments)
-            where TView : IUiView
-            where TController : AUiController<TView>
-        {
-            var controller = Activator.CreateController<TController, TView>(viewInstance, additionalArguments);
-            RegisterController(viewInstance, controller);
-        }
-
         private void RegisterController<TController, TView>(TView viewInstance, TController controller)
             where TView : IUiView
             where TController : AUiController<TView>
@@ -151,7 +142,7 @@ namespace KoboldUi.Windows
         private void AddEmptyElements()
         {
             foreach (var animatedEmptyView in _animatedEmptyViews)
-                AddController(animatedEmptyView, _ => new AnimatedEmptyController());
+                AddController<AnimatedEmptyController, AnimatedEmptyView>(animatedEmptyView);
         }
 
 #if (KOBOLD_ALCHEMY_SUPPORT || KOBOLD_ODIN_SUPPORT) && UNITY_EDITOR

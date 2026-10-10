@@ -26,6 +26,26 @@ namespace KoboldUi.Tests
         }
 
         [Test]
+        public void WindowCreatesParameterlessControllerWithoutAdapter()
+        {
+            _root = new GameObject("Simple window");
+            var view = _root.AddComponent<RecordingView>();
+            _root.AddComponent<ParameterlessControllerProbe>();
+            var window = _root.AddComponent<ParameterlessTestWindow>();
+            window.ViewComponent = view;
+            typeof(AWindow)
+                .GetField("_animatedEmptyViews", BindingFlags.Instance | BindingFlags.NonPublic)
+                .SetValue(window, new List<KoboldUi.Element.View.Impl.AnimatedEmptyView>());
+
+            window.Configure(new UiActivator());
+            window.Initialize();
+
+            Assert.That(window.Controller, Is.Not.Null);
+            Assert.That(window.Controller.WasInitializedWithView, Is.True);
+            Assert.That(view.WasClosedInstantly, Is.True);
+        }
+
+        [Test]
         public void InitializeInjectsWindowAndControllerBeforeTheirInitialization()
         {
             var dependency = new TestDependency();
@@ -162,6 +182,33 @@ namespace KoboldUi.Tests
 
     public sealed class TestDependency
     {
+    }
+
+    public sealed class ParameterlessTestWindow : AWindow
+    {
+        public RecordingView ViewComponent { get; set; }
+        public ParameterlessRecordingController Controller { get; private set; }
+
+        protected override void AddControllers()
+        {
+            AddController<ParameterlessRecordingController, RecordingView>(ViewComponent);
+            Controller = ViewComponent.GetComponent<ParameterlessControllerProbe>().Controller;
+        }
+    }
+
+    public sealed class ParameterlessRecordingController : AUiController<RecordingView>
+    {
+        public bool WasInitializedWithView { get; private set; }
+        public override void Initialize()
+        {
+            WasInitializedWithView = View != null && View.WasInitialized;
+            View.GetComponent<ParameterlessControllerProbe>().Controller = this;
+        }
+    }
+
+    public sealed class ParameterlessControllerProbe : MonoBehaviour
+    {
+        public ParameterlessRecordingController Controller { get; set; }
     }
 
     public sealed class TestAdapter : IUiCompositionAdapter

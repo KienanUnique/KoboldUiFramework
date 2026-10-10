@@ -14,7 +14,16 @@ ui.Initialize(catalog);
 ui.Open<SettingsWindow>();
 ```
 
-Create controllers through factories in each `AWindow`:
+Controllers with a public parameterless constructor need no registration:
+
+```csharp
+protected override void AddControllers()
+{
+    AddController<SettingsController, SettingsView>(settingsView);
+}
+```
+
+Use the second `AddController` overload when a controller needs custom constructor arguments:
 
 ```csharp
 protected override void AddControllers()
@@ -56,6 +65,11 @@ Pass project and local adapters separately when their containers differ:
 ui.Initialize(catalog, projectAdapter, localAdapter);
 ```
 
+The same `AddController<TController, TView>(view)` call delegates controller
+creation to the adapter when one is configured. The view and available KoboldUi
+window services are passed as explicit runtime arguments. A controller without
+DI can instead use a public parameterless constructor.
+
 `IUiCompositionAdapter.Inject` applies the container's native member injection
 to existing windows, views, and other components. `Create<T>(arguments)` creates
 controllers with explicit runtime arguments, such as their view, plus container
@@ -64,8 +78,8 @@ attributes such as Zenject or VContainer `[Inject]` remain supported inside
 those projects. There is no KoboldUi injection attribute.
 
 KoboldUi window services are available as `ui.LocalWindows` and
-`ui.ProjectWindows`. Pass them explicitly through `configureWindow`, controller
-factories, or `AddInjectedController` arguments. They are no longer silently
+`ui.ProjectWindows`. Pass them through controller factories when using no DI.
+The adapter receives them as runtime constructor arguments; they are not
 registered with an external container.
 
 The application owns the Zenject or VContainer scope. Disposing `UiBootstrap`

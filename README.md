@@ -50,9 +50,12 @@ ui.Initialize(windowCatalog);
 ui.Open<SettingsWindow>();
 ```
 
-Without DI, windows supply controller factories with `AddController(view,
-v => new SettingsController(v, settingsStore))`. Existing windows and views can
-receive dependencies through explicit `Configure` methods called before initialization.
+For controllers with a public parameterless constructor, use
+`AddController<SettingsController, SettingsView>(view)` in the window. To pass
+custom dependencies without DI, use the factory overload:
+`AddController(view, v => new SettingsController(v, settingsStore))`.
+Existing windows and views can receive dependencies through explicit `Configure`
+methods called before initialization.
 Shared animation settings live in a `UiAnimationDefaults` asset, passed to
 `Initialize(windowCatalog, animationDefaults)`.
 

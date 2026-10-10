@@ -69,7 +69,30 @@ namespace KoboldUi.Composition
         }
 
         public TController CreateController<TController, TView>(TView view) where TController : class
-            => CreateController<TController, TView>(view, Array.Empty<object>());
+        {
+            if (ReferenceEquals(view, null)) throw new ArgumentNullException(nameof(view));
+            if (_adapter != null)
+            {
+                var count = 1 + (LocalWindows == null ? 0 : 1) + (ProjectWindows == null ? 0 : 1);
+                var arguments = new object[count];
+                arguments[0] = view;
+                var index = 1;
+                if (LocalWindows != null) arguments[index++] = LocalWindows;
+                if (ProjectWindows != null) arguments[index] = ProjectWindows;
+                return BindView(_adapter.Create<TController>(arguments), view);
+            }
+
+            try
+            {
+                return BindView(System.Activator.CreateInstance<TController>(), view);
+            }
+            catch (MissingMethodException exception)
+            {
+                throw new UiActivationException(
+                    $"{typeof(TController).FullName} needs a public parameterless constructor or a controller factory.",
+                    exception);
+            }
+        }
 
         public TController CreateController<TController, TView>(TView view, params object[] additionalArguments)
             where TController : class
