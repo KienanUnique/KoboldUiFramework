@@ -3,6 +3,7 @@ using KoboldUi.Element.Animations;
 using KoboldUi.Element.Controller;
 using KoboldUi.Services.WindowsService;
 using UnityEngine;
+using UnityEngine.Pool;
 
 namespace KoboldUi.Composition
 {
@@ -28,13 +29,22 @@ namespace KoboldUi.Composition
             if (root == null) throw new ArgumentNullException(nameof(root));
             if (_adapter == null && _animationDefaults == null) return;
 
-            foreach (var component in root.GetComponentsInChildren<Component>(true))
+            var components = ListPool<Component>.Get();
+            try
             {
-                if (component == null) continue;
-                if (component is IUiActivatorAware aware) aware.Configure(this);
-                if (_animationDefaults != null && component is IUiAnimationDefaultsReceiver receiver)
-                    receiver.ApplyDefaults(_animationDefaults);
-                _adapter?.Inject(component);
+                root.GetComponentsInChildren(true, components);
+                foreach (var component in components)
+                {
+                    if (component == null) continue;
+                    if (component is IUiActivatorAware aware) aware.Configure(this);
+                    if (_animationDefaults != null && component is IUiAnimationDefaultsReceiver receiver)
+                        receiver.ApplyDefaults(_animationDefaults);
+                    _adapter?.Inject(component);
+                }
+            }
+            finally
+            {
+                ListPool<Component>.Release(components);
             }
         }
 

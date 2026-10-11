@@ -8,6 +8,7 @@ using KoboldUi.UiAction;
 using KoboldUi.UiAction.Pool;
 using KoboldUi.Utils;
 using UnityEngine;
+using UnityEngine.Pool;
 
 #if KOBOLD_ALCHEMY_SUPPORT
 using Alchemy.Inspector;
@@ -82,18 +83,27 @@ namespace KoboldUi.Windows
                     break;
             }
 
-            var actions = new List<IUiAction>();
+            var actions = ListPool<IUiAction>.Get();
 
-            if (!IsInitialized)
-                Debug.LogError(
-                    $"[Kobold Ui {nameof(AWindow)}] | {gameObject.name} is not initialized. Change State logic is invalid!");
+            try
+            {
+                if (!IsInitialized)
+                    Debug.LogError(
+                        $"[Kobold Ui {nameof(AWindow)}] | {gameObject.name} is not initialized. Change State logic is invalid!");
 
-            foreach (var controller in _childControllers)
-                actions.Add(controller.SetState(state, pool));
+                foreach (var controller in _childControllers)
+                    actions.Add(controller.SetState(state, pool));
 
-            pool.GetAction(out var parallelAction, actions);
-
-            return parallelAction;
+                pool.GetAction(out var parallelAction, actions);
+                parallelAction.TakeOwnershipOfActions(actions);
+                actions = null;
+                return parallelAction;
+            }
+            finally
+            {
+                if (actions != null)
+                    ListPool<IUiAction>.Release(actions);
+            }
         }
 
         /// <inheritdoc />
