@@ -14,6 +14,8 @@ ui.RegisterWindow(settingsPrefab);
 ui.Open<SettingsWindow>();
 ```
 
+`ui.LocalWindows` and `ui.ProjectWindows` are available immediately after construction. Resolving either service does not initialize windows, so it is safe to pass one to a service constructor before calling `RegisterWindow`. The first window operation initializes the UI automatically. Call `ui.Initialize()` to initialize it explicitly; this method is idempotent. Use `UiInitializationMode.Manual` to require an explicit call before window operations.
+
 Controllers with a public parameterless constructor need no registration:
 
 ```csharp
@@ -47,20 +49,23 @@ Custom per-prefab parameters remain serialized on the animation component.
 
 ## With Zenject or VContainer
 
-Enable `KOBOLD_ZENJECT_SUPPORT` or `KOBOLD_VCONTAINER_SUPPORT` and create the
-matching adapter:
+Enable `KOBOLD_ZENJECT_SUPPORT` or `KOBOLD_VCONTAINER_SUPPORT` and use the corresponding installer preset. For Zenject:
 
 ```csharp
-var ui = new UiBootstrap(localCanvas, projectCanvas, new ZenjectUiCompositionAdapter(container));
+var ui = Container.BindKoboldUi(canvas, WindowScope.Local);
 ui.RegisterWindow(settingsPrefab);
 ```
 
-For VContainer, use the corresponding adapter instead:
+For VContainer, call this in `LifetimeScope.Configure`:
 
 ```csharp
-var ui = new UiBootstrap(localCanvas, projectCanvas, new VContainerUiCompositionAdapter(scope));
+var ui = builder.RegisterKoboldUi(canvas, WindowScope.Local);
 ui.RegisterWindow(settingsPrefab);
 ```
+
+Each preset registers the matching window service with its container. The service is immediately available for constructor injection. Zenject initializes windows during its `IInitializable.Initialize` phase; VContainer initializes them after the container builds. Both wait until the remaining bindings are available. If registration itself needs those bindings, use the optional `registerWindows` callback in either preset. Pass `initializationMode: UiInitializationMode.Manual` to either preset to require an explicit `ui.Initialize()`.
+
+Direct `UiBootstrap` construction with `ZenjectUiCompositionAdapter` or `VContainerUiCompositionAdapter` remains available for custom composition. It does not register services in the container automatically.
 
 Pass project and local adapters separately when their containers differ:
 
@@ -81,10 +86,7 @@ dependencies. KoboldUi calls each method once per new object. Container-specific
 attributes such as Zenject or VContainer `[Inject]` remain supported inside
 those projects. There is no KoboldUi injection attribute.
 
-KoboldUi window services are available as `ui.LocalWindows` and
-`ui.ProjectWindows`. Pass them through controller factories when using no DI.
-The adapter receives them as runtime constructor arguments; they are not
-registered with an external container.
+KoboldUi window services are available as `ui.LocalWindows` and `ui.ProjectWindows`. Pass them through controller factories when using no DI. The adapter receives them as runtime constructor arguments. The installer presets also bind the selected service interface in their respective containers.
 
 The application owns the Zenject or VContainer scope. Disposing `UiBootstrap`
 does not dispose it. If IL2CPP stripping affects objects created by a DI adapter,

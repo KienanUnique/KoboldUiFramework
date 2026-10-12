@@ -8,6 +8,8 @@ using UnityEngine;
 
 namespace KoboldUi.Composition
 {
+    public enum UiInitializationMode { Automatic, Manual }
+
     public sealed class UiBootstrap : IDisposable
     {
         private readonly Canvas _localCanvas;
@@ -19,6 +21,8 @@ namespace KoboldUi.Composition
         private readonly WindowRegistry _projectRegistry = new WindowRegistry();
         private readonly List<WindowRegistration> _registrations = new List<WindowRegistration>();
         private readonly List<AWindowBase> _instances = new List<AWindowBase>();
+        private readonly List<Action> _pendingActions = new List<Action>();
+        private readonly UiInitializationMode _initializationMode;
         private readonly ILocalWindowsService _localWindows;
         private readonly IProjectWindowsService _projectWindows;
         private bool _built;
@@ -27,30 +31,38 @@ namespace KoboldUi.Composition
 
         public ILocalWindowsService LocalWindows
         {
-            get { EnsureBuilt(); return _localWindows; }
+            get { ThrowIfDisposed(); return _localWindows; }
         }
 
         public IProjectWindowsService ProjectWindows
         {
-            get { EnsureBuilt(); return _projectWindows; }
+            get { ThrowIfDisposed(); return _projectWindows; }
         }
 
+        public UiInitializationMode InitializationMode => _initializationMode;
+
         public UiBootstrap(Canvas localCanvas, Canvas projectCanvas,
-            IUiCompositionAdapter adapter = null, UiAnimationDefaults animationDefaults = null)
-            : this(localCanvas, projectCanvas, adapter, adapter, animationDefaults)
+            IUiCompositionAdapter adapter = null, UiAnimationDefaults animationDefaults = null,
+            UiInitializationMode initializationMode = UiInitializationMode.Automatic)
+            : this(localCanvas, projectCanvas, adapter, adapter, animationDefaults, initializationMode)
         {
         }
 
         public UiBootstrap(Canvas localCanvas, Canvas projectCanvas, IUiCompositionAdapter projectAdapter,
-            IUiCompositionAdapter localAdapter, UiAnimationDefaults animationDefaults)
+            IUiCompositionAdapter localAdapter, UiAnimationDefaults animationDefaults,
+            UiInitializationMode initializationMode = UiInitializationMode.Automatic)
         {
             _localCanvas = localCanvas ?? throw new ArgumentNullException(nameof(localCanvas));
             _projectCanvas = projectCanvas ?? throw new ArgumentNullException(nameof(projectCanvas));
             _projectAdapter = projectAdapter;
             _localAdapter = localAdapter;
             _animationDefaults = animationDefaults;
-            _localWindows = new LocalWindowsService(_localRegistry);
-            _projectWindows = new ProjectWindowsService(_projectRegistry);
+            if (initializationMode != UiInitializationMode.Automatic &&
+                initializationMode != UiInitializationMode.Manual)
+                throw new ArgumentOutOfRangeException(nameof(initializationMode));
+            _initializationMode = initializationMode;
+            _localWindows = new LocalWindowsService(_localRegistry, EnsureReadyForServiceOperation, QueueAction);
+            _projectWindows = new ProjectWindowsService(_projectRegistry, EnsureReadyForServiceOperation, QueueAction);
         }
 
         public UiBootstrap RegisterWindow<TWindow>(TWindow prefab, WindowScope scope = WindowScope.Local,
@@ -85,10 +97,40 @@ namespace KoboldUi.Composition
                 ? _localRegistry.Get<TWindow>() : _projectRegistry.Get<TWindow>();
         }
 
+        public void Initialize()
+        {
+            ThrowIfDisposed();
+            if (_built) return;
+            if (_building)
+                throw new InvalidOperationException("Cannot initialize UI windows while they are being initialized.");
+            Build();
+        }
+
         private void EnsureBuilt()
         {
             ThrowIfDisposed();
             if (_built || _building) return;
+            if (_initializationMode == UiInitializationMode.Manual)
+                throw new InvalidOperationException("Call Initialize before using windows in Manual mode.");
+            Build();
+        }
+
+        private bool EnsureReadyForServiceOperation()
+        {
+            ThrowIfDisposed();
+            if (_built) return true;
+            if (_building) return false;
+            EnsureBuilt();
+            return true;
+        }
+
+        private void QueueAction(Action action)
+        {
+            _pendingActions.Add(action);
+        }
+
+        private void Build()
+        {
             if (_registrations.Count == 0)
                 throw new InvalidOperationException("Register at least one window before using the UI.");
 
@@ -129,6 +171,11 @@ namespace KoboldUi.Composition
                 if (Application.isPlaying) UnityEngine.Object.Destroy(staging);
                 else UnityEngine.Object.DestroyImmediate(staging);
             }
+            try
+            {
+                foreach (var action in _pendingActions) action();
+            }
+            finally { _pendingActions.Clear(); }
         }
 
         public void Dispose()
@@ -144,6 +191,7 @@ namespace KoboldUi.Composition
                 else UnityEngine.Object.DestroyImmediate(window.gameObject);
             }
             _instances.Clear();
+            _pendingActions.Clear();
             _registrations.Clear();
             _localRegistry.Clear();
             _projectRegistry.Clear();

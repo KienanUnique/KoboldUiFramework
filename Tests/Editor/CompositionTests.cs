@@ -62,7 +62,7 @@ namespace KoboldUi.Tests
         }
 
         [Test]
-        public void AccessingWindowServiceBuildsRegisteredWindows()
+        public void AccessingWindowServiceDoesNotBuildRegisteredWindows()
         {
             var local = NewObject("local").AddComponent<Canvas>();
             var project = NewObject("project").AddComponent<Canvas>();
@@ -71,8 +71,67 @@ namespace KoboldUi.Tests
             try
             {
                 ui.RegisterWindow(prefab);
-                Assert.That(ui.LocalWindows, Is.Not.Null);
+                var service = ui.LocalWindows;
+                Assert.That(service, Is.Not.Null);
+                Assert.That(local.transform.childCount, Is.Zero);
                 Assert.That(ui.Get<ProbeWindow>().IsInitialized, Is.True);
+            }
+            finally { ui.Dispose(); }
+        }
+
+        [Test]
+        public void ServiceCanBeResolvedBeforeRegistrationAndInitializesOnFirstOpen()
+        {
+            var local = NewObject("local").AddComponent<Canvas>();
+            var project = NewObject("project").AddComponent<Canvas>();
+            var prefab = NewObject("prefab").AddComponent<ProbeWindow>();
+            var ui = new UiBootstrap(local, project);
+            try
+            {
+                var service = ui.LocalWindows;
+                ui.RegisterWindow(prefab);
+                service.OpenWindow<ProbeWindow>();
+                Assert.That(service.CurrentWindow, Is.SameAs(ui.Get<ProbeWindow>()));
+                Assert.That(ui.Get<ProbeWindow>().InitializeCount, Is.EqualTo(1));
+            }
+            finally { ui.Dispose(); }
+        }
+
+        [Test]
+        public void ManualModeExposesServiceButRequiresExplicitInitialization()
+        {
+            var local = NewObject("local").AddComponent<Canvas>();
+            var project = NewObject("project").AddComponent<Canvas>();
+            var prefab = NewObject("prefab").AddComponent<ProbeWindow>();
+            var ui = new UiBootstrap(local, project, initializationMode: UiInitializationMode.Manual);
+            try
+            {
+                var service = ui.LocalWindows;
+                ui.RegisterWindow(prefab);
+                Assert.Throws<InvalidOperationException>(() => service.OpenWindow<ProbeWindow>());
+                ui.Initialize();
+                ui.Initialize();
+                service.OpenWindow<ProbeWindow>();
+                Assert.That(ui.Get<ProbeWindow>().InitializeCount, Is.EqualTo(1));
+            }
+            finally { ui.Dispose(); }
+        }
+
+        [Test]
+        public void NavigationRequestedDuringWindowInitializationRunsAfterAllWindowsAreReady()
+        {
+            var local = NewObject("local").AddComponent<Canvas>();
+            var project = NewObject("project").AddComponent<Canvas>();
+            var target = NewObject("target").AddComponent<ProbeWindow>();
+            var opening = NewObject("opening").AddComponent<OpeningWindow>();
+            var ui = new UiBootstrap(local, project);
+            try
+            {
+                ui.RegisterWindow(target);
+                ui.RegisterWindow(opening);
+                ui.Initialize();
+                Assert.That(ui.LocalWindows.CurrentWindow, Is.SameAs(ui.Get<ProbeWindow>()));
+                Assert.That(ui.Get<ProbeWindow>().InitializeCount, Is.EqualTo(1));
             }
             finally { ui.Dispose(); }
         }
@@ -354,7 +413,25 @@ namespace KoboldUi.Tests
                 InitializeCount++;
                 base.Initialize();
             }
-            public override IUiAction SetState(EWindowState state, in IUiActionsPool pool) => throw new NotSupportedException();
+            public override IUiAction SetState(EWindowState state, in IUiActionsPool pool)
+            {
+                pool.GetAction(out KoboldUi.UiAction.Impl.Common.EmptyAction action);
+                return action;
+            }
+            public override void ApplyOrder(int order) { }
+        }
+
+        public sealed class OpeningWindow : AWindowBase
+        {
+            public override bool IsPopup => false;
+            public override bool IsBackLogicIgnorable => false;
+            public override void Initialize()
+            {
+                Activator.LocalWindows.OpenWindow<ProbeWindow>();
+                base.Initialize();
+            }
+            public override IUiAction SetState(EWindowState state, in IUiActionsPool pool) =>
+                throw new NotSupportedException();
             public override void ApplyOrder(int order) { }
         }
 

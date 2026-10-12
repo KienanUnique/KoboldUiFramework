@@ -1,5 +1,6 @@
 using KoboldUi.Adapters.VContainer;
 using KoboldUi.Composition;
+using KoboldUi.Services.WindowsService;
 using NUnit.Framework;
 using UnityEngine;
 using VContainer;
@@ -8,6 +9,89 @@ namespace KoboldUi.Tests.VContainer
 {
     public class VContainerBootstrapTests
     {
+        [Test]
+        public void ManualPresetWaitsForExplicitInitialization()
+        {
+            var canvasObject = new GameObject("Canvas", typeof(Canvas));
+            var prefabObject = new GameObject("Prefab");
+            IObjectResolver container = null;
+            UiBootstrap ui = null;
+            try
+            {
+                var builder = new ContainerBuilder();
+                ui = builder.RegisterKoboldUi(canvasObject.GetComponent<Canvas>(), WindowScope.Local,
+                    initializationMode: UiInitializationMode.Manual);
+                ui.RegisterWindow(prefabObject.AddComponent<VContainerBootstrapTestWindow>());
+                builder.RegisterInstance(new VContainerBootstrapTestDependency());
+                container = builder.Build();
+                Assert.That(canvasObject.transform.childCount, Is.Zero);
+                Assert.Throws<System.InvalidOperationException>(() => ui.LocalWindows.OpenWindow<VContainerBootstrapTestWindow>());
+                ui.Initialize();
+                Assert.That(ui.Get<VContainerBootstrapTestWindow>().InitializeCount, Is.EqualTo(1));
+            }
+            finally
+            {
+                ui?.Dispose();
+                container?.Dispose();
+                Object.DestroyImmediate(canvasObject);
+                Object.DestroyImmediate(prefabObject);
+            }
+        }
+
+        [Test]
+        public void PresetBindsServiceBeforeInitializingWindowWhenContainerBuilds()
+        {
+            var canvasObject = new GameObject("Canvas", typeof(Canvas));
+            var prefabObject = new GameObject("Prefab");
+            IObjectResolver container = null;
+            UiBootstrap ui = null;
+            try
+            {
+                var builder = new ContainerBuilder();
+                var prefab = prefabObject.AddComponent<VContainerBootstrapTestWindow>();
+                ui = builder.RegisterKoboldUi(canvasObject.GetComponent<Canvas>(), WindowScope.Local);
+                ui.RegisterWindow(prefab);
+                builder.RegisterInstance(new VContainerBootstrapTestDependency());
+                Assert.That(canvasObject.transform.childCount, Is.Zero);
+                container = builder.Build();
+                Assert.That(container.Resolve<ILocalWindowsService>(), Is.SameAs(ui.LocalWindows));
+                Assert.That(ui.Get<VContainerBootstrapTestWindow>().InitializeCount, Is.EqualTo(1));
+            }
+            finally
+            {
+                ui?.Dispose();
+                container?.Dispose();
+                Object.DestroyImmediate(canvasObject);
+                Object.DestroyImmediate(prefabObject);
+            }
+        }
+
+        [Test]
+        public void PresetCanRegisterWindowsInBuildCallback()
+        {
+            var canvasObject = new GameObject("Canvas", typeof(Canvas));
+            var prefabObject = new GameObject("Prefab");
+            IObjectResolver container = null;
+            UiBootstrap ui = null;
+            try
+            {
+                var builder = new ContainerBuilder();
+                var prefab = prefabObject.AddComponent<VContainerBootstrapTestWindow>();
+                ui = builder.RegisterKoboldUi(canvasObject.GetComponent<Canvas>(), WindowScope.Local,
+                    registerWindows: bootstrap => bootstrap.RegisterWindow(prefab));
+                builder.RegisterInstance(new VContainerBootstrapTestDependency());
+                container = builder.Build();
+                Assert.That(ui.Get<VContainerBootstrapTestWindow>().Dependency, Is.Not.Null);
+            }
+            finally
+            {
+                ui?.Dispose();
+                container?.Dispose();
+                Object.DestroyImmediate(canvasObject);
+                Object.DestroyImmediate(prefabObject);
+            }
+        }
+
         [Test]
         public void BootstrapCreatesInjectsAndNavigatesToRegisteredWindow()
         {

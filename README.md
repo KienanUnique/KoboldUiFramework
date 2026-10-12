@@ -50,6 +50,8 @@ ui.RegisterWindow(settingsPrefab);
 ui.Open<SettingsWindow>();
 ```
 
+`ui.LocalWindows` and `ui.ProjectWindows` can be passed to services immediately after creating `UiBootstrap`; obtaining either service does not create windows. Without DI, the first window operation initializes registered windows automatically. Call `ui.Initialize()` to do this explicitly. Pass `UiInitializationMode.Manual` to require explicit initialization.
+
 For controllers with a public parameterless constructor, use
 `AddController<SettingsController, SettingsView>(view)` in the window. To pass
 custom dependencies without DI, use the factory overload:
@@ -59,8 +61,7 @@ methods called before initialization.
 Shared animation settings live in a `UiAnimationDefaults` asset, passed to
 `new UiBootstrap(localCanvas, projectCanvas, animationDefaults: animationDefaults)`.
 
-Optional Zenject and VContainer composition adapters use separate assemblies and the `KOBOLD_ZENJECT_SUPPORT` or
-`KOBOLD_VCONTAINER_SUPPORT` define. See [DI migration](docs/DI_MIGRATION.md).
+Optional Zenject and VContainer presets use separate assemblies and the `KOBOLD_ZENJECT_SUPPORT` or `KOBOLD_VCONTAINER_SUPPORT` define. In installers, call `Container.BindKoboldUi(canvas, WindowScope.Local)` or `builder.RegisterKoboldUi(canvas, WindowScope.Local)`, then `ui.RegisterWindow(prefab)`. See [DI migration](docs/DI_MIGRATION.md).
 
 
 # Useful Links

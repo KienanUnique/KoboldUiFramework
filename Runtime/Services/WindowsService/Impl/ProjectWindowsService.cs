@@ -7,7 +7,8 @@ namespace KoboldUi.Services.WindowsService.Impl
     /// </summary>
     public class ProjectWindowsService : AWindowsService, IProjectWindowsService
     {
-        public ProjectWindowsService(WindowRegistry windowRegistry) : base(windowRegistry)
+        public ProjectWindowsService(WindowRegistry windowRegistry, System.Func<bool> ensureReady = null,
+            System.Action<System.Action> queueAction = null) : base(windowRegistry, ensureReady, queueAction)
         {
         }
     }

@@ -20,13 +20,18 @@ namespace KoboldUi.Services.WindowsService.Impl
         private readonly ITasksRunner _tasksRunner = new TaskRunner();
         private readonly IUiActionsPool _uiActionsPool;
         private readonly IWindowsStackHolder _windowsStackHolder = new WindowsStackHolder();
+        private readonly Func<bool> _ensureReady;
+        private readonly Action<Action> _queueAction;
 
         /// <inheritdoc />
         public IWindow CurrentWindow => _windowsStackHolder.CurrentWindow;
 
-        protected AWindowsService(WindowRegistry windowRegistry)
+        protected AWindowsService(WindowRegistry windowRegistry, Func<bool> ensureReady = null,
+            Action<Action> queueAction = null)
         {
             _windowRegistry = windowRegistry ?? throw new ArgumentNullException(nameof(windowRegistry));
+            _ensureReady = ensureReady;
+            _queueAction = queueAction;
             var uiActionsPool = new UiActionsPool(_windowsStackHolder);
             uiActionsPool.Initialize();
             _uiActionsPool = uiActionsPool;
@@ -50,6 +55,11 @@ namespace KoboldUi.Services.WindowsService.Impl
             EPreviousWindowPolicy previousWindowPolicy = EPreviousWindowPolicy.Default
         ) where TWindow : IWindow
         {
+            if (_ensureReady != null && !_ensureReady())
+            {
+                _queueAction(() => OpenWindow<TWindow>(onComplete, previousWindowPolicy));
+                return;
+            }
             var nextWindow = _windowRegistry.Get(typeof(TWindow));
             _uiActionsPool.GetAction(out OpenWindowAction openAction, nextWindow, previousWindowPolicy);
             _tasksRunner.AddToQueue(openAction);
@@ -60,6 +70,11 @@ namespace KoboldUi.Services.WindowsService.Impl
         /// <inheritdoc />
         public void CloseWindow(Action onComplete, bool useBackLogicIgnorableChecks)
         {
+            if (_ensureReady != null && !_ensureReady())
+            {
+                _queueAction(() => CloseWindow(onComplete, useBackLogicIgnorableChecks));
+                return;
+            }
             _uiActionsPool.GetAction(out CloseWindowAction tryBackWindowAction, useBackLogicIgnorableChecks);
             _tasksRunner.AddToQueue(tryBackWindowAction);
 
@@ -69,6 +84,11 @@ namespace KoboldUi.Services.WindowsService.Impl
         /// <inheritdoc />
         public void CloseToWindow<TWindow>(Action onComplete, bool useBackLogicIgnorableChecks)
         {
+            if (_ensureReady != null && !_ensureReady())
+            {
+                _queueAction(() => CloseToWindow<TWindow>(onComplete, useBackLogicIgnorableChecks));
+                return;
+            }
             var targetWindow = _windowRegistry.Get(typeof(TWindow));
             _uiActionsPool.GetAction(out CloseToWindowAction backToWindowAction, targetWindow, useBackLogicIgnorableChecks);
 
@@ -79,6 +99,11 @@ namespace KoboldUi.Services.WindowsService.Impl
         /// <inheritdoc />
         public void CloseAllWindows(Action onComplete, bool useBackLogicIgnorableChecks)
         {
+            if (_ensureReady != null && !_ensureReady())
+            {
+                _queueAction(() => CloseAllWindows(onComplete, useBackLogicIgnorableChecks));
+                return;
+            }
             _uiActionsPool.GetAction(out CloseAllWindowsAction closeAllWindowsAction, useBackLogicIgnorableChecks);
             _tasksRunner.AddToQueue(closeAllWindowsAction);
 
