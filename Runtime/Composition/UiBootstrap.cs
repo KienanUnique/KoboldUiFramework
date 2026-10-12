@@ -226,8 +226,8 @@ namespace KoboldUi.Composition
         private readonly Canvas _projectCanvas;
         private readonly WindowScope _defaultScope;
         private readonly List<Action<UiBootstrap>> _registrations = new List<Action<UiBootstrap>>();
-        private readonly List<IKoboldDefaultAnimationParameters> _parameters =
-            new List<IKoboldDefaultAnimationParameters>();
+        private readonly List<IAnimationParameters> _parameters =
+            new List<IAnimationParameters>();
         private readonly Action<UiBootstrap> _onBuilt;
         private IUiCompositionAdapter _adapter;
         private UiAnimationDefaults _projectDefaults;
@@ -261,7 +261,7 @@ namespace KoboldUi.Composition
         }
 
         public UiBootstrapBuilder AddDefaultParameters<T>(T parameter)
-            where T : class, IKoboldDefaultAnimationParameters
+            where T : class, IAnimationParameters
         {
             ThrowIfBuilt();
             if (parameter == null) throw new ArgumentNullException(nameof(parameter));

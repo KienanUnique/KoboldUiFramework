@@ -62,7 +62,7 @@ var localUi = new UiBootstrapBuilder(localCanvas, localCanvas)
 
 Local overrides win for their parameter type; other types inherit project
 overrides or use built-in values. Custom parameter types implement
-`IKoboldDefaultAnimationParameters` and can also be registered this way.
+`IAnimationParameters` and can also be registered this way.
 
 ## With Zenject or VContainer
 

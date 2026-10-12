@@ -6,8 +6,8 @@ namespace KoboldUi.Element.Animations
     /// <summary>Explicit overrides for animation parameters in one UI scope.</summary>
     public sealed class UiAnimationDefaults
     {
-        private readonly Dictionary<Type, IKoboldDefaultAnimationParameters> _parameters =
-            new Dictionary<Type, IKoboldDefaultAnimationParameters>();
+        private readonly Dictionary<Type, IAnimationParameters> _parameters =
+            new Dictionary<Type, IAnimationParameters>();
         private readonly UiAnimationDefaults _projectDefaults;
 
         public UiAnimationDefaults(UiAnimationDefaults projectDefaults = null)
@@ -15,7 +15,7 @@ namespace KoboldUi.Element.Animations
             _projectDefaults = projectDefaults;
         }
 
-        public bool TryGet<T>(out T value) where T : class, IKoboldDefaultAnimationParameters
+        public bool TryGet<T>(out T value) where T : class, IAnimationParameters
         {
             if (_parameters.TryGetValue(typeof(T), out var parameter))
             {
@@ -27,7 +27,7 @@ namespace KoboldUi.Element.Animations
             return false;
         }
 
-        public void Add(IKoboldDefaultAnimationParameters parameter)
+        public void Add(IAnimationParameters parameter)
         {
             if (parameter == null) throw new ArgumentNullException(nameof(parameter));
             var type = parameter.GetType();

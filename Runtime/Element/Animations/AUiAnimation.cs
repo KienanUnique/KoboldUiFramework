@@ -18,7 +18,7 @@ namespace KoboldUi.Element.Animations
     /// </summary>
     /// <typeparam name="TParams">Parameter type describing the animation behaviour.</typeparam>
     public abstract class AUiAnimation<TParams> : AUiAnimationBase, IUiAnimationDefaultsReceiver
-        where TParams : class, IKoboldDefaultAnimationParameters
+        where TParams : class, IAnimationParameters
     {
         /// <summary>
         /// Determines whether consumers should wait for the tween to finish before continuing.
