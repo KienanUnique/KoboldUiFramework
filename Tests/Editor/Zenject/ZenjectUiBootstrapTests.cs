@@ -19,8 +19,8 @@ namespace KoboldUi.Tests.Zenject
             {
                 var container = new DiContainer();
                 ui = container.BindKoboldUi(canvasObject.GetComponent<Canvas>(), WindowScope.Local,
-                    initializationMode: UiInitializationMode.Manual);
-                ui.RegisterWindow(prefabObject.AddComponent<ZenjectBootstrapLocalWindow>());
+                        initializationMode: UiInitializationMode.Manual)
+                    .RegisterWindow(prefabObject.AddComponent<ZenjectBootstrapLocalWindow>()).Build();
                 container.BindInstance(new ZenjectBootstrapToken("ready")).AsSingle();
                 foreach (var initializable in container.ResolveAll<IInitializable>()) initializable.Initialize();
                 Assert.That(canvasObject.transform.childCount, Is.Zero);
@@ -47,9 +47,9 @@ namespace KoboldUi.Tests.Zenject
                 var container = new DiContainer();
                 var prefab = prefabObject.AddComponent<ZenjectBootstrapLocalWindow>();
                 var serviceToken = new ZenjectBootstrapToken("late binding");
-                ui = container.BindKoboldUi(canvasObject.GetComponent<Canvas>(), WindowScope.Local);
+                ui = container.BindKoboldUi(canvasObject.GetComponent<Canvas>(), WindowScope.Local)
+                    .RegisterWindow(prefab).Build();
                 var windows = container.Resolve<ILocalWindowsService>();
-                ui.RegisterWindow(prefab);
                 Assert.That(canvasObject.transform.childCount, Is.Zero);
                 container.BindInstance(serviceToken).AsSingle();
                 foreach (var initializable in container.ResolveAll<IInitializable>()) initializable.Initialize();
@@ -79,7 +79,7 @@ namespace KoboldUi.Tests.Zenject
                     {
                         Assert.That(container.Resolve<ZenjectBootstrapToken>().Scope, Is.EqualTo("ready"));
                         bootstrap.RegisterWindow(prefab);
-                    });
+                    }).Build();
                 container.BindInstance(new ZenjectBootstrapToken("ready")).AsSingle();
                 Assert.That(canvasObject.transform.childCount, Is.Zero);
                 foreach (var initializable in container.ResolveAll<IInitializable>()) initializable.Initialize();

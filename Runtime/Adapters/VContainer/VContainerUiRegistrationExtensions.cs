@@ -1,6 +1,5 @@
 using System;
 using KoboldUi.Composition;
-using KoboldUi.Element.Animations;
 using KoboldUi.Services.WindowsService;
 using UnityEngine;
 using VContainer;
@@ -9,8 +8,8 @@ namespace KoboldUi.Adapters.VContainer
 {
     public static class VContainerUiRegistrationExtensions
     {
-        public static UiBootstrap RegisterKoboldUi(this IContainerBuilder builder, Canvas canvas, WindowScope scope,
-            Action<UiBootstrap> registerWindows = null, UiAnimationDefaults animationDefaults = null,
+        public static UiBootstrapBuilder RegisterKoboldUi(this IContainerBuilder builder, Canvas canvas, WindowScope scope,
+            Action<UiBootstrap> registerWindows = null,
             UiInitializationMode initializationMode = UiInitializationMode.Automatic)
         {
             if (builder == null) throw new ArgumentNullException(nameof(builder));
@@ -19,19 +18,22 @@ namespace KoboldUi.Adapters.VContainer
                 throw new ArgumentOutOfRangeException(nameof(scope));
 
             var adapter = new VContainerUiCompositionAdapter();
-            var ui = new UiBootstrap(canvas, canvas, adapter, animationDefaults, initializationMode);
-            builder.RegisterInstance(ui);
-            if (scope == WindowScope.Local)
-                builder.RegisterInstance<ILocalWindowsService>(ui.LocalWindows);
-            else
-                builder.RegisterInstance<IProjectWindowsService>(ui.ProjectWindows);
-            builder.RegisterBuildCallback(container =>
-            {
-                adapter.Attach(container);
-                registerWindows?.Invoke(ui);
-                if (ui.InitializationMode == UiInitializationMode.Automatic) ui.Initialize();
-            });
-            return ui;
+            return new UiBootstrapBuilder(canvas, canvas, scope, ui =>
+                {
+                    builder.RegisterInstance(ui);
+                    if (scope == WindowScope.Local)
+                        builder.RegisterInstance<ILocalWindowsService>(ui.LocalWindows);
+                    else
+                        builder.RegisterInstance<IProjectWindowsService>(ui.ProjectWindows);
+                    builder.RegisterBuildCallback(container =>
+                    {
+                        adapter.Attach(container);
+                        registerWindows?.Invoke(ui);
+                        if (ui.InitializationMode == UiInitializationMode.Automatic) ui.Initialize();
+                    });
+                })
+                .WithAdapter(adapter)
+                .WithInitializationMode(initializationMode);
         }
     }
 }

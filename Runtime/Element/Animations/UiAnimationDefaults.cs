@@ -1,46 +1,39 @@
 using System;
 using System.Collections.Generic;
-using KoboldUi.Element.Animations.Parameters;
-using UnityEngine;
 
 namespace KoboldUi.Element.Animations
 {
-    [CreateAssetMenu(menuName = "KoboldUi/Animation Defaults", fileName = "UiAnimationDefaults")]
-    public sealed class UiAnimationDefaults : ScriptableObject
+    /// <summary>Explicit overrides for animation parameters in one UI scope.</summary>
+    public sealed class UiAnimationDefaults
     {
-        [SerializeField] private List<AUiAnimationParameters> parameters = new List<AUiAnimationParameters>();
-        [SerializeField] private UiAnimationDefaults projectDefaults;
+        private readonly Dictionary<Type, IKoboldDefaultAnimationParameters> _parameters =
+            new Dictionary<Type, IKoboldDefaultAnimationParameters>();
+        private readonly UiAnimationDefaults _projectDefaults;
 
-        public bool TryGet<T>(out T value) where T : IUiAnimationParameters
+        public UiAnimationDefaults(UiAnimationDefaults projectDefaults = null)
         {
-            if (TryGetOwn(out value)) return true;
-            if (projectDefaults != null && projectDefaults.TryGetOwn(out value)) return true;
-            value = default;
-            return false;
+            _projectDefaults = projectDefaults;
         }
 
-        private bool TryGetOwn<T>(out T value) where T : IUiAnimationParameters
+        public bool TryGet<T>(out T value) where T : class, IKoboldDefaultAnimationParameters
         {
-            foreach (var parameter in parameters)
+            if (_parameters.TryGetValue(typeof(T), out var parameter))
             {
-                if (parameter is T match)
-                {
-                    value = match;
-                    return true;
-                }
+                value = (T)parameter;
+                return true;
             }
-
-            value = default;
+            if (_projectDefaults != null) return _projectDefaults.TryGet(out value);
+            value = null;
             return false;
         }
 
-        public void Add(AUiAnimationParameters parameter)
+        public void Add(IKoboldDefaultAnimationParameters parameter)
         {
             if (parameter == null) throw new ArgumentNullException(nameof(parameter));
-            foreach (var current in parameters)
-                if (current != null && current.GetType() == parameter.GetType())
-                    throw new InvalidOperationException($"Defaults already contain {parameter.GetType().FullName}.");
-            parameters.Add(parameter);
+            var type = parameter.GetType();
+            if (_parameters.ContainsKey(type))
+                throw new InvalidOperationException($"Defaults already contain {type.FullName}.");
+            _parameters.Add(type, parameter);
         }
     }
 }

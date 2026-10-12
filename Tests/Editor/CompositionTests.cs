@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using KoboldUi.Composition;
+using KoboldUi.Element.Animations.Parameters.Impl;
 using KoboldUi.Services.WindowsService.Impl;
 using KoboldUi.UiAction;
 using KoboldUi.UiAction.Pool;
@@ -14,6 +15,26 @@ namespace KoboldUi.Tests
     public class CompositionTests
     {
         private readonly List<UnityEngine.Object> _objects = new List<UnityEngine.Object>();
+
+        [Test]
+        public void BuilderRegistersWindowsAndExplicitAnimationParameters()
+        {
+            var canvas = NewObject("canvas").AddComponent<Canvas>();
+            var prefab = NewObject("prefab").AddComponent<ProbeWindow>();
+            var fade = ScriptableObject.CreateInstance<FadeAnimationParameters>();
+            _objects.Add(fade);
+            var ui = new UiBootstrapBuilder(canvas, canvas)
+                .AddDefaultParameters(fade)
+                .RegisterWindow(prefab)
+                .Build();
+            try
+            {
+                Assert.That(ui.Get<ProbeWindow>().IsInitialized, Is.True);
+                Assert.That(ui.AnimationDefaults.TryGet<FadeAnimationParameters>(out var selected), Is.True);
+                Assert.That(selected, Is.SameAs(fade));
+            }
+            finally { ui.Dispose(); }
+        }
 
         [TearDown]
         public void TearDown()

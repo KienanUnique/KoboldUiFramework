@@ -13,7 +13,7 @@ namespace KoboldUi.Tests.Zenject
     public class ZenjectInstallerTests
     {
         [Test]
-        public void DefaultAnimationInstallerProvidesSharedDefaultsAsset()
+        public void DefaultAnimationInstallerProvidesExplicitParameterAssets()
         {
             var installer = ScriptableObject.CreateInstance<DefaultAnimationsInstaller>();
             var fade = ScriptableObject.CreateInstance<FadeAnimationParameters>();
@@ -28,10 +28,9 @@ namespace KoboldUi.Tests.Zenject
                 var container = new DiContainer();
                 container.Inject(installer);
                 installer.InstallBindings();
-                var defaults = container.Resolve<UiAnimationDefaults>();
-                Assert.That(defaults.TryGet<FadeAnimationParameters>(out var result), Is.True);
-                Assert.That(result, Is.SameAs(fade));
-                Object.DestroyImmediate(defaults);
+                Assert.That(container.Resolve<FadeAnimationParameters>(), Is.SameAs(fade));
+                Assert.That(container.Resolve<ScaleAnimationParameters>(), Is.SameAs(scale));
+                Assert.That(container.Resolve<SlideAnimationParameters>(), Is.SameAs(slide));
             }
             finally
             {

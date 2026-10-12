@@ -17,7 +17,8 @@ namespace KoboldUi.Element.Animations
     /// Generic animation component that drives appear and disappear transitions using tween parameters.
     /// </summary>
     /// <typeparam name="TParams">Parameter type describing the animation behaviour.</typeparam>
-    public abstract class AUiAnimation<TParams> : AUiAnimationBase, IUiAnimationDefaultsReceiver where TParams : IUiAnimationParameters
+    public abstract class AUiAnimation<TParams> : AUiAnimationBase, IUiAnimationDefaultsReceiver
+        where TParams : class, IKoboldDefaultAnimationParameters
     {
         /// <summary>
         /// Determines whether consumers should wait for the tween to finish before continuing.
@@ -44,19 +45,29 @@ namespace KoboldUi.Element.Animations
         }
 
         /// <summary>
-        /// Gets the animation parameters in use, falling back to the shared defaults asset if needed.
+        /// Gets explicitly configured parameters, if any.
         /// </summary>
+        protected TParams OptionalAnimationParameters
+        {
+            get
+            {
+                if (_useDefaultParameters) return _defaultAnimationParameters;
+                if (_animationParameters == null)
+                    throw new InvalidOperationException(
+                        $"Custom animation parameters {typeof(TParams)} weren't assigned.");
+                return _animationParameters;
+            }
+        }
+
+        /// <summary>Gets required parameters for animations without built-in values.</summary>
         protected TParams AnimationParameters
         {
             get
             {
-                if (!_useDefaultParameters)
-                    return _animationParameters;
-
-                if (_defaultAnimationParameters == null)
+                var parameters = OptionalAnimationParameters;
+                if (parameters == null)
                     throw new Exception($"Default animation parameters {typeof(TParams)} wasn't found");
-
-                return _defaultAnimationParameters;
+                return parameters;
             }
         }
 

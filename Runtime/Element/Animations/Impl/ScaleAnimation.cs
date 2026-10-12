@@ -9,6 +9,7 @@ namespace KoboldUi.Element.Animations.Impl
     /// </summary>
     public class ScaleAnimation : AUiAnimation<ScaleAnimationParameters>
     {
+        private const float DEFAULT_DURATION = 0.2f;
         private readonly Vector3 _appearScale = Vector3.one;
         private readonly Vector3 _disappearScale = Vector3.zero;
 
@@ -24,9 +25,9 @@ namespace KoboldUi.Element.Animations.Impl
         protected override Tween AnimateAppear()
         {
             _currentAnimation?.Kill();
-
-            _currentAnimation = transform.DOScale(_appearScale, AnimationParameters.Duration)
-                .SetEase(AnimationParameters.AppearEase)
+            var parameters = OptionalAnimationParameters;
+            _currentAnimation = transform.DOScale(_appearScale, parameters?.Duration ?? DEFAULT_DURATION)
+                .SetEase(parameters?.AppearEase ?? Ease.OutBack)
                 .SetUpdate(true)
                 .SetLink(gameObject);
 
@@ -37,9 +38,9 @@ namespace KoboldUi.Element.Animations.Impl
         protected override Tween AnimateDisappear()
         {
             _currentAnimation?.Kill();
-
-            _currentAnimation = transform.DOScale(_disappearScale, AnimationParameters.Duration)
-                .SetEase(AnimationParameters.DisappearEase)
+            var parameters = OptionalAnimationParameters;
+            _currentAnimation = transform.DOScale(_disappearScale, parameters?.Duration ?? DEFAULT_DURATION)
+                .SetEase(parameters?.DisappearEase ?? Ease.InBack)
                 .SetUpdate(true)
                 .SetLink(gameObject);
 

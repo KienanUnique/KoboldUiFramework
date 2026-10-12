@@ -46,6 +46,62 @@ namespace KoboldUi.Tests.PlayMode
         }
 
         [Test]
+        public void BuiltInAnimationRejectsMissingExplicitCustomAsset()
+        {
+            var animationObject = new GameObject("Fade animation");
+            _objects.Add(animationObject);
+            var animation = animationObject.AddComponent<FadeAnimation>();
+            typeof(AUiAnimation<FadeAnimationParameters>)
+                .GetField("_useDefaultParameters", BindingFlags.Instance | BindingFlags.NonPublic)
+                .SetValue(animation, false);
+            var pool = new UiActionsPool(new WindowsStackHolder());
+            pool.Initialize();
+            try
+            {
+                Assert.Throws<System.InvalidOperationException>(() => animation.Appear(pool));
+            }
+            finally
+            {
+                DOTween.KillAll();
+                pool.Dispose();
+            }
+        }
+
+        [Test]
+        public void BuiltInAnimationsWorkWithoutDefaultAssets()
+        {
+            var fadeObject = new GameObject("Fade animation");
+            var scaleObject = new GameObject("Scale animation");
+            var slideObject = new GameObject("Slide animation", typeof(RectTransform));
+            _objects.Add(fadeObject);
+            _objects.Add(scaleObject);
+            _objects.Add(slideObject);
+            var fade = fadeObject.AddComponent<FadeAnimation>();
+            var scale = scaleObject.AddComponent<ScaleAnimation>();
+            var slide = slideObject.AddComponent<SlideAnimation>();
+            var pool = new UiActionsPool(new WindowsStackHolder());
+            pool.Initialize();
+            try
+            {
+                Assert.DoesNotThrow(() => fade.Appear(pool));
+                Assert.DoesNotThrow(() => scale.Appear(pool));
+                Assert.DoesNotThrow(() => slide.Appear(pool));
+                DOTween.CompleteAll();
+                Assert.That(fadeObject.GetComponent<CanvasGroup>().alpha, Is.EqualTo(1f).Within(0.001f));
+                Assert.That(scaleObject.transform.localScale, Is.EqualTo(Vector3.one));
+                Assert.DoesNotThrow(() => fade.Disappear(pool));
+                Assert.DoesNotThrow(() => scale.Disappear(pool));
+                Assert.DoesNotThrow(() => slide.Disappear(pool));
+                DOTween.CompleteAll();
+            }
+            finally
+            {
+                DOTween.KillAll();
+                pool.Dispose();
+            }
+        }
+
+        [Test]
         public void FadeAnimationAppearsAndDisappearsWithAssetDefaults()
         {
             var parameters = ScriptableObject.CreateInstance<FadeAnimationParameters>();
@@ -53,8 +109,7 @@ namespace KoboldUi.Tests.PlayMode
             var animationObject = new GameObject("Fade animation");
             _objects.Add(animationObject);
             var animation = animationObject.AddComponent<FadeAnimation>();
-            var defaults = ScriptableObject.CreateInstance<UiAnimationDefaults>();
-            _assets.Add(defaults);
+            var defaults = new UiAnimationDefaults();
             defaults.Add(parameters);
             new UiActivator(animationDefaults: defaults).PrepareGameObject(animationObject);
             var pool = new UiActionsPool(new WindowsStackHolder());

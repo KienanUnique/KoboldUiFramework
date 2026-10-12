@@ -40,6 +40,7 @@ namespace KoboldUi.Composition
         }
 
         public UiInitializationMode InitializationMode => _initializationMode;
+        public UiAnimationDefaults AnimationDefaults => _animationDefaults;
 
         public UiBootstrap(Canvas localCanvas, Canvas projectCanvas,
             IUiCompositionAdapter adapter = null, UiAnimationDefaults animationDefaults = null,
@@ -215,6 +216,112 @@ namespace KoboldUi.Composition
                 Scope = scope;
                 Configure = configure;
             }
+        }
+    }
+
+    /// <summary>Collects UI registrations and optional animation overrides before creating the bootstrap.</summary>
+    public sealed class UiBootstrapBuilder
+    {
+        private readonly Canvas _localCanvas;
+        private readonly Canvas _projectCanvas;
+        private readonly WindowScope _defaultScope;
+        private readonly List<Action<UiBootstrap>> _registrations = new List<Action<UiBootstrap>>();
+        private readonly List<IKoboldDefaultAnimationParameters> _parameters =
+            new List<IKoboldDefaultAnimationParameters>();
+        private readonly Action<UiBootstrap> _onBuilt;
+        private IUiCompositionAdapter _adapter;
+        private UiAnimationDefaults _projectDefaults;
+        private UiInitializationMode _initializationMode = UiInitializationMode.Automatic;
+        private bool _built;
+
+        public UiBootstrapBuilder(Canvas localCanvas, Canvas projectCanvas,
+            WindowScope defaultScope = WindowScope.Local)
+            : this(localCanvas, projectCanvas, defaultScope, null)
+        {
+        }
+
+        public UiBootstrapBuilder(Canvas localCanvas, Canvas projectCanvas, WindowScope defaultScope,
+            Action<UiBootstrap> onBuilt)
+        {
+            _localCanvas = localCanvas ?? throw new ArgumentNullException(nameof(localCanvas));
+            _projectCanvas = projectCanvas ?? throw new ArgumentNullException(nameof(projectCanvas));
+            if (defaultScope != WindowScope.Local && defaultScope != WindowScope.Project)
+                throw new ArgumentOutOfRangeException(nameof(defaultScope));
+            _defaultScope = defaultScope;
+            _onBuilt = onBuilt;
+        }
+
+        public UiBootstrapBuilder RegisterWindow<TWindow>(TWindow prefab,
+            WindowScope? scope = null, Action<TWindow> configure = null) where TWindow : AWindowBase
+        {
+            ThrowIfBuilt();
+            if (prefab == null) throw new ArgumentNullException(nameof(prefab));
+            _registrations.Add(ui => ui.RegisterWindow(prefab, scope ?? _defaultScope, configure));
+            return this;
+        }
+
+        public UiBootstrapBuilder AddDefaultParameters<T>(T parameter)
+            where T : class, IKoboldDefaultAnimationParameters
+        {
+            ThrowIfBuilt();
+            if (parameter == null) throw new ArgumentNullException(nameof(parameter));
+            foreach (var current in _parameters)
+                if (current.GetType() == parameter.GetType())
+                    throw new InvalidOperationException($"Defaults already contain {parameter.GetType().FullName}.");
+            _parameters.Add(parameter);
+            return this;
+        }
+
+        public UiBootstrapBuilder WithProjectDefaults(UiAnimationDefaults projectDefaults)
+        {
+            ThrowIfBuilt();
+            _projectDefaults = projectDefaults ?? throw new ArgumentNullException(nameof(projectDefaults));
+            return this;
+        }
+
+        public UiBootstrapBuilder WithAdapter(IUiCompositionAdapter adapter)
+        {
+            ThrowIfBuilt();
+            _adapter = adapter ?? throw new ArgumentNullException(nameof(adapter));
+            return this;
+        }
+
+        public UiBootstrapBuilder WithInitializationMode(UiInitializationMode mode)
+        {
+            ThrowIfBuilt();
+            if (mode != UiInitializationMode.Automatic && mode != UiInitializationMode.Manual)
+                throw new ArgumentOutOfRangeException(nameof(mode));
+            _initializationMode = mode;
+            return this;
+        }
+
+        public UiBootstrap Build()
+        {
+            ThrowIfBuilt();
+            _built = true;
+            UiAnimationDefaults defaults = null;
+            if (_projectDefaults != null || _parameters.Count != 0)
+            {
+                defaults = new UiAnimationDefaults(_projectDefaults);
+                foreach (var parameter in _parameters) defaults.Add(parameter);
+            }
+            var ui = new UiBootstrap(_localCanvas, _projectCanvas, _adapter, defaults, _initializationMode);
+            try
+            {
+                foreach (var registration in _registrations) registration(ui);
+                _onBuilt?.Invoke(ui);
+                return ui;
+            }
+            catch
+            {
+                ui.Dispose();
+                throw;
+            }
+        }
+
+        private void ThrowIfBuilt()
+        {
+            if (_built) throw new InvalidOperationException("UI builder has already been built.");
         }
     }
 }

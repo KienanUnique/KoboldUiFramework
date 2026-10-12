@@ -15,6 +15,7 @@ namespace KoboldUi.Element.Animations.Impl
     [RequireComponent(typeof(RectTransform))]
     public class SlideAnimation : AUiAnimation<SlideAnimationParameters>
     {
+        private const float DEFAULT_DURATION = 0.4f;
         [SerializeField] private Vector2 _fromAppearAnchoredPosition;
         [SerializeField] private bool _disappearToTheSamePlace = true;
 
@@ -54,11 +55,11 @@ namespace KoboldUi.Element.Animations.Impl
         protected override Tween AnimateAppear()
         {
             _currentAnimation?.Kill();
-
+            var parameters = OptionalAnimationParameters;
             _currentAnimation = _rectTransform
-                .DOAnchorPos(_originalAnchoredPosition, AnimationParameters.AppearDuration)
+                .DOAnchorPos(_originalAnchoredPosition, parameters?.AppearDuration ?? DEFAULT_DURATION)
                 .SetUpdate(true)
-                .SetEase(AnimationParameters.AppearEase)
+                .SetEase(parameters?.AppearEase ?? Ease.OutBack)
                 .SetLink(gameObject);
 
             return _currentAnimation;
@@ -68,13 +69,13 @@ namespace KoboldUi.Element.Animations.Impl
         protected override Tween AnimateDisappear()
         {
             _currentAnimation?.Kill();
-
+            var parameters = OptionalAnimationParameters;
             var disappearTargetPosition =
                 _disappearToTheSamePlace ? _fromAppearAnchoredPosition : _toDisappearAnchoredPosition;
 
             _currentAnimation = _rectTransform
-                .DOAnchorPos(disappearTargetPosition, AnimationParameters.DisappearDuration)
-                .SetEase(AnimationParameters.DisappearEase)
+                .DOAnchorPos(disappearTargetPosition, parameters?.DisappearDuration ?? DEFAULT_DURATION)
+                .SetEase(parameters?.DisappearEase ?? Ease.InBack)
                 .SetUpdate(true)
                 .SetLink(gameObject);
 

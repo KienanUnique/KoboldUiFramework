@@ -76,10 +76,10 @@ namespace KoboldUi.Tests
         }
 
         [Test]
-        public void AnimationUsesDefaultsFromAsset()
+        public void AnimationUsesExplicitDefaultParameterAsset()
         {
             var parameters = ScriptableObject.CreateInstance<FadeAnimationParameters>();
-            var defaults = ScriptableObject.CreateInstance<UiAnimationDefaults>();
+            var defaults = new UiAnimationDefaults();
             defaults.Add(parameters);
             var animationObject = new GameObject("Animation");
 
@@ -94,7 +94,6 @@ namespace KoboldUi.Tests
             {
                 UnityEngine.Object.DestroyImmediate(animationObject);
                 UnityEngine.Object.DestroyImmediate(parameters);
-                UnityEngine.Object.DestroyImmediate(defaults);
             }
         }
 
@@ -104,19 +103,13 @@ namespace KoboldUi.Tests
             var projectFade = ScriptableObject.CreateInstance<FadeAnimationParameters>();
             var projectScale = ScriptableObject.CreateInstance<ScaleAnimationParameters>();
             var localFade = ScriptableObject.CreateInstance<FadeAnimationParameters>();
-            var projectDefaults = ScriptableObject.CreateInstance<UiAnimationDefaults>();
-            var localDefaults = ScriptableObject.CreateInstance<UiAnimationDefaults>();
+            var projectDefaults = new UiAnimationDefaults();
+            var localDefaults = new UiAnimationDefaults(projectDefaults);
             try
             {
                 projectDefaults.Add(projectFade);
                 projectDefaults.Add(projectScale);
                 localDefaults.Add(localFade);
-                var serialized = new SerializedObject(localDefaults);
-                var parent = serialized.FindProperty("projectDefaults");
-                Assert.That(parent, Is.Not.Null);
-                parent.objectReferenceValue = projectDefaults;
-                serialized.ApplyModifiedPropertiesWithoutUndo();
-
                 Assert.That(localDefaults.TryGet<FadeAnimationParameters>(out var selectedFade), Is.True);
                 Assert.That(selectedFade, Is.SameAs(localFade));
                 Assert.That(localDefaults.TryGet<ScaleAnimationParameters>(out var selectedScale), Is.True);
@@ -124,8 +117,6 @@ namespace KoboldUi.Tests
             }
             finally
             {
-                UnityEngine.Object.DestroyImmediate(localDefaults);
-                UnityEngine.Object.DestroyImmediate(projectDefaults);
                 UnityEngine.Object.DestroyImmediate(localFade);
                 UnityEngine.Object.DestroyImmediate(projectScale);
                 UnityEngine.Object.DestroyImmediate(projectFade);
@@ -141,6 +132,25 @@ namespace KoboldUi.Tests
             {
                 var animation = animationObject.AddComponent<ParameterProbeAnimation>();
 
+                Assert.That(() => animation.ReadParameters(),
+                    Throws.Exception.With.Message.Contains(nameof(FadeAnimationParameters)));
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(animationObject);
+            }
+        }
+
+        [Test]
+        public void AnimationReportsMissingExplicitCustomParameters()
+        {
+            var animationObject = new GameObject("Animation");
+            try
+            {
+                var animation = animationObject.AddComponent<ParameterProbeAnimation>();
+                var serialized = new SerializedObject(animation);
+                serialized.FindProperty("_useDefaultParameters").boolValue = false;
+                serialized.ApplyModifiedPropertiesWithoutUndo();
                 Assert.That(() => animation.ReadParameters(),
                     Throws.Exception.With.Message.Contains(nameof(FadeAnimationParameters)));
             }

@@ -1,5 +1,4 @@
 using System;
-using KoboldUi.Element.Animations;
 using KoboldUi.Services.WindowsService;
 using UnityEngine;
 using Zenject;
@@ -8,8 +7,8 @@ namespace KoboldUi.Composition.Zenject
 {
     public static class ZenjectUiRegistrationExtensions
     {
-        public static UiBootstrap BindKoboldUi(this DiContainer container, Canvas canvas, WindowScope scope,
-            Action<UiBootstrap> registerWindows = null, UiAnimationDefaults animationDefaults = null,
+        public static UiBootstrapBuilder BindKoboldUi(this DiContainer container, Canvas canvas, WindowScope scope,
+            Action<UiBootstrap> registerWindows = null,
             UiInitializationMode initializationMode = UiInitializationMode.Automatic)
         {
             if (container == null) throw new ArgumentNullException(nameof(container));
@@ -17,15 +16,17 @@ namespace KoboldUi.Composition.Zenject
             if (scope != WindowScope.Local && scope != WindowScope.Project)
                 throw new ArgumentOutOfRangeException(nameof(scope));
 
-            var ui = new UiBootstrap(canvas, canvas, new ZenjectUiCompositionAdapter(container),
-                animationDefaults, initializationMode);
-            if (scope == WindowScope.Local)
-                container.Bind<ILocalWindowsService>().FromInstance(ui.LocalWindows).AsSingle();
-            else
-                container.Bind<IProjectWindowsService>().FromInstance(ui.ProjectWindows).AsSingle();
-            container.Bind<IDisposable>().FromInstance(ui).AsCached();
-            container.Bind<IInitializable>().FromInstance(new UiInitializer(ui, registerWindows)).AsCached();
-            return ui;
+            return new UiBootstrapBuilder(canvas, canvas, scope, ui =>
+                {
+                    if (scope == WindowScope.Local)
+                        container.Bind<ILocalWindowsService>().FromInstance(ui.LocalWindows).AsSingle();
+                    else
+                        container.Bind<IProjectWindowsService>().FromInstance(ui.ProjectWindows).AsSingle();
+                    container.Bind<IDisposable>().FromInstance(ui).AsCached();
+                    container.Bind<IInitializable>().FromInstance(new UiInitializer(ui, registerWindows)).AsCached();
+                })
+                .WithAdapter(new ZenjectUiCompositionAdapter(container))
+                .WithInitializationMode(initializationMode);
         }
 
         private sealed class UiInitializer : IInitializable

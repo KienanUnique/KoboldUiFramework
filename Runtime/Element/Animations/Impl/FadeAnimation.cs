@@ -12,6 +12,7 @@ namespace KoboldUi.Element.Animations.Impl
     {
         private const float FADE_DISAPPEAR_VALUE = 0f;
         private const float FADE_APPEAR_VALUE = 1f;
+        private const float DEFAULT_DURATION = 0.5f;
 
         private CanvasGroup _canvasGroup;
 
@@ -32,9 +33,10 @@ namespace KoboldUi.Element.Animations.Impl
         protected override Tween AnimateAppear()
         {
             _currentAnimation?.Kill();
-
-            _currentAnimation = _canvasGroup.DOFade(FADE_APPEAR_VALUE, AnimationParameters.AppearDuration)
-                .SetEase(AnimationParameters.Ease)
+            var parameters = OptionalAnimationParameters;
+            _currentAnimation = _canvasGroup.DOFade(FADE_APPEAR_VALUE,
+                    parameters?.AppearDuration ?? DEFAULT_DURATION)
+                .SetEase(parameters?.Ease ?? Ease.Linear)
                 .SetUpdate(true)
                 .SetLink(_canvasGroup.gameObject);
             
@@ -45,9 +47,10 @@ namespace KoboldUi.Element.Animations.Impl
         protected override Tween AnimateDisappear()
         {
             _currentAnimation?.Kill();
-
-            _currentAnimation = _canvasGroup.DOFade(FADE_DISAPPEAR_VALUE, AnimationParameters.DisappearDuration)
-                .SetEase(AnimationParameters.Ease)
+            var parameters = OptionalAnimationParameters;
+            _currentAnimation = _canvasGroup.DOFade(FADE_DISAPPEAR_VALUE,
+                    parameters?.DisappearDuration ?? DEFAULT_DURATION)
+                .SetEase(parameters?.Ease ?? Ease.Linear)
                 .SetUpdate(true)
                 .SetLink(_canvasGroup.gameObject);
                 

@@ -20,8 +20,8 @@ namespace KoboldUi.Tests.VContainer
             {
                 var builder = new ContainerBuilder();
                 ui = builder.RegisterKoboldUi(canvasObject.GetComponent<Canvas>(), WindowScope.Local,
-                    initializationMode: UiInitializationMode.Manual);
-                ui.RegisterWindow(prefabObject.AddComponent<VContainerBootstrapTestWindow>());
+                        initializationMode: UiInitializationMode.Manual)
+                    .RegisterWindow(prefabObject.AddComponent<VContainerBootstrapTestWindow>()).Build();
                 builder.RegisterInstance(new VContainerBootstrapTestDependency());
                 container = builder.Build();
                 Assert.That(canvasObject.transform.childCount, Is.Zero);
@@ -49,8 +49,8 @@ namespace KoboldUi.Tests.VContainer
             {
                 var builder = new ContainerBuilder();
                 var prefab = prefabObject.AddComponent<VContainerBootstrapTestWindow>();
-                ui = builder.RegisterKoboldUi(canvasObject.GetComponent<Canvas>(), WindowScope.Local);
-                ui.RegisterWindow(prefab);
+                ui = builder.RegisterKoboldUi(canvasObject.GetComponent<Canvas>(), WindowScope.Local)
+                    .RegisterWindow(prefab).Build();
                 builder.RegisterInstance(new VContainerBootstrapTestDependency());
                 Assert.That(canvasObject.transform.childCount, Is.Zero);
                 container = builder.Build();
@@ -78,7 +78,7 @@ namespace KoboldUi.Tests.VContainer
                 var builder = new ContainerBuilder();
                 var prefab = prefabObject.AddComponent<VContainerBootstrapTestWindow>();
                 ui = builder.RegisterKoboldUi(canvasObject.GetComponent<Canvas>(), WindowScope.Local,
-                    registerWindows: bootstrap => bootstrap.RegisterWindow(prefab));
+                    registerWindows: bootstrap => bootstrap.RegisterWindow(prefab)).Build();
                 builder.RegisterInstance(new VContainerBootstrapTestDependency());
                 container = builder.Build();
                 Assert.That(ui.Get<VContainerBootstrapTestWindow>().Dependency, Is.Not.Null);

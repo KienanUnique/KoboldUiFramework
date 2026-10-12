@@ -9,12 +9,13 @@ inspect constructors or members for injection metadata.
 Register the window prefabs, then open the UI:
 
 ```csharp
-var ui = new UiBootstrap(localCanvas, projectCanvas);
-ui.RegisterWindow(settingsPrefab);
+var ui = new UiBootstrapBuilder(localCanvas, projectCanvas)
+    .RegisterWindow(settingsPrefab)
+    .Build();
 ui.Open<SettingsWindow>();
 ```
 
-`ui.LocalWindows` and `ui.ProjectWindows` are available immediately after construction. Resolving either service does not initialize windows, so it is safe to pass one to a service constructor before calling `RegisterWindow`. The first window operation initializes the UI automatically. Call `ui.Initialize()` to initialize it explicitly; this method is idempotent. Use `UiInitializationMode.Manual` to require an explicit call before window operations.
+`ui.LocalWindows` and `ui.ProjectWindows` are available immediately after `Build()`. Resolving either service does not initialize windows, so it is safe to pass one to a service constructor. The first window operation initializes the UI automatically. Call `ui.Initialize()` to initialize it explicitly; this method is idempotent. Use `WithInitializationMode(UiInitializationMode.Manual)` to require an explicit call before window operations.
 
 Controllers with a public parameterless constructor need no registration:
 
@@ -43,33 +44,45 @@ ui.RegisterWindow(settingsPrefab, configure: window =>
     window.Configure(settings, ui.LocalWindows));
 ```
 
-For shared animation parameters, create a `UiAnimationDefaults` asset, add
-parameter assets, and pass it to the `UiBootstrap` constructor.
-Custom per-prefab parameters remain serialized on the animation component.
-Project defaults are optional. To override one or more parameter types in a
-local UI, create another `UiAnimationDefaults` asset, assign the project asset
-to its `Project Defaults` field, and add only the local overrides. Lookup uses
-the local parameter first and the project parameter for types absent locally.
-Pass the relevant asset explicitly to each UI bootstrap; KoboldUi does not
-look it up through DI, Resources, or a global singleton.
+Fade, scale, and slide have built-in values, so no defaults asset or registration
+is needed. Concrete parameter ScriptableObjects still work as per-prefab custom
+settings or explicit scope overrides:
+
+```csharp
+var projectUi = new UiBootstrapBuilder(projectCanvas, projectCanvas, WindowScope.Project)
+    .AddDefaultParameters(projectFadeParameters)
+    .RegisterWindow(loadingPrefab)
+    .Build();
+var localUi = new UiBootstrapBuilder(localCanvas, localCanvas)
+    .WithProjectDefaults(projectUi.AnimationDefaults)
+    .AddDefaultParameters(localFadeParameters)
+    .RegisterWindow(settingsPrefab)
+    .Build();
+```
+
+Local overrides win for their parameter type; other types inherit project
+overrides or use built-in values. Custom parameter types implement
+`IKoboldDefaultAnimationParameters` and can also be registered this way.
 
 ## With Zenject or VContainer
 
 Enable `KOBOLD_ZENJECT_SUPPORT` or `KOBOLD_VCONTAINER_SUPPORT` and use the corresponding installer preset. For Zenject:
 
 ```csharp
-var ui = Container.BindKoboldUi(canvas, WindowScope.Local);
-ui.RegisterWindow(settingsPrefab);
+var ui = Container.BindKoboldUi(canvas, WindowScope.Local)
+    .RegisterWindow(settingsPrefab)
+    .Build();
 ```
 
 For VContainer, call this in `LifetimeScope.Configure`:
 
 ```csharp
-var ui = builder.RegisterKoboldUi(canvas, WindowScope.Local);
-ui.RegisterWindow(settingsPrefab);
+var ui = builder.RegisterKoboldUi(canvas, WindowScope.Local)
+    .RegisterWindow(settingsPrefab)
+    .Build();
 ```
 
-Each preset registers the matching window service with its container. The service is immediately available for constructor injection. Zenject initializes windows during its `IInitializable.Initialize` phase; VContainer initializes them after the container builds. Both wait until the remaining bindings are available. If registration itself needs those bindings, use the optional `registerWindows` callback in either preset. Pass `initializationMode: UiInitializationMode.Manual` to either preset to require an explicit `ui.Initialize()`.
+Each preset registers the matching window service when `Build()` runs. Zenject initializes windows during its `IInitializable.Initialize` phase; VContainer initializes them after the container builds. Both wait until the remaining bindings are available. If registration itself needs those bindings, use the optional `registerWindows` callback in either preset. Pass `initializationMode: UiInitializationMode.Manual` to either preset to require an explicit `ui.Initialize()`.
 
 Direct `UiBootstrap` construction with `ZenjectUiCompositionAdapter` or `VContainerUiCompositionAdapter` remains available for custom composition. It does not register services in the container automatically.
 
