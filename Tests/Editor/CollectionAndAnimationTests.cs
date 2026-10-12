@@ -6,6 +6,7 @@ using KoboldUi.Collections.Concrete.Impl;
 using KoboldUi.Element.Animations;
 using KoboldUi.Element.Animations.Parameters.Impl;
 using NUnit.Framework;
+using UnityEditor;
 using UnityEngine;
 
 namespace KoboldUi.Tests
@@ -94,6 +95,40 @@ namespace KoboldUi.Tests
                 UnityEngine.Object.DestroyImmediate(animationObject);
                 UnityEngine.Object.DestroyImmediate(parameters);
                 UnityEngine.Object.DestroyImmediate(defaults);
+            }
+        }
+
+        [Test]
+        public void LocalDefaultsOverrideOnlyMatchingProjectParameterTypes()
+        {
+            var projectFade = ScriptableObject.CreateInstance<FadeAnimationParameters>();
+            var projectScale = ScriptableObject.CreateInstance<ScaleAnimationParameters>();
+            var localFade = ScriptableObject.CreateInstance<FadeAnimationParameters>();
+            var projectDefaults = ScriptableObject.CreateInstance<UiAnimationDefaults>();
+            var localDefaults = ScriptableObject.CreateInstance<UiAnimationDefaults>();
+            try
+            {
+                projectDefaults.Add(projectFade);
+                projectDefaults.Add(projectScale);
+                localDefaults.Add(localFade);
+                var serialized = new SerializedObject(localDefaults);
+                var parent = serialized.FindProperty("projectDefaults");
+                Assert.That(parent, Is.Not.Null);
+                parent.objectReferenceValue = projectDefaults;
+                serialized.ApplyModifiedPropertiesWithoutUndo();
+
+                Assert.That(localDefaults.TryGet<FadeAnimationParameters>(out var selectedFade), Is.True);
+                Assert.That(selectedFade, Is.SameAs(localFade));
+                Assert.That(localDefaults.TryGet<ScaleAnimationParameters>(out var selectedScale), Is.True);
+                Assert.That(selectedScale, Is.SameAs(projectScale));
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(localDefaults);
+                UnityEngine.Object.DestroyImmediate(projectDefaults);
+                UnityEngine.Object.DestroyImmediate(localFade);
+                UnityEngine.Object.DestroyImmediate(projectScale);
+                UnityEngine.Object.DestroyImmediate(projectFade);
             }
         }
 

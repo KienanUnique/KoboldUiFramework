@@ -46,6 +46,12 @@ ui.RegisterWindow(settingsPrefab, configure: window =>
 For shared animation parameters, create a `UiAnimationDefaults` asset, add
 parameter assets, and pass it to the `UiBootstrap` constructor.
 Custom per-prefab parameters remain serialized on the animation component.
+Project defaults are optional. To override one or more parameter types in a
+local UI, create another `UiAnimationDefaults` asset, assign the project asset
+to its `Project Defaults` field, and add only the local overrides. Lookup uses
+the local parameter first and the project parameter for types absent locally.
+Pass the relevant asset explicitly to each UI bootstrap; KoboldUi does not
+look it up through DI, Resources, or a global singleton.
 
 ## With Zenject or VContainer
 

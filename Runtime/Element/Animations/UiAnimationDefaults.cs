@@ -9,8 +9,17 @@ namespace KoboldUi.Element.Animations
     public sealed class UiAnimationDefaults : ScriptableObject
     {
         [SerializeField] private List<AUiAnimationParameters> parameters = new List<AUiAnimationParameters>();
+        [SerializeField] private UiAnimationDefaults projectDefaults;
 
         public bool TryGet<T>(out T value) where T : IUiAnimationParameters
+        {
+            if (TryGetOwn(out value)) return true;
+            if (projectDefaults != null && projectDefaults.TryGetOwn(out value)) return true;
+            value = default;
+            return false;
+        }
+
+        private bool TryGetOwn<T>(out T value) where T : IUiAnimationParameters
         {
             foreach (var parameter in parameters)
             {

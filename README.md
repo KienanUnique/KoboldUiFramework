@@ -60,6 +60,10 @@ Existing windows and views can receive dependencies through explicit `Configure`
 methods called before initialization.
 Shared animation settings live in a `UiAnimationDefaults` asset, passed to
 `new UiBootstrap(localCanvas, projectCanvas, animationDefaults: animationDefaults)`.
+The argument is optional and does not depend on DI. A local defaults asset can
+reference a project defaults asset in its `Project Defaults` field: its own
+parameters override matching project parameter types, while missing types
+fall back to the project asset.
 
 Optional Zenject and VContainer presets use separate assemblies and the `KOBOLD_ZENJECT_SUPPORT` or `KOBOLD_VCONTAINER_SUPPORT` define. In installers, call `Container.BindKoboldUi(canvas, WindowScope.Local)` or `builder.RegisterKoboldUi(canvas, WindowScope.Local)`, then `ui.RegisterWindow(prefab)`. See [DI migration](docs/DI_MIGRATION.md).
 
