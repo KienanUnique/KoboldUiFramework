@@ -94,6 +94,47 @@ namespace KoboldUi.Tests.Zenject
         }
 
         [Test]
+        public void LocalControllerUsesRegisteredProjectService()
+        {
+            var projectCanvasObject = new GameObject("ProjectCanvas", typeof(Canvas));
+            var localCanvasObject = new GameObject("LocalCanvas", typeof(Canvas));
+            var projectPrefabObject = new GameObject("ProjectPrefab");
+            var localPrefabObject = new GameObject("LocalPrefab");
+            UiBootstrap projectUi = null;
+            UiBootstrap localUi = null;
+            try
+            {
+                var projectContainer = new DiContainer();
+                projectContainer.BindInstance(new ZenjectBootstrapToken("project")).AsSingle();
+                projectUi = projectContainer.BindKoboldUi(projectCanvasObject.GetComponent<Canvas>(),
+                        WindowScope.Project)
+                    .RegisterWindow(projectPrefabObject.AddComponent<ZenjectProjectNavigationTargetWindow>()).Build();
+                foreach (var initializable in projectContainer.ResolveAll<IInitializable>()) initializable.Initialize();
+
+                var localContainer = new DiContainer();
+                localContainer.Bind<IProjectWindowsService>().FromInstance(projectUi.ProjectWindows).AsSingle();
+                localUi = localContainer.BindKoboldUi(localCanvasObject.GetComponent<Canvas>(), WindowScope.Local)
+                    .RegisterWindow(localPrefabObject.AddComponent<ZenjectProjectNavigationWindow>()).Build();
+                foreach (var initializable in localContainer.ResolveAll<IInitializable>()) initializable.Initialize();
+
+                var controller = localUi.Get<ZenjectProjectNavigationWindow>().Controller;
+                Assert.That(controller.ProjectWindows, Is.SameAs(projectUi.ProjectWindows));
+                controller.OpenProjectWindow();
+                Assert.That(projectUi.ProjectWindows.CurrentWindow,
+                    Is.SameAs(projectUi.Get<ZenjectProjectNavigationTargetWindow>()));
+            }
+            finally
+            {
+                localUi?.Dispose();
+                projectUi?.Dispose();
+                Object.DestroyImmediate(localCanvasObject);
+                Object.DestroyImmediate(projectCanvasObject);
+                Object.DestroyImmediate(localPrefabObject);
+                Object.DestroyImmediate(projectPrefabObject);
+            }
+        }
+
+        [Test]
         public void BootstrapUsesScopedZenjectDependenciesAndWindowServices()
         {
             var localCanvasObject = new GameObject("LocalCanvas", typeof(Canvas));

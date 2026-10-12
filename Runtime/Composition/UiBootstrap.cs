@@ -136,8 +136,17 @@ namespace KoboldUi.Composition
                 throw new InvalidOperationException("Register at least one window before using the UI.");
 
             _building = true;
-            var localActivator = new UiActivator(_localAdapter, _animationDefaults, _localWindows, _projectWindows);
-            var projectActivator = new UiActivator(_projectAdapter, _animationDefaults, _localWindows, _projectWindows);
+            var hasLocalWindows = false;
+            var hasProjectWindows = false;
+            foreach (var registration in _registrations)
+            {
+                if (registration.Scope == WindowScope.Local) hasLocalWindows = true;
+                else hasProjectWindows = true;
+            }
+            var localWindows = hasLocalWindows ? _localWindows : null;
+            var projectWindows = hasProjectWindows ? _projectWindows : null;
+            var localActivator = new UiActivator(_localAdapter, _animationDefaults, localWindows, projectWindows);
+            var projectActivator = new UiActivator(_projectAdapter, _animationDefaults, localWindows, projectWindows);
             var staging = new GameObject("KoboldUi window staging");
             staging.SetActive(false);
             try
