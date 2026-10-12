@@ -30,10 +30,19 @@ namespace KoboldUi.Element.Animations
         public void Add(IAnimationParameters parameter)
         {
             if (parameter == null) throw new ArgumentNullException(nameof(parameter));
-            var type = parameter.GetType();
-            if (_parameters.ContainsKey(type))
-                throw new InvalidOperationException($"Defaults already contain {type.FullName}.");
-            _parameters.Add(type, parameter);
+            Add(parameter.GetType(), parameter);
+        }
+
+        internal void Add(Type parameterType, IAnimationParameters parameter)
+        {
+            if (parameterType == null) throw new ArgumentNullException(nameof(parameterType));
+            if (parameter == null) throw new ArgumentNullException(nameof(parameter));
+            if (!parameterType.IsInstanceOfType(parameter))
+                throw new ArgumentException($"{parameter.GetType().FullName} is not assignable to {parameterType.FullName}.",
+                    nameof(parameter));
+            if (_parameters.ContainsKey(parameterType))
+                throw new InvalidOperationException($"Defaults already contain {parameterType.FullName}.");
+            _parameters.Add(parameterType, parameter);
         }
     }
 }

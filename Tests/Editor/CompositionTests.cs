@@ -36,6 +36,40 @@ namespace KoboldUi.Tests
             finally { ui.Dispose(); }
         }
 
+        [Test]
+        public void BuilderUsesDeclaredParameterTypeForDerivedAsset()
+        {
+            var canvas = NewObject("canvas").AddComponent<Canvas>();
+            var prefab = NewObject("prefab").AddComponent<ProbeWindow>();
+            var fade = ScriptableObject.CreateInstance<DerivedFadeAnimationParameters>();
+            _objects.Add(fade);
+            var ui = new UiBootstrapBuilder(canvas, canvas)
+                .AddDefaultParameters<FadeAnimationParameters>(fade)
+                .RegisterWindow(prefab)
+                .Build();
+            try
+            {
+                Assert.That(ui.AnimationDefaults.TryGet<FadeAnimationParameters>(out var selected), Is.True);
+                Assert.That(selected, Is.SameAs(fade));
+            }
+            finally { ui.Dispose(); }
+        }
+
+        [Test]
+        public void BuilderRejectsDuplicateDeclaredParameterType()
+        {
+            var canvas = NewObject("canvas").AddComponent<Canvas>();
+            var first = ScriptableObject.CreateInstance<DerivedFadeAnimationParameters>();
+            var second = ScriptableObject.CreateInstance<OtherDerivedFadeAnimationParameters>();
+            _objects.Add(first);
+            _objects.Add(second);
+            var builder = new UiBootstrapBuilder(canvas, canvas)
+                .AddDefaultParameters<FadeAnimationParameters>(first);
+
+            Assert.Throws<InvalidOperationException>(() =>
+                builder.AddDefaultParameters<FadeAnimationParameters>(second));
+        }
+
         [TearDown]
         public void TearDown()
         {
@@ -369,6 +403,8 @@ namespace KoboldUi.Tests
 
         public sealed class Dependency { }
         public sealed class ViewToken { }
+        public sealed class DerivedFadeAnimationParameters : FadeAnimationParameters { }
+        public sealed class OtherDerivedFadeAnimationParameters : FadeAnimationParameters { }
 
         public sealed class ParameterlessController : KoboldUi.Element.Controller.IUiViewReceiver<ViewToken>
         {

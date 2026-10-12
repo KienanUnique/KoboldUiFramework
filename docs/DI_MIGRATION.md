@@ -63,6 +63,9 @@ var localUi = new UiBootstrapBuilder(localCanvas, localCanvas)
 Local overrides win for their parameter type; other types inherit project
 overrides or use built-in values. Custom parameter types implement
 `IAnimationParameters` and can also be registered this way.
+When a parameter asset derives from the type used by an animation, specify
+that base type explicitly, for example
+`.AddDefaultParameters<FadeAnimationParameters>(customFadeAsset)`.
 
 ## With Zenject or VContainer
 

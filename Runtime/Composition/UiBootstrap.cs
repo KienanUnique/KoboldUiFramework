@@ -235,8 +235,8 @@ namespace KoboldUi.Composition
         private readonly Canvas _projectCanvas;
         private readonly WindowScope _defaultScope;
         private readonly List<Action<UiBootstrap>> _registrations = new List<Action<UiBootstrap>>();
-        private readonly List<IAnimationParameters> _parameters =
-            new List<IAnimationParameters>();
+        private readonly Dictionary<Type, IAnimationParameters> _parameters =
+            new Dictionary<Type, IAnimationParameters>();
         private readonly Action<UiBootstrap> _onBuilt;
         private IUiCompositionAdapter _adapter;
         private UiAnimationDefaults _projectDefaults;
@@ -274,10 +274,10 @@ namespace KoboldUi.Composition
         {
             ThrowIfBuilt();
             if (parameter == null) throw new ArgumentNullException(nameof(parameter));
-            foreach (var current in _parameters)
-                if (current.GetType() == parameter.GetType())
-                    throw new InvalidOperationException($"Defaults already contain {parameter.GetType().FullName}.");
-            _parameters.Add(parameter);
+            var parameterType = typeof(T);
+            if (_parameters.ContainsKey(parameterType))
+                throw new InvalidOperationException($"Defaults already contain {parameterType.FullName}.");
+            _parameters.Add(parameterType, parameter);
             return this;
         }
 
@@ -312,7 +312,7 @@ namespace KoboldUi.Composition
             if (_projectDefaults != null || _parameters.Count != 0)
             {
                 defaults = new UiAnimationDefaults(_projectDefaults);
-                foreach (var parameter in _parameters) defaults.Add(parameter);
+                foreach (var parameter in _parameters) defaults.Add(parameter.Key, parameter.Value);
             }
             var ui = new UiBootstrap(_localCanvas, _projectCanvas, _adapter, defaults, _initializationMode);
             try
