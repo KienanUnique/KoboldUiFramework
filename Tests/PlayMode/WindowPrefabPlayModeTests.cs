@@ -51,7 +51,7 @@ namespace KoboldUi.Tests.PlayMode
             var animationObject = new GameObject("Fade animation");
             _objects.Add(animationObject);
             var animation = animationObject.AddComponent<FadeAnimation>();
-            typeof(AUiAnimation<FadeAnimationParameters>)
+            typeof(AUiTweenAnimation<FadeAnimationParameters>)
                 .GetField("_useDefaultParameters", BindingFlags.Instance | BindingFlags.NonPublic)
                 .SetValue(animation, false);
             var pool = new UiActionsPool(new WindowsStackHolder());
@@ -93,6 +93,32 @@ namespace KoboldUi.Tests.PlayMode
                 Assert.DoesNotThrow(() => scale.Disappear(pool));
                 Assert.DoesNotThrow(() => slide.Disappear(pool));
                 DOTween.CompleteAll();
+            }
+            finally
+            {
+                DOTween.KillAll();
+                pool.Dispose();
+            }
+        }
+
+        [Test]
+        public void CustomTweenAnimationWorksWithoutParameterAsset()
+        {
+            var animationObject = new GameObject("Custom tween animation");
+            _objects.Add(animationObject);
+            var animation = animationObject.AddComponent<NoParameterTweenAnimation>();
+            var pool = new UiActionsPool(new WindowsStackHolder());
+            pool.Initialize();
+
+            try
+            {
+                animation.Appear(pool).Start().GetAwaiter().GetResult();
+                DOTween.CompleteAll();
+                Assert.That(animationObject.activeSelf, Is.True);
+
+                animation.Disappear(pool).Start().GetAwaiter().GetResult();
+                DOTween.CompleteAll();
+                Assert.That(animationObject.activeSelf, Is.False);
             }
             finally
             {
@@ -180,6 +206,19 @@ namespace KoboldUi.Tests.PlayMode
         public void RecordClick()
         {
             ClickCount++;
+        }
+    }
+
+    public sealed class NoParameterTweenAnimation : AUiTweenAnimation
+    {
+        protected override Tween AnimateAppear()
+        {
+            return transform.DOScale(Vector3.one, 0.1f);
+        }
+
+        protected override Tween AnimateDisappear()
+        {
+            return transform.DOScale(Vector3.zero, 0.1f);
         }
     }
 

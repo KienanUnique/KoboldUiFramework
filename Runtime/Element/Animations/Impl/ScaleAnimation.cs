@@ -7,7 +7,7 @@ namespace KoboldUi.Element.Animations.Impl
     /// <summary>
     /// Animates transform scale to show or hide views.
     /// </summary>
-    public class ScaleAnimation : AUiAnimation<ScaleAnimationParameters>
+    public class ScaleAnimation : AUiTweenAnimation<ScaleAnimationParameters>
     {
         private const float DEFAULT_DURATION = 0.2f;
         private readonly Vector3 _appearScale = Vector3.one;

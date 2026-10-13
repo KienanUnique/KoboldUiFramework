@@ -13,7 +13,7 @@ namespace KoboldUi.Element.Animations.Impl
     /// Animates a RectTransform between anchored positions to slide views.
     /// </summary>
     [RequireComponent(typeof(RectTransform))]
-    public class SlideAnimation : AUiAnimation<SlideAnimationParameters>
+    public class SlideAnimation : AUiTweenAnimation<SlideAnimationParameters>
     {
         private const float DEFAULT_DURATION = 0.4f;
         [SerializeField] private Vector2 _fromAppearAnchoredPosition;
