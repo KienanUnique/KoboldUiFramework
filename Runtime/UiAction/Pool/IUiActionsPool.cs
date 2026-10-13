@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using DG.Tweening;
+using KoboldUi.Element.Animations;
 using KoboldUi.UiAction.Impl.Common;
 using KoboldUi.UiAction.Impl.Service;
 using KoboldUi.Services.WindowsService;
@@ -39,6 +40,10 @@ namespace KoboldUi.UiAction.Pool
         /// <param name="action">Action instance to use.</param>
         /// <param name="tween">Tween to play.</param>
         void GetAction(out TweenAction action, Tween tween);
+
+        /// <summary>Retrieves an action for a cancellable async animation transition.</summary>
+        void GetAction(out AsyncAnimationAction action, AUiAsyncAnimation animation,
+            UiAnimationTransition transition, bool needWaitAnimation);
 
         /// <summary>
         /// Retrieves a wait-initialization action for the provided window.
@@ -101,6 +106,9 @@ namespace KoboldUi.UiAction.Pool
         /// Returns a tween action to the pool.
         /// </summary>
         void ReturnAction(TweenAction action);
+
+        /// <summary>Returns an async animation action to the pool.</summary>
+        void ReturnAction(AsyncAnimationAction action);
 
         /// <summary>
         /// Returns a wait-initialization action to the pool.

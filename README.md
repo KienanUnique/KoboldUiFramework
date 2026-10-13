@@ -65,6 +65,44 @@ one type for a UI scope, call `.AddDefaultParameters(fadeParameters)` before
 for individual prefab settings. A local builder can inherit project overrides
 with `.WithProjectDefaults(projectUi.AnimationDefaults)`.
 
+## Custom asynchronous animations
+
+Derive from `AUiAsyncAnimation` to write a transition without creating an
+`IUiAction`. Attach the component to an animated view and assign it as the
+view's open and close animation.
+
+```csharp
+using System.Threading;
+using Cysharp.Threading.Tasks;
+using KoboldUi.Element.Animations;
+using UnityEngine;
+
+public sealed class DelayedPanelAnimation : AUiAsyncAnimation
+{
+    [SerializeField] private CanvasGroup _canvasGroup;
+
+    protected override async UniTask AnimateAppearAsync(CancellationToken token)
+    {
+        _canvasGroup.alpha = 0f;
+        await UniTask.Delay(150, cancellationToken: token);
+        _canvasGroup.alpha = 1f;
+    }
+
+    protected override async UniTask AnimateDisappearAsync(CancellationToken token)
+    {
+        await UniTask.Delay(150, cancellationToken: token);
+        _canvasGroup.alpha = 0f;
+    }
+}
+```
+
+`_needWaitAnimation` controls whether navigation waits for completion. The
+animation runs in both modes. Pass the supplied token to every asynchronous
+operation and check it in custom loops. A new transition, instant close, or
+component destruction cancels the current token. Cancellation is handled by
+the framework; other animation exceptions propagate when navigation waits and
+are published by UniTask when it does not wait.
+
 Optional Zenject and VContainer presets use separate assemblies and the `KOBOLD_ZENJECT_SUPPORT` or `KOBOLD_VCONTAINER_SUPPORT` define. In installers, call `Container.BindKoboldUi(canvas, WindowScope.Local).RegisterWindow(prefab).Build()` or the equivalent `builder.RegisterKoboldUi(...)`. See [DI migration](docs/DI_MIGRATION.md).
 
 
