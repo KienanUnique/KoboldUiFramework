@@ -26,7 +26,7 @@ namespace KoboldUi.Windows
     /// Base implementation for windows composed of controllers and views.
     /// </summary>
     [RequireComponent(typeof(CanvasGroup))]
-    public abstract class AWindow : AWindowBase, IAutoFillable
+    public abstract class AWindow : AWindowBase
     {
         [Header("Behaviour")]
         /// <summary>
@@ -157,7 +157,7 @@ namespace KoboldUi.Windows
 
 #if (KOBOLD_ALCHEMY_SUPPORT || KOBOLD_ODIN_SUPPORT) && UNITY_EDITOR
         [Button]
-        /// <inheritdoc />
+        /// <summary>Fills the list of animated empty views from child components.</summary>
         public void AutoFill()
         {
             _animatedEmptyViews = new List<AnimatedEmptyView>();

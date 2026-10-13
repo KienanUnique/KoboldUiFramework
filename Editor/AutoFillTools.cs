@@ -1,4 +1,5 @@
-﻿using KoboldUi;
+﻿using KoboldUi.Element.View;
+using KoboldUi.Windows;
 using UnityEditor;
 using UnityEngine;
 
@@ -22,13 +23,17 @@ namespace KoboldUiEditor
                 var path = AssetDatabase.GUIDToAssetPath(asset);
                 var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
 
-                var autoFillables = prefab.GetComponentsInChildren<IAutoFillable>();
+                var windows = prefab.GetComponentsInChildren<AWindow>();
+                var views = prefab.GetComponentsInChildren<AUiAnimatedView>();
 
-                if (autoFillables.Length <= 0)
+                if (windows.Length == 0 && views.Length == 0)
                     continue;
                 
-                foreach (var autoFillable in autoFillables) 
-                    autoFillable.AutoFill();
+                foreach (var window in windows)
+                    window.AutoFill();
+
+                foreach (var view in views)
+                    view.AutoFill();
 
                 Debug.Log($"{nameof(AutoFillTools)} | Autofill called in {path}");
             }
