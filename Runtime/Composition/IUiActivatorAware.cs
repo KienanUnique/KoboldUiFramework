@@ -1,6 +1,6 @@
 namespace KoboldUi.Composition
 {
-    public interface IUiActivatorAware
+    internal interface IUiActivatorAware
     {
         void Configure(UiActivator activator);
     }

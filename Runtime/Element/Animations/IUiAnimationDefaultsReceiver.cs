@@ -1,6 +1,6 @@
 namespace KoboldUi.Element.Animations
 {
-    public interface IUiAnimationDefaultsReceiver
+    internal interface IUiAnimationDefaultsReceiver
     {
         void ApplyDefaults(UiAnimationDefaults defaults);
     }
