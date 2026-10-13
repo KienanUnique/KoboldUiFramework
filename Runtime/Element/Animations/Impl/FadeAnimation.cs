@@ -8,7 +8,7 @@ namespace KoboldUi.Element.Animations.Impl
     /// Tweens a CanvasGroup alpha to fade views in and out.
     /// </summary>
     [RequireComponent(typeof(CanvasGroup))]
-    public class FadeAnimation : AUiAnimation<FadeAnimationParameters>
+    public class FadeAnimation : AUiTweenAnimation<FadeAnimationParameters>
     {
         private const float FADE_DISAPPEAR_VALUE = 0f;
         private const float FADE_APPEAR_VALUE = 1f;

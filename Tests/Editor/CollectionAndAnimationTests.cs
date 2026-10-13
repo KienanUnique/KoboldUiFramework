@@ -1,4 +1,6 @@
 using System;
+using System.Threading;
+using Cysharp.Threading.Tasks;
 using DG.Tweening;
 using KoboldUi.Composition;
 using KoboldUi.Collections.Base;
@@ -87,6 +89,51 @@ namespace KoboldUi.Tests
             {
                 var animation = animationObject.AddComponent<ParameterProbeAnimation>();
                 new UiActivator(animationDefaults: defaults).PrepareGameObject(animationObject);
+
+                Assert.That(animation.ReadParameters(), Is.SameAs(parameters));
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(animationObject);
+                UnityEngine.Object.DestroyImmediate(parameters);
+            }
+        }
+
+        [Test]
+        public void AsyncAnimationUsesExplicitDefaultParameterAsset()
+        {
+            var parameters = ScriptableObject.CreateInstance<FadeAnimationParameters>();
+            var defaults = new UiAnimationDefaults();
+            defaults.Add(parameters);
+            var animationObject = new GameObject("Async animation");
+
+            try
+            {
+                var animation = animationObject.AddComponent<AsyncParameterProbeAnimation>();
+                new UiActivator(animationDefaults: defaults).PrepareGameObject(animationObject);
+
+                Assert.That(animation.ReadParameters(), Is.SameAs(parameters));
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(animationObject);
+                UnityEngine.Object.DestroyImmediate(parameters);
+            }
+        }
+
+        [Test]
+        public void AsyncAnimationUsesCustomParameterAsset()
+        {
+            var parameters = ScriptableObject.CreateInstance<FadeAnimationParameters>();
+            var animationObject = new GameObject("Async animation");
+
+            try
+            {
+                var animation = animationObject.AddComponent<AsyncParameterProbeAnimation>();
+                var serialized = new SerializedObject(animation);
+                serialized.FindProperty("_useDefaultParameters").boolValue = false;
+                serialized.FindProperty("_animationParameters").objectReferenceValue = parameters;
+                serialized.ApplyModifiedPropertiesWithoutUndo();
 
                 Assert.That(animation.ReadParameters(), Is.SameAs(parameters));
             }
@@ -210,7 +257,7 @@ namespace KoboldUi.Tests
         }
     }
 
-    public sealed class ParameterProbeAnimation : AUiAnimation<FadeAnimationParameters>
+    public sealed class ParameterProbeAnimation : AUiTweenAnimation<FadeAnimationParameters>
     {
         public FadeAnimationParameters ReadParameters()
         {
@@ -229,6 +276,24 @@ namespace KoboldUi.Tests
         protected override Tween AnimateDisappear()
         {
             throw new NotSupportedException();
+        }
+    }
+
+    public sealed class AsyncParameterProbeAnimation : AUiAsyncAnimation<FadeAnimationParameters>
+    {
+        public FadeAnimationParameters ReadParameters()
+        {
+            return AnimationParameters;
+        }
+
+        protected override UniTask AnimateAppearAsync(CancellationToken token)
+        {
+            return UniTask.CompletedTask;
+        }
+
+        protected override UniTask AnimateDisappearAsync(CancellationToken token)
+        {
+            return UniTask.CompletedTask;
         }
     }
 }
