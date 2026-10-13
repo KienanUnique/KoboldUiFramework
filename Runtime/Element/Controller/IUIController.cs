@@ -7,7 +7,7 @@ namespace KoboldUi.Element.Controller
     /// <summary>
     /// Defines how controllers drive view state transitions.
     /// </summary>
-    public interface IUIController
+    internal interface IUIController
     {
         /// <summary>
         /// Applies the requested window state and returns the action to perform the transition.

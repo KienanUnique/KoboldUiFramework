@@ -6,7 +6,7 @@ namespace KoboldUi.Element.Animations
     /// <summary>
     /// Supplies UI actions for animated transitions between view states.
     /// </summary>
-    public interface IUiAnimation
+    internal interface IUiAnimation
     {
         /// <summary>
         /// Builds the animation used when a view appears.
