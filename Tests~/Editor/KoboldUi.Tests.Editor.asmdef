@@ -1,0 +1,22 @@
+{
+    "name": "KoboldUi.Tests.Editor",
+    "rootNamespace": "KoboldUi.Tests",
+    "references": [
+        "com.kienanunique.kobolduiframework",
+        "UniTask"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "DOTween.dll",
+        "nunit.framework.dll"
+    ],
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ],
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ]
+}

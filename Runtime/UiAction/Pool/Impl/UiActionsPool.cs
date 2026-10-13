@@ -1,20 +1,21 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using DG.Tweening;
+using KoboldUi.Element.Animations;
 using KoboldUi.UiAction.Impl.Common;
 using KoboldUi.UiAction.Impl.Service;
 using KoboldUi.Services.WindowsService;
 using KoboldUi.Windows;
 using KoboldUi.WindowsStack;
 using UnityEngine.Pool;
-using Zenject;
+
 
 namespace KoboldUi.UiAction.Pool.Impl
 {
     /// <summary>
     /// Maintains pools for the various UI action types used by the framework.
     /// </summary>
-    public class UiActionsPool : IUiActionsPool, IDisposable, IInitializable
+    public class UiActionsPool : IUiActionsPool, IDisposable
     {
         private const int DEFAULT_POOL_SIZE = 2;
 
@@ -27,6 +28,7 @@ namespace KoboldUi.UiAction.Pool.Impl
         private ObjectPool<SimpleCallbackAction> _simpleCallbackActionPool;
         private ObjectPool<CloseWindowAction> _tryBackWindowActionPool;
         private ObjectPool<TweenAction> _tweenActionPool;
+        private ObjectPool<AsyncAnimationAction> _asyncAnimationActionPool;
         private ObjectPool<WaitInitializationAction> _waitInitializationActionPool;
         private ObjectPool<CloseToWindowAction> _backToWindowActionPool;
         private ObjectPool<CloseAllWindowsAction> _closeAllWindowsActionPool;
@@ -46,6 +48,7 @@ namespace KoboldUi.UiAction.Pool.Impl
             _parallelActionPool?.Dispose();
             _simpleCallbackActionPool?.Dispose();
             _tweenActionPool?.Dispose();
+            _asyncAnimationActionPool?.Dispose();
             _waitInitializationActionPool?.Dispose();
             _openPreviousWindowActionPool?.Dispose();
             _openWindowActionPool?.Dispose();
@@ -67,6 +70,9 @@ namespace KoboldUi.UiAction.Pool.Impl
                 defaultCapacity: DEFAULT_POOL_SIZE);
             _tweenActionPool =
                 new ObjectPool<TweenAction>(() => new TweenAction(this), defaultCapacity: DEFAULT_POOL_SIZE);
+            _asyncAnimationActionPool =
+                new ObjectPool<AsyncAnimationAction>(() => new AsyncAnimationAction(this),
+                    defaultCapacity: DEFAULT_POOL_SIZE);
             _waitInitializationActionPool =
                 new ObjectPool<WaitInitializationAction>(() => new WaitInitializationAction(this),
                     defaultCapacity: DEFAULT_POOL_SIZE);
@@ -111,6 +117,14 @@ namespace KoboldUi.UiAction.Pool.Impl
         {
             action = _tweenActionPool.Get();
             action.Setup(tween);
+        }
+
+        /// <inheritdoc />
+        public void GetAction(out AsyncAnimationAction action, AUiAsyncAnimation animation,
+            UiAnimationTransition transition, bool needWaitAnimation)
+        {
+            action = _asyncAnimationActionPool.Get();
+            action.Setup(animation, transition, needWaitAnimation);
         }
 
         /// <inheritdoc />
@@ -181,6 +195,12 @@ namespace KoboldUi.UiAction.Pool.Impl
         public void ReturnAction(TweenAction action)
         {
             _tweenActionPool.Release(action);
+        }
+
+        /// <inheritdoc />
+        public void ReturnAction(AsyncAnimationAction action)
+        {
+            _asyncAnimationActionPool.Release(action);
         }
 
         /// <inheritdoc />

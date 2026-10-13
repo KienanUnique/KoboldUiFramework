@@ -1,0 +1,20 @@
+{
+    "name": "KoboldUi.Tests.VContainer.Fixtures",
+    "rootNamespace": "KoboldUi.Tests.VContainer",
+    "references": [
+        "com.kienanunique.kobolduiframework",
+        "VContainer"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS",
+        "KOBOLD_VCONTAINER_SUPPORT"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

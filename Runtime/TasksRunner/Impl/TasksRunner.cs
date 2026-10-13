@@ -10,7 +10,7 @@ namespace KoboldUi.TasksRunner.Impl
     /// <summary>
     /// Processes UI actions sequentially on a background task queue.
     /// </summary>
-    public class TaskRunner : ITasksRunner
+    internal class TaskRunner : ITasksRunner
     {
         private readonly ConcurrentQueue<IUiAction> _actionQueue = new();
         private readonly CancellationTokenSource _cancellationTokenSource = new();

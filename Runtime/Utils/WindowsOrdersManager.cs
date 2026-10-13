@@ -6,7 +6,7 @@ namespace KoboldUi.Utils
     /// <summary>
     /// Helper methods for maintaining window sibling order based on the stack.
     /// </summary>
-    public static class WindowsOrdersManager
+    internal static class WindowsOrdersManager
     {
         /// <summary>
         /// Forces the window to the top of its sibling order, regardless of the stack count.

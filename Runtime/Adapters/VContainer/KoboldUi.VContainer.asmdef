@@ -1,0 +1,19 @@
+{
+    "name": "KoboldUi.VContainer",
+    "rootNamespace": "KoboldUi.Adapters.VContainer",
+    "references": [
+        "com.kienanunique.kobolduiframework",
+        "VContainer"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [
+        "KOBOLD_VCONTAINER_SUPPORT"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

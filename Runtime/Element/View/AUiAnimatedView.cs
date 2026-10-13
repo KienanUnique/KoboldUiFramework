@@ -18,7 +18,7 @@ namespace KoboldUi.Element.View
     /// <summary>
     /// View that plays configured animations when opening or closing.
     /// </summary>
-    public class AUiAnimatedView : AUiView, IAutoFillable
+    public class AUiAnimatedView : AUiView
     {
 #if KOBOLD_ODIN_SUPPORT
         [InfoBox("Optional. If null, the animation is replaced with SetActive(true)", InfoMessageType.Info, nameof(IsOpenAnimationMissing))]
@@ -77,7 +77,7 @@ namespace KoboldUi.Element.View
 
 #if (KOBOLD_ALCHEMY_SUPPORT || KOBOLD_ODIN_SUPPORT) && UNITY_EDITOR
         [Button]
-        /// <inheritdoc />
+        /// <summary>Assigns the attached animation to unassigned transitions.</summary>
         public void AutoFill()
         {
             if(!TryGetComponent<AUiAnimationBase>(out var uiAnimation))

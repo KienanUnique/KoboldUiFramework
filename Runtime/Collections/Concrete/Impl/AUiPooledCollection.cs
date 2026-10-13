@@ -27,7 +27,7 @@ namespace KoboldUi.Collections.Concrete.Impl
             }
             else
             {
-                view = Instantiator.InstantiatePrefabForComponent<TView>(prefab);
+                view = CreateView();
             }
 
             OnCreated(view);

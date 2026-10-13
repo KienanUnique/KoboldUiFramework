@@ -1,0 +1,14 @@
+{
+    "name": "KoboldUi.Tests.Zenject.Fixtures",
+    "rootNamespace": "KoboldUi.Tests.Zenject",
+    "references": ["com.kienanunique.kobolduiframework", "Zenject"],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": ["Zenject-usage.dll"],
+    "autoReferenced": false,
+    "defineConstraints": ["UNITY_INCLUDE_TESTS", "KOBOLD_ZENJECT_SUPPORT"],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

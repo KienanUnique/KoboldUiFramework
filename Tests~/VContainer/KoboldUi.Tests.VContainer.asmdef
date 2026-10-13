@@ -1,0 +1,29 @@
+{
+    "name": "KoboldUi.Tests.VContainer",
+    "rootNamespace": "KoboldUi.Tests.VContainer",
+    "references": [
+        "com.kienanunique.kobolduiframework",
+        "KoboldUi.VContainer",
+        "KoboldUi.Tests.VContainer.Fixtures",
+        "VContainer"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS",
+        "KOBOLD_VCONTAINER_SUPPORT"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false,
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ]
+}
