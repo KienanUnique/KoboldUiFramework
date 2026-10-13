@@ -87,6 +87,8 @@ var ui = builder.RegisterKoboldUi(canvas, WindowScope.Local)
 
 Each preset registers the matching window service when `Build()` runs. Zenject initializes windows during its `IInitializable.Initialize` phase; VContainer initializes them after the container builds. Both wait until the remaining bindings are available. If registration itself needs those bindings, use the optional `registerWindows` callback in either preset. Pass `initializationMode: UiInitializationMode.Manual` to either preset to require an explicit `ui.Initialize()`.
 
+In Automatic mode, `OpenWindow<T>()`, `ui.Open<T>()`, or `ui.Initialize()` called by an earlier initializer or build callback wait until the preset has attached its adapter and registered its windows. Queued opens run after all windows are initialized. `ui.Get<T>()` must wait for that point because it returns a window synchronously; calling it earlier throws. Install the preset during the container's binding phase. Once that phase has passed, create a new child scope for new bindings instead of registering them into the existing scope.
+
 Direct `UiBootstrap` construction with `ZenjectUiCompositionAdapter` or `VContainerUiCompositionAdapter` remains available for custom composition. It does not register services in the container automatically.
 
 Pass project and local adapters separately when their containers differ:

@@ -94,6 +94,76 @@ namespace KoboldUi.Tests.Zenject
         }
 
         [Test]
+        public void AutoQueuesWindowOpenFromEarlierInitializable()
+        {
+            var canvasObject = new GameObject("Canvas", typeof(Canvas));
+            var prefabObject = new GameObject("Prefab");
+            UiBootstrap ui = null;
+            try
+            {
+                var container = new DiContainer();
+                var prefab = prefabObject.AddComponent<ZenjectBootstrapLocalWindow>();
+                var registrations = 0;
+                var early = new OpenWindowInitializable(() =>
+                    ui.LocalWindows.OpenWindow<ZenjectBootstrapLocalWindow>());
+                container.Bind<IInitializable>().FromInstance(early).AsCached();
+                ui = container.BindKoboldUi(canvasObject.GetComponent<Canvas>(), WindowScope.Local,
+                    registerWindows: bootstrap =>
+                    {
+                        registrations++;
+                        bootstrap.RegisterWindow(prefab);
+                    }).Build();
+                var token = new ZenjectBootstrapToken("late binding");
+                container.BindInstance(token).AsSingle();
+
+                var initializables = container.ResolveAll<IInitializable>();
+                Assert.That(initializables[0], Is.SameAs(early));
+                foreach (var initializable in initializables) initializable.Initialize();
+
+                var window = ui.Get<ZenjectBootstrapLocalWindow>();
+                Assert.That(ui.LocalWindows.CurrentWindow, Is.SameAs(window));
+                Assert.That(window.Token, Is.SameAs(token));
+                Assert.That(registrations, Is.EqualTo(1));
+            }
+            finally
+            {
+                ui?.Dispose();
+                Object.DestroyImmediate(canvasObject);
+                Object.DestroyImmediate(prefabObject);
+            }
+        }
+
+        [Test]
+        public void AutoDefersInitializeRequestedByEarlierInitializable()
+        {
+            var canvasObject = new GameObject("Canvas", typeof(Canvas));
+            var prefabObject = new GameObject("Prefab");
+            UiBootstrap ui = null;
+            try
+            {
+                var container = new DiContainer();
+                var early = new OpenWindowInitializable(() => ui.Initialize());
+                container.Bind<IInitializable>().FromInstance(early).AsCached();
+                ui = container.BindKoboldUi(canvasObject.GetComponent<Canvas>(), WindowScope.Local,
+                    registerWindows: bootstrap =>
+                        bootstrap.RegisterWindow(prefabObject.AddComponent<ZenjectBootstrapLocalWindow>())).Build();
+                container.BindInstance(new ZenjectBootstrapToken("ready")).AsSingle();
+
+                var initializables = container.ResolveAll<IInitializable>();
+                Assert.That(initializables[0], Is.SameAs(early));
+                foreach (var initializable in initializables) initializable.Initialize();
+
+                Assert.That(ui.Get<ZenjectBootstrapLocalWindow>().IsInitialized, Is.True);
+            }
+            finally
+            {
+                ui?.Dispose();
+                Object.DestroyImmediate(canvasObject);
+                Object.DestroyImmediate(prefabObject);
+            }
+        }
+
+        [Test]
         public void LocalControllerUsesRegisteredProjectService()
         {
             var projectCanvasObject = new GameObject("ProjectCanvas", typeof(Canvas));
@@ -181,6 +251,14 @@ namespace KoboldUi.Tests.Zenject
                 Object.DestroyImmediate(localPrefabObject);
                 Object.DestroyImmediate(projectPrefabObject);
             }
+        }
+
+        private sealed class OpenWindowInitializable : IInitializable
+        {
+            private readonly System.Action _open;
+
+            public OpenWindowInitializable(System.Action open) { _open = open; }
+            public void Initialize() { _open(); }
         }
     }
 }

@@ -28,6 +28,7 @@ namespace KoboldUi.Composition
         private bool _built;
         private bool _building;
         private bool _disposed;
+        private bool _compositionReady = true;
 
         public ILocalWindowsService LocalWindows
         {
@@ -85,6 +86,14 @@ namespace KoboldUi.Composition
 
         public void Open<TWindow>() where TWindow : IWindow
         {
+            ThrowIfDisposed();
+            if (!_compositionReady)
+            {
+                if (_initializationMode == UiInitializationMode.Manual)
+                    throw new InvalidOperationException("Call Initialize before using windows in Manual mode.");
+                QueueAction(() => Open<TWindow>());
+                return;
+            }
             if (_building) throw new InvalidOperationException("Cannot open a window while UI windows are being initialized.");
             EnsureBuilt();
             if (_localRegistry.Contains(typeof(TWindow))) _localWindows.OpenWindow<TWindow>();
@@ -102,15 +111,38 @@ namespace KoboldUi.Composition
         {
             ThrowIfDisposed();
             if (_built) return;
+            if (!_compositionReady)
+            {
+                if (_initializationMode == UiInitializationMode.Manual)
+                    throw new InvalidOperationException("UI composition has not completed yet.");
+                return;
+            }
             if (_building)
                 throw new InvalidOperationException("Cannot initialize UI windows while they are being initialized.");
             Build();
+        }
+
+        internal void WaitForComposition()
+        {
+            ThrowIfDisposed();
+            if (_built || _building)
+                throw new InvalidOperationException("Cannot wait for composition after UI initialization.");
+            _compositionReady = false;
+        }
+
+        internal void CompleteComposition()
+        {
+            ThrowIfDisposed();
+            _compositionReady = true;
+            if (_initializationMode == UiInitializationMode.Automatic) Initialize();
         }
 
         private void EnsureBuilt()
         {
             ThrowIfDisposed();
             if (_built || _building) return;
+            if (!_compositionReady)
+                throw new InvalidOperationException("UI composition has not completed yet.");
             if (_initializationMode == UiInitializationMode.Manual)
                 throw new InvalidOperationException("Call Initialize before using windows in Manual mode.");
             Build();
@@ -121,6 +153,12 @@ namespace KoboldUi.Composition
             ThrowIfDisposed();
             if (_built) return true;
             if (_building) return false;
+            if (!_compositionReady)
+            {
+                if (_initializationMode == UiInitializationMode.Manual)
+                    throw new InvalidOperationException("Call Initialize before using windows in Manual mode.");
+                return false;
+            }
             EnsureBuilt();
             return true;
         }

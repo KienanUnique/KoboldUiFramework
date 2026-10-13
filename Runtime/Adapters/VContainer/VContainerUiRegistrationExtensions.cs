@@ -20,6 +20,7 @@ namespace KoboldUi.Adapters.VContainer
             var adapter = new VContainerUiCompositionAdapter();
             return new UiBootstrapBuilder(canvas, canvas, scope, ui =>
                 {
+                    ui.WaitForComposition();
                     builder.RegisterInstance(ui);
                     if (scope == WindowScope.Local)
                         builder.RegisterInstance<ILocalWindowsService>(ui.LocalWindows);
@@ -29,7 +30,7 @@ namespace KoboldUi.Adapters.VContainer
                     {
                         adapter.Attach(container);
                         registerWindows?.Invoke(ui);
-                        if (ui.InitializationMode == UiInitializationMode.Automatic) ui.Initialize();
+                        ui.CompleteComposition();
                     });
                 })
                 .WithAdapter(adapter)

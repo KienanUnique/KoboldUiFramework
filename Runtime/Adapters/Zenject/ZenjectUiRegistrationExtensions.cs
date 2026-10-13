@@ -18,6 +18,7 @@ namespace KoboldUi.Composition.Zenject
 
             return new UiBootstrapBuilder(canvas, canvas, scope, ui =>
                 {
+                    ui.WaitForComposition();
                     if (scope == WindowScope.Local)
                         container.Bind<ILocalWindowsService>().FromInstance(ui.LocalWindows).AsSingle();
                     else
@@ -46,7 +47,7 @@ namespace KoboldUi.Composition.Zenject
                 if (_initialized) return;
                 _initialized = true;
                 _registerWindows?.Invoke(_ui);
-                if (_ui.InitializationMode == UiInitializationMode.Automatic) _ui.Initialize();
+                _ui.CompleteComposition();
             }
         }
     }
