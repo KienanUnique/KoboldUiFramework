@@ -130,7 +130,7 @@ public sealed class ScalePanelAnimation : AUiTweenAnimation
 }
 ```
 
-Optional Zenject and VContainer presets use separate assemblies and the `KOBOLD_ZENJECT_SUPPORT` or `KOBOLD_VCONTAINER_SUPPORT` define. In installers, call `Container.BindKoboldUi(canvas, WindowScope.Local).RegisterWindow(prefab).Build()` or the equivalent `builder.RegisterKoboldUi(...)`. See [DI migration](https://github.com/KienanUnique/KoboldUiFramework/wiki/DI-Migration).
+Optional Zenject and VContainer presets use separate assemblies and the `KOBOLD_ZENJECT_SUPPORT` or `KOBOLD_VCONTAINER_SUPPORT` define. In installers, call `Container.BindKoboldUi(canvas, WindowScope.Local).RegisterWindow(prefab).Build()` or the equivalent `builder.RegisterKoboldUi(...)`. See [DI migration](https://github.com/KienanUnique/KoboldUiFramework/wiki/1.x.x_to_2.0.0_migration).
 
 
 # Useful Links
