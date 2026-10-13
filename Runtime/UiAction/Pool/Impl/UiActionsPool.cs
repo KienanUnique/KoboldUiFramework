@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using DG.Tweening;
 using KoboldUi.UiAction.Impl.Common;
@@ -7,14 +7,14 @@ using KoboldUi.Services.WindowsService;
 using KoboldUi.Windows;
 using KoboldUi.WindowsStack;
 using UnityEngine.Pool;
-using Zenject;
+
 
 namespace KoboldUi.UiAction.Pool.Impl
 {
     /// <summary>
     /// Maintains pools for the various UI action types used by the framework.
     /// </summary>
-    public class UiActionsPool : IUiActionsPool, IDisposable, IInitializable
+    public class UiActionsPool : IUiActionsPool, IDisposable
     {
         private const int DEFAULT_POOL_SIZE = 2;
 

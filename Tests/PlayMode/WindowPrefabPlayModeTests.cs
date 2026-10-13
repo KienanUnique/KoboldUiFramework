@@ -2,6 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using DG.Tweening;
+using KoboldUi.Composition;
+using KoboldUi.Element.Animations;
 using KoboldUi.Element.Animations.Impl;
 using KoboldUi.Element.Animations.Parameters.Impl;
 using KoboldUi.Element.Controller;
@@ -15,7 +17,6 @@ using UniRx;
 using UnityEngine;
 using UnityEngine.TestTools;
 using UnityEngine.UI;
-using Zenject;
 
 namespace KoboldUi.Tests.PlayMode
 {
@@ -45,16 +46,72 @@ namespace KoboldUi.Tests.PlayMode
         }
 
         [Test]
-        public void FadeAnimationAppearsAndDisappearsWithInjectedDefaults()
+        public void BuiltInAnimationRejectsMissingExplicitCustomAsset()
+        {
+            var animationObject = new GameObject("Fade animation");
+            _objects.Add(animationObject);
+            var animation = animationObject.AddComponent<FadeAnimation>();
+            typeof(AUiAnimation<FadeAnimationParameters>)
+                .GetField("_useDefaultParameters", BindingFlags.Instance | BindingFlags.NonPublic)
+                .SetValue(animation, false);
+            var pool = new UiActionsPool(new WindowsStackHolder());
+            pool.Initialize();
+            try
+            {
+                Assert.Throws<System.InvalidOperationException>(() => animation.Appear(pool));
+            }
+            finally
+            {
+                DOTween.KillAll();
+                pool.Dispose();
+            }
+        }
+
+        [Test]
+        public void BuiltInAnimationsWorkWithoutDefaultAssets()
+        {
+            var fadeObject = new GameObject("Fade animation");
+            var scaleObject = new GameObject("Scale animation");
+            var slideObject = new GameObject("Slide animation", typeof(RectTransform));
+            _objects.Add(fadeObject);
+            _objects.Add(scaleObject);
+            _objects.Add(slideObject);
+            var fade = fadeObject.AddComponent<FadeAnimation>();
+            var scale = scaleObject.AddComponent<ScaleAnimation>();
+            var slide = slideObject.AddComponent<SlideAnimation>();
+            var pool = new UiActionsPool(new WindowsStackHolder());
+            pool.Initialize();
+            try
+            {
+                Assert.DoesNotThrow(() => fade.Appear(pool));
+                Assert.DoesNotThrow(() => scale.Appear(pool));
+                Assert.DoesNotThrow(() => slide.Appear(pool));
+                DOTween.CompleteAll();
+                Assert.That(fadeObject.GetComponent<CanvasGroup>().alpha, Is.EqualTo(1f).Within(0.001f));
+                Assert.That(scaleObject.transform.localScale, Is.EqualTo(Vector3.one));
+                Assert.DoesNotThrow(() => fade.Disappear(pool));
+                Assert.DoesNotThrow(() => scale.Disappear(pool));
+                Assert.DoesNotThrow(() => slide.Disappear(pool));
+                DOTween.CompleteAll();
+            }
+            finally
+            {
+                DOTween.KillAll();
+                pool.Dispose();
+            }
+        }
+
+        [Test]
+        public void FadeAnimationAppearsAndDisappearsWithAssetDefaults()
         {
             var parameters = ScriptableObject.CreateInstance<FadeAnimationParameters>();
             _assets.Add(parameters);
             var animationObject = new GameObject("Fade animation");
             _objects.Add(animationObject);
             var animation = animationObject.AddComponent<FadeAnimation>();
-            var container = new DiContainer();
-            container.BindInstance(parameters).AsSingle();
-            container.InjectGameObject(animationObject);
+            var defaults = new UiAnimationDefaults();
+            defaults.Add(parameters);
+            new UiActivator(animationDefaults: defaults).PrepareGameObject(animationObject);
             var pool = new UiActionsPool(new WindowsStackHolder());
             pool.Initialize();
 
@@ -76,11 +133,9 @@ namespace KoboldUi.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator PrefabWindowInjectsControllerAndHandlesButtonClick()
+        public IEnumerator PrefabWindowUsesExplicitControllerFactoryAndHandlesButtonClick()
         {
             var service = new ClickService();
-            var container = new DiContainer();
-            container.BindInstance(service).AsSingle();
 
             var canvasObject = new GameObject("Canvas", typeof(Canvas));
             _objects.Add(canvasObject);
@@ -94,14 +149,17 @@ namespace KoboldUi.Tests.PlayMode
             _objects.Add(buttonObject);
             buttonObject.transform.SetParent(prefabObject.transform);
             view.Configure(buttonObject.GetComponent<Button>());
-            prefab.Configure(view);
+            prefab.Configure(view, null);
             typeof(AWindow)
                 .GetField("_animatedEmptyViews", BindingFlags.Instance | BindingFlags.NonPublic)
                 .SetValue(prefab, new List<KoboldUi.Element.View.Impl.AnimatedEmptyView>());
 
-            container.BindWindowFromPrefab(canvas, prefab);
-            var instance = container.Resolve<ButtonWindow>();
+            var instance = Object.Instantiate(prefab, canvas.transform);
             _objects.Add(instance.gameObject);
+            instance.Configure(instance.View, service);
+            var activator = new UiActivator();
+            instance.Configure(activator);
+            activator.PrepareGameObject(instance.gameObject);
             instance.Initialize();
 
             Assert.That(instance.IsInitialized, Is.True);
@@ -128,20 +186,21 @@ namespace KoboldUi.Tests.PlayMode
     public sealed class ButtonWindow : AWindow
     {
         [SerializeField] private ButtonView view;
-        [Inject] private ClickService _service;
+        private ClickService _service;
 
         public ButtonView View => view;
         public ButtonController Controller => view.Controller;
         public ClickService InjectedService => _service;
 
-        public void Configure(ButtonView buttonView)
+        public void Configure(ButtonView buttonView, ClickService service)
         {
             view = buttonView;
+            _service = service;
         }
 
         protected override void AddControllers()
         {
-            AddController<ButtonController, ButtonView>(view);
+            AddController(view, _ => new ButtonController(_service));
         }
     }
 

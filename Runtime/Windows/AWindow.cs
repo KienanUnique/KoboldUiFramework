@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using KoboldUi.Element.Controller;
 using KoboldUi.Element.Controller.Impl;
 using KoboldUi.Element.View;
@@ -7,7 +8,7 @@ using KoboldUi.UiAction;
 using KoboldUi.UiAction.Pool;
 using KoboldUi.Utils;
 using UnityEngine;
-using Zenject;
+using UnityEngine.Pool;
 
 #if KOBOLD_ALCHEMY_SUPPORT
 using Alchemy.Inspector;
@@ -44,7 +45,6 @@ namespace KoboldUi.Windows
         private readonly List<IUIController> _childControllers = new();
         private CanvasGroup _canvasGroup;
 
-        private DiContainer _container;
         
         /// <inheritdoc />
         public override bool IsPopup => _isPopup;
@@ -58,14 +58,12 @@ namespace KoboldUi.Windows
         }
 
         /// <inheritdoc />
-        public sealed override void InstallBindings(DiContainer container)
-        {
-            _container = container;
-        }
-
         /// <inheritdoc />
         public sealed override void Initialize()
         {
+            if (IsInitialized) return;
+            if (Activator == null)
+                throw new System.InvalidOperationException($"Window {name} has no UiActivator. Call Configure first.");
             AddControllers();
             AddEmptyElements();
             base.Initialize();
@@ -85,18 +83,27 @@ namespace KoboldUi.Windows
                     break;
             }
 
-            var actions = new List<IUiAction>();
+            var actions = ListPool<IUiAction>.Get();
 
-            if (!IsInitialized)
-                Debug.LogError(
-                    $"[Kobold Ui {nameof(AWindow)}] | {gameObject.name} is not initialized. Change State logic is invalid!");
+            try
+            {
+                if (!IsInitialized)
+                    Debug.LogError(
+                        $"[Kobold Ui {nameof(AWindow)}] | {gameObject.name} is not initialized. Change State logic is invalid!");
 
-            foreach (var controller in _childControllers)
-                actions.Add(controller.SetState(state, pool));
+                foreach (var controller in _childControllers)
+                    actions.Add(controller.SetState(state, pool));
 
-            pool.GetAction(out var parallelAction, actions);
-
-            return parallelAction;
+                pool.GetAction(out var parallelAction, actions);
+                parallelAction.TakeOwnershipOfActions(actions);
+                actions = null;
+                return parallelAction;
+            }
+            finally
+            {
+                if (actions != null)
+                    ListPool<IUiAction>.Release(actions);
+            }
         }
 
         /// <inheritdoc />
@@ -117,10 +124,24 @@ namespace KoboldUi.Windows
             where TView : IUiView
             where TController : AUiController<TView>
         {
-            var controller = _container.Instantiate<TController>(new List<object> {viewInstance});
+            var controller = Activator.CreateController<TController, TView>(viewInstance);
 
-            _container.InjectGameObject(gameObject);
+            RegisterController(viewInstance, controller);
+        }
 
+        protected void AddController<TController, TView>(TView viewInstance, Func<TView, TController> factory)
+            where TView : IUiView
+            where TController : AUiController<TView>
+        {
+            var controller = Activator.CreateController(viewInstance, factory);
+
+            RegisterController(viewInstance, controller);
+        }
+
+        private void RegisterController<TController, TView>(TView viewInstance, TController controller)
+            where TView : IUiView
+            where TController : AUiController<TView>
+        {
             _childControllers.Add(controller);
 
             viewInstance.Initialize();

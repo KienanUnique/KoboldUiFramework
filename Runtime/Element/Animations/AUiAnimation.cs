@@ -5,7 +5,6 @@ using KoboldUi.UiAction.Impl.Common;
 using KoboldUi.UiAction.Pool;
 using UnityEngine;
 using UnityEngine.Serialization;
-using Zenject;
 #if KOBOLD_ALCHEMY_SUPPORT
 using Alchemy.Inspector;
 #elif KOBOLD_ODIN_SUPPORT
@@ -18,7 +17,8 @@ namespace KoboldUi.Element.Animations
     /// Generic animation component that drives appear and disappear transitions using tween parameters.
     /// </summary>
     /// <typeparam name="TParams">Parameter type describing the animation behaviour.</typeparam>
-    public abstract class AUiAnimation<TParams> : AUiAnimationBase where TParams : IUiAnimationParameters
+    public abstract class AUiAnimation<TParams> : AUiAnimationBase, IUiAnimationDefaultsReceiver
+        where TParams : class, IAnimationParameters
     {
         /// <summary>
         /// Determines whether consumers should wait for the tween to finish before continuing.
@@ -36,22 +36,38 @@ namespace KoboldUi.Element.Animations
         [SerializeField]
         private TParams _animationParameters;
 
-        [InjectOptional] private TParams _defaultAnimationParameters;
+        private TParams _defaultAnimationParameters;
+
+        public void ApplyDefaults(UiAnimationDefaults defaults)
+        {
+            if (defaults == null) throw new ArgumentNullException(nameof(defaults));
+            defaults.TryGet(out _defaultAnimationParameters);
+        }
 
         /// <summary>
-        /// Gets the animation parameters in use, falling back to injected defaults if needed.
+        /// Gets explicitly configured parameters, if any.
         /// </summary>
+        protected TParams OptionalAnimationParameters
+        {
+            get
+            {
+                if (_useDefaultParameters) return _defaultAnimationParameters;
+                if (_animationParameters == null)
+                    throw new InvalidOperationException(
+                        $"Custom animation parameters {typeof(TParams)} weren't assigned.");
+                return _animationParameters;
+            }
+        }
+
+        /// <summary>Gets required parameters for animations without built-in values.</summary>
         protected TParams AnimationParameters
         {
             get
             {
-                if (!_useDefaultParameters)
-                    return _animationParameters;
-
-                if (_defaultAnimationParameters == null)
+                var parameters = OptionalAnimationParameters;
+                if (parameters == null)
                     throw new Exception($"Default animation parameters {typeof(TParams)} wasn't found");
-
-                return _defaultAnimationParameters;
+                return parameters;
             }
         }
 

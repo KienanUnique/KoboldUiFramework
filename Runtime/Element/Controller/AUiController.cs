@@ -3,7 +3,6 @@ using KoboldUi.Element.View;
 using KoboldUi.UiAction;
 using KoboldUi.UiAction.Pool;
 using KoboldUi.Utils;
-using Zenject;
 
 namespace KoboldUi.Element.Controller
 {
@@ -11,12 +10,17 @@ namespace KoboldUi.Element.Controller
     /// Base controller that orchestrates view lifecycle transitions based on window state changes.
     /// </summary>
     /// <typeparam name="TView">View type controlled by the controller.</typeparam>
-    public abstract class AUiController<TView> : IUIController, IInitializable where TView : IUiView
+    public abstract class AUiController<TView> : IUIController, IUiViewReceiver<TView> where TView : IUiView
     {
         /// <summary>
         /// View instance managed by the controller.
         /// </summary>
-        [Inject] protected readonly TView View;
+        protected TView View;
+
+        public void SetView(TView view)
+        {
+            View = view ?? throw new ArgumentNullException(nameof(view));
+        }
 
         /// <summary>
         /// Indicates whether the view has been opened at least once.

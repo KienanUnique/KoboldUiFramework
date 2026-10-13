@@ -3,14 +3,12 @@
     "rootNamespace": "KoboldUi.Tests.PlayMode",
     "references": [
         "com.kienanunique.kobolduiframework",
-        "Zenject",
         "UniRx",
         "UniTask",
         "UnityEngine.UI"
     ],
     "overrideReferences": true,
     "precompiledReferences": [
-        "Zenject-usage.dll",
         "DOTween.dll",
         "nunit.framework.dll"
     ],

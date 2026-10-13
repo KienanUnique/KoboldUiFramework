@@ -50,7 +50,7 @@ namespace KoboldUi.Collections.Concrete.Impl
         /// <inheritdoc />
         public TView Create()
         {
-            var view = Instantiator.InstantiatePrefabForComponent<TView>(prefab);
+            var view = CreateView();
             OnCreated(view);
             return view;
         }

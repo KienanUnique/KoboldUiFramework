@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using KoboldUi.Composition;
 using KoboldUi.Services.WindowsService.Impl;
 using KoboldUi.UiAction;
 using KoboldUi.UiAction.Impl.Common;
@@ -6,7 +7,6 @@ using KoboldUi.UiAction.Pool;
 using KoboldUi.Utils;
 using KoboldUi.Windows;
 using NUnit.Framework;
-using Zenject;
 
 namespace KoboldUi.Tests
 {
@@ -15,10 +15,10 @@ namespace KoboldUi.Tests
         [Test]
         public void OpenWindowResolvesRegisteredInstanceAndInvokesCallbackAfterActivation()
         {
-            var container = new DiContainer();
             var window = new ServiceWindow();
-            container.BindInstance(window).AsSingle();
-            var service = new LocalWindowsService(container);
+            var registry = new WindowRegistry();
+            registry.Register(window);
+            var service = new LocalWindowsService(registry);
             var callbackSawActiveWindow = false;
 
             try
@@ -40,10 +40,10 @@ namespace KoboldUi.Tests
         [Test]
         public void CloseWindowClosesRegisteredInstanceAndClearsCurrentWindow()
         {
-            var container = new DiContainer();
             var window = new ServiceWindow();
-            container.BindInstance(window).AsSingle();
-            var service = new LocalWindowsService(container);
+            var registry = new WindowRegistry();
+            registry.Register(window);
+            var service = new LocalWindowsService(registry);
 
             try
             {

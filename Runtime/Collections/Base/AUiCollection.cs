@@ -1,7 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using Zenject;
+using KoboldUi.Composition;
 
 namespace KoboldUi.Collections.Base
 {
@@ -9,7 +9,7 @@ namespace KoboldUi.Collections.Base
     /// Base behaviour for UI collections that manage pooled view instances.
     /// </summary>
     /// <typeparam name="TView">Type of view stored in the collection.</typeparam>
-    public abstract class AUiCollection<TView> : MonoBehaviour, IUiCollection<TView>
+    public abstract class AUiCollection<TView> : MonoBehaviour, IUiCollection<TView>, IUiActivatorAware
         where TView : MonoBehaviour, IUiCollectionView
     {
         /// <summary>
@@ -22,9 +22,14 @@ namespace KoboldUi.Collections.Base
         [SerializeField] protected Transform collectionContainer;
 
         /// <summary>
-        /// Instantiator used to spawn new view instances.
+        /// Optional activator used when spawned views need animation defaults or composition.
         /// </summary>
-        [Inject] protected IInstantiator Instantiator;
+        protected UiActivator Activator;
+
+        public void Configure(UiActivator activator)
+        {
+            Activator = activator ?? throw new System.ArgumentNullException(nameof(activator));
+        }
 
         /// <inheritdoc />
         public abstract int Count { get; }
@@ -48,6 +53,11 @@ namespace KoboldUi.Collections.Base
         {
             view.SetParent(collectionContainer);
             view.Appear();
+        }
+
+        protected TView CreateView()
+        {
+            return Activator == null ? Instantiate(prefab) : Activator.InstantiatePrefab(prefab);
         }
     }
 }

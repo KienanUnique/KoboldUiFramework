@@ -3,7 +3,6 @@
     "rootNamespace": "KoboldUi.Tests",
     "references": [
         "com.kienanunique.kobolduiframework",
-        "Zenject",
         "UniTask"
     ],
     "includePlatforms": [
@@ -11,7 +10,6 @@
     ],
     "overrideReferences": true,
     "precompiledReferences": [
-        "Zenject-usage.dll",
         "DOTween.dll",
         "nunit.framework.dll"
     ],
